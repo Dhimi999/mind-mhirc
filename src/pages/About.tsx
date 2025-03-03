@@ -2,14 +2,42 @@
 import { useState } from "react";
 import { 
   Users, Sparkles, Heart, Brain, BookOpen, 
-  BarChart4, ArrowRight, Activity, UserCheck
+  BarChart4, ArrowRight, Activity, UserCheck, Send, Lightbulb, Network
 } from "lucide-react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { toast } from "@/components/ui/use-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TeamMember from "@/components/TeamMember";
 
+const formSchema = z.object({
+  name: z.string().min(2, "Nama minimal 2 karakter"),
+  email: z.string().email("Email tidak valid"),
+  subject: z.string().min(5, "Subjek minimal 5 karakter"),
+  message: z.string().min(10, "Pesan minimal 10 karakter"),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
 const About = () => {
   const [activeTab, setActiveTab] = useState<"visi" | "misi" | "nilai">("visi");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      subject: "",
+      message: "",
+    },
+  });
 
   const tabs = [
     { id: "visi", label: "Visi Kami" },
@@ -65,11 +93,36 @@ const About = () => {
     }
   ];
 
+  const onSubmit = async (data: FormValues) => {
+    setIsSubmitting(true);
+    
+    try {
+      // Here we would typically send the data to a backend API
+      // For demonstration purposes, we'll just simulate a successful submission
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      form.reset();
+      toast({
+        title: "Pesan terkirim!",
+        description: "Terima kasih telah menghubungi kami. Kami akan segera membalas pesan Anda.",
+      });
+    } catch (error) {
+      toast({
+        title: "Gagal mengirim pesan",
+        description: "Terjadi kesalahan saat mengirim pesan. Silakan coba lagi nanti.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-1">
+        {/* Hero Section - Judul */}
         <section className="pt-24 pb-12 sm:pt-32 sm:pb-16 bg-gradient-to-b from-background to-muted relative overflow-hidden">
           <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
           <div className="absolute top-1/4 right-[10%] w-64 h-64 rounded-full bg-primary/5 animate-float blur-3xl"></div>
@@ -254,7 +307,107 @@ const About = () => {
           <div className="absolute right-0 bottom-1/3 w-32 h-32 bg-accent/10 rounded-full blur-2xl"></div>
         </section>
         
-        <section className="py-16 px-4 sm:px-6 bg-background">
+        {/* Redesigned Logo Mind MHIRC Section */}
+        <section className="py-16 px-4 sm:px-6 bg-background relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute left-20 bottom-20 w-32 h-32 bg-secondary/5 rounded-full blur-3xl"></div>
+          
+          <div className="container mx-auto max-w-6xl relative z-10">
+            <div className="text-center mb-10 fade-in">
+              <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-1 text-primary text-sm font-medium mb-4">
+                <Sparkles className="h-4 w-4" />
+                <span>Logo Kami</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Makna Logo Mind MHIRC
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Logo kami merepresentasikan visi dan misi Mind MHIRC sebagai pusat riset inovatif 
+                kesehatan mental yang menghubungkan ilmu pengetahuan dengan solusi praktis.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+              <div className="flex justify-center order-2 lg:order-1">
+                <div className="relative">
+                  <div className="absolute -inset-10 bg-gradient-to-tr from-primary/5 via-accent/5 to-secondary/5 rounded-full animate-spin-slow blur-3xl opacity-70"></div>
+                  <div className="relative overflow-hidden rounded-full p-2 bg-gradient-to-tr from-primary/30 to-secondary/30 shadow-xl">
+                    <div className="bg-white rounded-full p-4">
+                      <img 
+                        src="/lovable-uploads/f1e145af-f219-4e03-adfb-d4d892faee8a.png"
+                        alt="Logo Mind MHIRC"
+                        className="w-48 h-48 md:w-60 md:h-60 object-contain relative z-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-6 order-1 lg:order-2">
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="bg-white shadow-xl rounded-xl border border-primary/10 overflow-hidden transform transition-all duration-300 hover:shadow-primary/20 hover:-translate-y-1">
+                    <div className="flex items-stretch">
+                      <div className="w-3 bg-primary"></div>
+                      <div className="flex-1 p-6">
+                        <div className="flex items-center space-x-4 mb-3">
+                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Lightbulb className="h-6 w-6 text-primary" />
+                          </div>
+                          <h3 className="font-bold text-xl">Lampu Pengetahuan</h3>
+                        </div>
+                        <p className="text-muted-foreground">
+                          Melambangkan pencerahan, inovasi, dan solusi baru dalam kesehatan mental.
+                          Cahaya yang menerangi jalan untuk pemahaman yang lebih baik tentang kesehatan mental.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white shadow-xl rounded-xl border border-secondary/10 overflow-hidden transform transition-all duration-300 hover:shadow-secondary/20 hover:-translate-y-1">
+                    <div className="flex items-stretch">
+                      <div className="w-3 bg-secondary"></div>
+                      <div className="flex-1 p-6">
+                        <div className="flex items-center space-x-4 mb-3">
+                          <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Network className="h-6 w-6 text-secondary" />
+                          </div>
+                          <h3 className="font-bold text-xl">Koneksi Jaringan</h3>
+                        </div>
+                        <p className="text-muted-foreground">
+                          Garis-garis yang menghubungkan melambangkan integrasi ilmu pengetahuan, 
+                          teknologi, dan praktik klinis. Juga mewakili kolaborasi antara berbagai 
+                          pemangku kepentingan dalam ekosistem kesehatan mental.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white shadow-xl rounded-xl border border-accent/10 overflow-hidden transform transition-all duration-300 hover:shadow-accent/20 hover:-translate-y-1">
+                    <div className="flex items-stretch">
+                      <div className="w-3 bg-accent"></div>
+                      <div className="flex-1 p-6">
+                        <div className="flex items-center space-x-4 mb-3">
+                          <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Brain className="h-6 w-6 text-accent-600" />
+                          </div>
+                          <h3 className="font-bold text-xl">Titik Koneksi</h3>
+                        </div>
+                        <p className="text-muted-foreground">
+                          Lingkaran oranye di setiap ujung melambangkan berbagai aspek kesehatan 
+                          mental yang kami teliti dan kembangkan, serta menggambarkan pendekatan 
+                          holistik kami terhadap kesehatan mental.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* Profil Lembaga Section */}
+        <section className="py-16 px-4 sm:px-6 bg-muted/30">
           <div className="container mx-auto">
             <div className="max-w-4xl mx-auto">
               <div className="mb-12 text-center fade-in">
@@ -446,7 +599,8 @@ const About = () => {
           </div>
         </section>
         
-        <section className="py-16 px-4 sm:px-6 bg-muted">
+        {/* Tim Kami Section */}
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
               <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-1 text-primary text-sm font-medium mb-4">
@@ -468,6 +622,182 @@ const About = () => {
             </div>
           </div>
         </section>
+        
+        {/* Formulir Kontak Section */}
+        <section className="py-16 px-4 sm:px-6 bg-muted/50 relative">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-12 fade-in">
+              <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-1 text-primary text-sm font-medium mb-4">
+                <Send className="h-4 w-4" />
+                <span>Hubungi Kami</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Tinggalkan Pesan untuk Kami
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Apakah Anda memiliki pertanyaan, saran, atau ingin berkolaborasi dengan kami? 
+                Jangan ragu untuk menghubungi kami melalui formulir di bawah ini.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-background rounded-2xl p-6 shadow-medium">
+                  <h3 className="font-bold text-xl mb-4">Informasi Kontak</h3>
+                  
+                  <div className="space-y-5">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground">Email</h4>
+                        <p className="font-medium mt-1">info@mindmhirc.org</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start space-x-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground">Telepon</h4>
+                        <p className="font-medium mt-1">+62 21 7890 1234</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start space-x-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground">Alamat</h4>
+                        <p className="font-medium mt-1">Jl. Kesehatan Mental No. 45, Jakarta Selatan 12345, Indonesia</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-background rounded-2xl p-6 shadow-medium">
+                  <h3 className="font-bold text-xl mb-4">Jam Operasional</h3>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-border">
+                      <span className="text-muted-foreground">Senin - Jumat</span>
+                      <span className="font-medium">08:00 - 17:00</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-border">
+                      <span className="text-muted-foreground">Sabtu</span>
+                      <span className="font-medium">09:00 - 15:00</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Minggu & Hari Libur</span>
+                      <span className="font-medium">Tutup</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="lg:col-span-3">
+                <div className="bg-background rounded-2xl p-6 shadow-medium">
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nama Lengkap</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Masukkan nama lengkap Anda" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input placeholder="email@example.com" type="email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="subject"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Subjek</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Subjek pesan Anda" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="message"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Pesan</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Tuliskan pesan Anda di sini" 
+                                className="min-h-32" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <span className="flex items-center">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Mengirim...
+                          </span>
+                        ) : (
+                          <span className="flex items-center">
+                            <Send className="h-4 w-4 mr-2" />
+                            Kirim Pesan
+                          </span>
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Decorative elements */}
+          <div className="absolute left-10 top-1/4 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
+          <div className="absolute right-10 bottom-1/4 w-32 h-32 bg-secondary/10 rounded-full blur-2xl"></div>
+        </section>
       </main>
       
       <Footer />
@@ -476,3 +806,4 @@ const About = () => {
 };
 
 export default About;
+

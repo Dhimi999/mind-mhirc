@@ -1,22 +1,75 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, BookOpen, BoxSelect, Calendar, ChevronDown, ClipboardList, File, FileText, Home, LineChart, LogOut, Mail, Menu, MessageSquare, PieChart, Users, X } from "lucide-react";
-import Navbar from "@/components/Navbar";
+import { ArrowLeft, BookOpen, BoxSelect, Brain, Calendar, ChevronDown, ClipboardList, File, FileText, Home, LineChart, LogOut, Mail, Menu, MessageSquare, PieChart, Users, X } from "lucide-react";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // Import Settings icon with an alias to avoid name conflict
 import { Settings as SettingsIcon } from "lucide-react";
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [userName, setUserName] = useState("Pengguna");
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
+  const { user, logout } = useAuth();
+
+  // Fetch user's full name from profiles table
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single();
+          
+          if (error) {
+            console.error('Error fetching user profile:', error);
+            return;
+          }
+          
+          if (data && data.full_name) {
+            setUserName(data.full_name);
+          }
+        } catch (error) {
+          console.error('Error in profile fetch:', error);
+        }
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/");
+    } catch (error) {
+      toast({
+        title: "Gagal Logout",
+        description: "Terjadi kesalahan saat mencoba keluar",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle exit dashboard
+  const handleExitDashboard = () => {
+    navigate("/");
+  };
 
   // Mock user data - in a real app, this would come from user context or API
-  const user = {
-    name: "Budi Santoso",
-    email: "budi@example.com",
+  const mockUser = {
+    name: userName,
+    email: user?.email || "pengguna@example.com",
     role: "Admin",
     // Could be "Admin", "Teacher", or "User"
     isProfessional: true,
@@ -25,16 +78,20 @@ const Dashboard = () => {
   };
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   return <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
       <div className="flex-1 pt-1">
         <div className="flex min-h-screen">
           {/* Sidebar - Mobile Overlay */}
           {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={toggleSidebar}></div>}
           
           {/* Sidebar */}
-          <aside className={`fixed top-16 left-0 z-40 h-[calc(100vh-4rem)] w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-            <div className="pt-16 p-4 h-full flex flex-col max-h-screen">
+          <aside className={`fixed top-0 left-0 z-40 h-screen w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+            <div className="p-4 h-full flex flex-col max-h-screen">
+              {/* Brand Logo at the top of sidebar */}
+              <div className="flex items-center space-x-2 mb-6 mt-4">
+                <Brain className="h-8 w-8 text-primary" />
+                <span className="font-bold text-xl tracking-tight">Mind MHIRC</span>
+              </div>
+              
               <div className="flex items-center justify-between lg:hidden">
                 <span className="font-semibold">Menu</span>
                 <button onClick={toggleSidebar} className="p-1 rounded-full hover:bg-muted">
@@ -77,17 +134,17 @@ const Dashboard = () => {
                   </div>
                   
                   {/* Admin & Teacher Menu */}
-                  {(user.role === "Admin" || user.role === "Teacher") && <div>
+                  {(mockUser.role === "Admin" || mockUser.role === "Teacher") && <div>
                       <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
-                        {user.role === "Admin" ? "Admin" : "Guru"}
+                        {mockUser.role === "Admin" ? "Admin" : "Guru"}
                       </div>
                       
-                      {user.role === "Teacher" && <Link to="/dashboard/students" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                      {mockUser.role === "Teacher" && <Link to="/dashboard/students" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
                           <Users className="mr-3 h-5 w-5" />
                           Daftar Murid
                         </Link>}
                       
-                      {user.role === "Admin" && <>
+                      {mockUser.role === "Admin" && <>
                           <Link to="/dashboard/users" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
                             <Users className="mr-3 h-5 w-5" />
                             Manajemen Pengguna
@@ -122,21 +179,14 @@ const Dashboard = () => {
                   </div>
                 </nav>
               </div>
-              
-              <div className="pt-2 mt-4 border-t">
-                <button onClick={() => navigate("/")} className="flex items-center w-full px-3 py-2 text-sm rounded-md hover:bg-muted text-muted-foreground">
-                  <LogOut className="mr-3 h-5 w-5" />
-                  <span>Keluar</span>
-                </button>
-              </div>
             </div>
           </aside>
           
           {/* Main Content */}
           <main className="flex-1 min-w-0 overflow-x-hidden">
             {/* Top Bar */}
-            <div className="bg-card border-b sticky top-16 z-30">
-              <div className="flex items-center justify-between h-14 px-4">
+            <div className="bg-card border-b sticky top-0 z-30">
+              <div className="flex items-center justify-between h-16 px-4">
                 <div className="flex items-center">
                   <button onClick={toggleSidebar} className="p-2 mr-2 rounded-md lg:hidden hover:bg-muted">
                     <Menu size={20} />
@@ -153,10 +203,32 @@ const Dashboard = () => {
                   </Link>
                   
                   <div className="relative">
-                    <button className="flex items-center space-x-1">
-                      <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full" />
-                      <ChevronDown size={16} className="text-muted-foreground" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none">
+                        <img src={mockUser.avatarUrl} alt={mockUser.name} className="w-8 h-8 rounded-full" />
+                        <ChevronDown size={16} className="text-muted-foreground" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <div className="px-2 py-1.5 text-sm font-medium">
+                          {mockUser.name}
+                        </div>
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          {mockUser.email}
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/dashboard/settings">Pengaturan Akun</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExitDashboard}>
+                          <ArrowLeft className="mr-2 h-4 w-4" />
+                          <span>Keluar Dashboard</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Log Out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </div>
@@ -166,24 +238,24 @@ const Dashboard = () => {
             <div className="p-4 sm:p-6">
               {/* Dashboard Routes */}
               <Routes>
-                <Route index element={<DashboardOverview user={user} />} />
-                <Route path="tests/*" element={<DashboardTests user={user} />} />
-                <Route path="results/*" element={<DashboardResults user={user} />} />
-                <Route path="appointments/*" element={<DashboardAppointments user={user} />} />
-                <Route path="messages/*" element={<DashboardMessages user={user} />} />
+                <Route index element={<DashboardOverview user={mockUser} />} />
+                <Route path="tests/*" element={<DashboardTests user={mockUser} />} />
+                <Route path="results/*" element={<DashboardResults user={mockUser} />} />
+                <Route path="appointments/*" element={<DashboardAppointments user={mockUser} />} />
+                <Route path="messages/*" element={<DashboardMessages user={mockUser} />} />
                 
                 {/* Teacher Routes */}
-                {user.role === "Teacher" && <Route path="students/*" element={<DashboardStudents user={user} />} />}
+                {mockUser.role === "Teacher" && <Route path="students/*" element={<DashboardStudents user={mockUser} />} />}
                 
                 {/* Admin Routes */}
-                {user.role === "Admin" && <>
-                    <Route path="users/*" element={<DashboardUsers user={user} />} />
-                    <Route path="content/*" element={<DashboardContent user={user} />} />
-                    <Route path="analytics/*" element={<DashboardAnalytics user={user} />} />
+                {mockUser.role === "Admin" && <>
+                    <Route path="users/*" element={<DashboardUsers user={mockUser} />} />
+                    <Route path="content/*" element={<DashboardContent user={mockUser} />} />
+                    <Route path="analytics/*" element={<DashboardAnalytics user={mockUser} />} />
                   </>}
                 
-                <Route path="settings/*" element={<DashboardSettings user={user} />} />
-                <Route path="help/*" element={<DashboardHelp user={user} />} />
+                <Route path="settings/*" element={<DashboardSettings user={mockUser} />} />
+                <Route path="help/*" element={<DashboardHelp user={mockUser} />} />
                 <Route path="*" element={<DashboardNotFound />} />
               </Routes>
             </div>
@@ -202,11 +274,12 @@ const DashboardOverview = ({
 }: {
   user: any;
 }) => {
-  return <div className="mt-16">
+  return <div className="mt-1">
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl font-semibold mb-1">Selamat Datang, {user.name}!</h1>
         <p className="text-muted-foreground">Berikut adalah ringkasan aktivitas Anda.</p>
       </div>
+      
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
@@ -335,7 +408,7 @@ const DashboardOverview = ({
     </div>;
 };
 
-// Dashboard Tests page
+// Keep other dashboard pages unchanged
 const DashboardTests = ({
   user
 }: {
@@ -357,6 +430,7 @@ const DashboardResults = ({
   return <div>
       <h1 className="text-2xl font-semibold mb-6">Hasil Tes</h1>
       
+      
       {isProfessional ? <Tabs defaultValue="self" className="mb-6">
           <TabsList className="w-full max-w-md">
             <TabsTrigger value="self" className="flex-1">
@@ -371,7 +445,6 @@ const DashboardResults = ({
             <div className="bg-card shadow-soft rounded-xl p-6">
               <h2 className="text-lg font-medium mb-4">Hasil Tes Anda</h2>
               <div className="space-y-4">
-                {/* Mock test results */}
                 {[{
               title: "Tes SRQ-20",
               date: "15 Mei 2023",
@@ -413,7 +486,6 @@ const DashboardResults = ({
               <h2 className="text-lg font-medium mb-4">Hasil Tes Orang Lain</h2>
               
               <div className="space-y-4">
-                {/* Mock test results for others */}
                 {[{
               name: "Ani Wijaya",
               title: "Tes SRQ-20",
@@ -455,7 +527,6 @@ const DashboardResults = ({
         </Tabs> : <div className="bg-card shadow-soft rounded-xl p-6">
           <h2 className="text-lg font-medium mb-4">Hasil Tes Anda</h2>
           <div className="space-y-4">
-            {/* Standard user view - only shows their own tests */}
             {[{
           title: "Tes SRQ-20",
           date: "15 Mei 2023",

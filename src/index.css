@@ -161,6 +161,11 @@
   .animate-pulse-soft {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  /* Slow spin animation */
+  .animate-spin-slow {
+    animation: spin 15s linear infinite;
+  }
 }
 
 @keyframes fadeIn {
@@ -215,6 +220,15 @@
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Media query for small devices to improve responsive behavior */
 @media (max-width: 640px) {
   .section-padding {
@@ -225,4 +239,3 @@
     @apply px-4;
   }
 }
-

@@ -89,6 +89,9 @@ const AnonymousUserForm = ({ onSubmit }: AnonymousUserFormProps) => {
           min="1"
           max="120"
         />
+        <p className="text-xs text-muted-foreground">
+          Kami memerlukan tanggal lahir untuk menyesuaikan hasil tes berdasarkan umur anda
+        </p>
       </div>
       
       <div className="space-y-2">

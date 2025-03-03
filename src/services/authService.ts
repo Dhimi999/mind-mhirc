@@ -94,15 +94,27 @@ export const signIn = async (credentials: SignInData): Promise<{ success: boolea
   }
 };
 
-export const signOut = async (): Promise<void> => {
+export const signOut = async (): Promise<{ success: boolean; error?: string }> => {
   try {
-    await supabase.auth.signOut();
-  } catch (error) {
+    // First clear the local session
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) throw error;
+    
+    // Clear any local storage items related to auth if needed
+    localStorage.removeItem('supabase.auth.token');
+    
+    // Return success
+    return { success: true };
+  } catch (error: any) {
     console.error("Logout error:", error);
-    toast({
-      title: "Gagal Logout",
-      description: "Terjadi kesalahan saat logout. Silakan coba lagi.",
-      variant: "destructive"
-    });
+    
+    // Even if there's an error, we want to attempt to clear local state
+    localStorage.removeItem('supabase.auth.token');
+    
+    return { 
+      success: false, 
+      error: error.message || "Terjadi kesalahan saat logout. Silakan coba lagi." 
+    };
   }
 };

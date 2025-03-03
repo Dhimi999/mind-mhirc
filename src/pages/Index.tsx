@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, Brain, Users, BookOpen, ArrowRight, Sparkles, Info, AlertCircle, Activity } from "lucide-react";
+import { Heart, Brain, Users, BookOpen, ArrowRight, Sparkles, AlertCircle, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,40 +9,24 @@ import ServiceCard from "@/components/ServiceCard";
 import BlogPost from "@/components/BlogPost";
 import Button from "@/components/Button";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
+import testsData from "@/data/testsData";
+
 const Index = () => {
-  const featuredTests = [{
-    id: "srq",
-    title: "Self Reporting Questionnaire (SRQ)",
-    description: "Kuesioner lapor diri untuk mendeteksi gejala gangguan mental umum.",
-    duration: "5-10 menit",
-    questions: 20,
-    image: "https://images.unsplash.com/photo-1474377207190-a7d8b3334068?auto=format&fit=crop&q=80",
-    category: "Skrining"
-  }, {
-    id: "sas-sv",
-    title: "Tes Kecanduan Smartphone (SAS-SV)",
-    description: "Evaluasi tingkat ketergantungan Anda terhadap penggunaan smartphone dalam kehidupan sehari-hari.",
-    duration: "5-7 menit",
-    questions: 10,
-    image: "https://images.unsplash.com/photo-1512941937669-98be25ec3f84?auto=format&fit=crop&q=80",
-    category: "Adiksi"
-  }, {
-    id: "sdq",
-    title: "Tes Kekuatan dan Kelemahan (SDQ)",
-    description: "Evaluasi kekuatan dan kesulitan perilaku, emosional, dan sosial pada anak dan remaja.",
-    duration: "8-10 menit",
-    questions: 25,
-    image: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80",
-    category: "Skrining"
-  }, {
-    id: "bfi",
-    title: "Big Five Inventory (BFI-10)",
-    description: "Kenali lima dimensi utama kepribadian Anda untuk pemahaman diri yang lebih baik.",
-    duration: "5 menit",
-    questions: 10,
-    image: "https://images.unsplash.com/photo-1519834785169-98be25ec3f84?auto=format&fit=crop&q=80",
-    category: "Kepribadian"
-  }];
+  // Konversi testsData ke array
+  const allTests = Object.values(testsData).map(test => ({
+    id: test.id,
+    title: test.title,
+    description: test.description,
+    duration: test.duration,
+    questions: test.questions.length,
+    image: test.image,
+    category: test.category,
+    featured: test.featured
+  }));
+
+  // Filter hanya untuk featured tests
+  const featuredTests = allTests.filter(test => test.featured);
+
   const services = [{
     id: "konsultasi",
     title: "Konsultasi Psikologis",
@@ -62,6 +46,7 @@ const Index = () => {
     icon: Users,
     color: "bg-accent-600"
   }];
+
   const blogPosts = [{
     id: "mengenal-anxietas",
     title: "Mengenal Anxietas: Gejala, Penyebab, dan Cara Mengatasinya",
@@ -85,6 +70,7 @@ const Index = () => {
     },
     category: "Tips"
   }];
+
   const testimonials = [{
     content: "Mind MHIRC telah membantu saya memahami kondisi mental saya dengan lebih baik. Tes-tes yang disediakan sangat mudah diikuti dan hasilnya memberikan wawasan yang berharga.",
     author: {
@@ -134,12 +120,15 @@ const Index = () => {
     },
     rating: 5
   }];
-  return <div className="min-h-screen flex flex-col">
+
+  return (
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      
+
       <main className="flex-1">
         <HeroSection />
-        
+
+        {/* Section Fakta Kesehatan Mental */}
         <section className="py-16 px-4 sm:px-6 bg-gradient-to-r from-primary/5 to-secondary/5 overflow-hidden relative">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
@@ -150,7 +139,7 @@ const Index = () => {
                 Yuk, kenali kondisi kesehatan mental di Indonesia dan arti pentingnya untuk kualitas hidup kita.
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 fade-in">
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-soft hover:shadow-medium transition-all duration-300 overflow-hidden relative group">
                 <div className="absolute -top-10 -right-10 w-20 h-20 bg-primary/10 rounded-full transform group-hover:scale-150 transition-transform duration-500"></div>
@@ -165,7 +154,7 @@ const Index = () => {
                 </div>
                 <div className="w-24 h-24 absolute -bottom-8 -left-8 bg-secondary/5 rounded-full"></div>
               </div>
-              
+
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-soft hover:shadow-medium transition-all duration-300 overflow-hidden relative group">
                 <div className="absolute -top-10 -right-10 w-20 h-20 bg-secondary/10 rounded-full transform group-hover:scale-150 transition-transform duration-500"></div>
                 <div className="relative z-10">
@@ -179,7 +168,7 @@ const Index = () => {
                 </div>
                 <div className="w-24 h-24 absolute -bottom-8 -left-8 bg-primary/5 rounded-full"></div>
               </div>
-              
+
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-soft hover:shadow-medium transition-all duration-300 overflow-hidden relative group">
                 <div className="absolute -top-10 -right-10 w-20 h-20 bg-accent/10 rounded-full transform group-hover:scale-150 transition-transform duration-500"></div>
                 <div className="relative z-10">
@@ -193,7 +182,7 @@ const Index = () => {
                 </div>
                 <div className="w-24 h-24 absolute -bottom-8 -left-8 bg-accent/5 rounded-full"></div>
               </div>
-              
+
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-soft hover:shadow-medium transition-all duration-300 overflow-hidden relative group">
                 <div className="absolute -top-10 -right-10 w-20 h-20 bg-primary/10 rounded-full transform group-hover:scale-150 transition-transform duration-500"></div>
                 <div className="relative z-10">
@@ -208,7 +197,7 @@ const Index = () => {
                 <div className="w-24 h-24 absolute -bottom-8 -left-8 bg-secondary/5 rounded-full"></div>
               </div>
             </div>
-            
+
             <div className="mt-10 text-center fade-in">
               <Link to="/about">
                 <Button variant="outline" size="lg">
@@ -217,13 +206,12 @@ const Index = () => {
               </Link>
             </div>
           </div>
-          
+
           <div className="absolute top-1/3 left-0 w-24 h-24 bg-primary/5 blur-2xl rounded-full animate-float"></div>
-          <div className="absolute bottom-1/4 right-0 w-32 h-32 bg-secondary/5 blur-2xl rounded-full animate-float" style={{
-          animationDelay: '2s'
-        }}></div>
+          <div className="absolute bottom-1/4 right-0 w-32 h-32 bg-secondary/5 blur-2xl rounded-full animate-float" style={{ animationDelay: '2s' }}></div>
         </section>
-        
+
+        {/* Section Tes Mental (Featured Tests) */}
         <section className="section-padding bg-muted">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
@@ -235,14 +223,13 @@ const Index = () => {
               </h2>
               <p className="text-muted-foreground">
                 Mulai perjalanan kesehatan mental Anda dengan berbagai tes yang dirancang oleh para ahli.
-                Dapatkan wawasan tentang kondisi Anda dan rekomendasi penanganan yang tepat.
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 fade-in">
               {featuredTests.map(test => <TestCard key={test.id} {...test} />)}
             </div>
-            
+
             <div className="text-center mt-12 fade-in">
               <Link to="/tests">
                 <Button variant="outline" size="lg">
@@ -252,7 +239,8 @@ const Index = () => {
             </div>
           </div>
         </section>
-        
+
+        {/* Section Layanan */}
         <section className="section-padding">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
@@ -267,11 +255,11 @@ const Index = () => {
                 mencapai kesejahteraan mental yang optimal.
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 fade-in">
               {services.map(service => <ServiceCard key={service.id} {...service} />)}
             </div>
-            
+
             <div className="text-center mt-12 fade-in">
               <Link to="/services">
                 <Button variant="outline" size="lg">
@@ -281,20 +269,21 @@ const Index = () => {
             </div>
           </div>
         </section>
-        
+
+        {/* Section Riset & Inovasi */}
         <section className="section-padding bg-gradient-to-b from-muted to-background relative overflow-hidden">
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-primary/5 backdrop-blur-3xl"></div>
           </div>
-          
+
           <div className="container mx-auto relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="fade-in">
                 <div className="inline-flex items-center space-x-2 bg-accent/10 rounded-full px-4 py-1 text-accent-600 text-sm font-medium mb-4">
-                  <span>Riset & Inovasi</span>
+                  <span>Riset &amp; Inovasi</span>
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                  Memadukan Ilmu Pengetahuan & Teknologi
+                  Memadukan Ilmu Pengetahuan &amp; Teknologi
                 </h2>
                 <p className="text-muted-foreground mb-6">
                   Mind MHIRC merupakan pusat riset inovatif yang berfokus pada pengembangan solusi 
@@ -302,14 +291,21 @@ const Index = () => {
                   teknologi mutakhir, dan pemahaman konteks budaya lokal.
                 </p>
                 <ul className="space-y-4 mb-8">
-                  {["Penelitian berbasis bukti tentang intervensi kesehatan mental", "Pengembangan teknologi untuk meningkatkan aksesibilitas layanan", "Adaptasi dan validasi instrumen penilaian kesehatan mental", "Studi tentang kesehatan mental dalam konteks budaya Indonesia"].map((item, index) => <li key={index} className="flex items-start">
+                  {[
+                    "Penelitian berbasis bukti tentang intervensi kesehatan mental",
+                    "Pengembangan teknologi untuk meningkatkan aksesibilitas layanan",
+                    "Adaptasi dan validasi instrumen penilaian kesehatan mental",
+                    "Studi tentang kesehatan mental dalam konteks budaya Indonesia"
+                  ].map((item, index) => (
+                    <li key={index} className="flex items-start">
                       <div className="mr-3 mt-1 h-5 w-5 flex items-center justify-center rounded-full bg-secondary text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
                           <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
                         </svg>
                       </div>
                       <span>{item}</span>
-                    </li>)}
+                    </li>
+                  ))}
                 </ul>
                 <Link to="/about">
                   <Button>
@@ -317,12 +313,11 @@ const Index = () => {
                   </Button>
                 </Link>
               </div>
-              
+
               <div className="relative fade-in">
                 <div className="rounded-2xl overflow-hidden shadow-highlight">
                   <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80" alt="Research Lab" className="w-full h-auto object-cover" />
                 </div>
-                
                 <div className="absolute -bottom-6 -left-6 bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-medium max-w-[260px]">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -338,11 +333,12 @@ const Index = () => {
             </div>
           </div>
         </section>
-        
+
+        {/* Section Blog */}
         <section className="section-padding">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
-              <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-1 text-primary text-sm font-medium mb-4">
+              <div className="inline-flex items-center space-x-2 bg-secondary/10 rounded-full px-4 py-1 text-secondary text-sm font-medium mb-4">
                 <span>Blog</span>
               </div>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -353,11 +349,11 @@ const Index = () => {
                 dari para ahli dan peneliti Mind MHIRC.
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 fade-in">
               {blogPosts.map(post => <BlogPost key={post.id} {...post} />)}
             </div>
-            
+
             <div className="text-center mt-12 fade-in">
               <Link to="/blog">
                 <Button variant="outline" size="lg">
@@ -367,7 +363,8 @@ const Index = () => {
             </div>
           </div>
         </section>
-        
+
+        {/* Section Testimoni */}
         <section className="section-padding bg-secondary/5">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
@@ -381,11 +378,12 @@ const Index = () => {
                 Dengarkan pengalaman mereka yang telah menggunakan layanan dan mengikuti program Mind MHIRC.
               </p>
             </div>
-            
+
             <TestimonialCarousel testimonials={testimonials} />
           </div>
         </section>
-        
+
+        {/* Section Ajakan Bergabung */}
         <section className="section-padding bg-primary/5">
           <div className="container mx-auto">
             <div className="max-w-4xl mx-auto text-center space-y-6 fade-in">
@@ -412,8 +410,10 @@ const Index = () => {
           </div>
         </section>
       </main>
-      
+
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default Index;

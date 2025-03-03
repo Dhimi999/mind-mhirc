@@ -16,7 +16,7 @@ const Tests = () => {
   // Convert testsData object to array for UI
   const allTests = Object.values(testsData).map(test => ({
     id: test.id,
-    title: test.shortTitle || test.title,
+    title: test.title || test.title,
     description: test.description,
     duration: test.duration,
     questions: test.questions.length,

@@ -1,38 +1,32 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { signOut } from "@/services/authService";
-import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
 
-  // Navigation items untuk semua pengguna (desktop & mobile)
   const navigationItems = [
-    { label: "Tes", path: "/tests" },
-    { label: "Layanan", path: "/services" },
-    { label: "Blog", path: "/blog" },
-    { label: "Tentang", path: "/about" },
+    { name: "Beranda", path: "/" },
+    { name: "Tes", path: "/tests" },
+    { name: "Layanan", path: "/services" },
+    { name: "Blog", path: "/blog" },
+    { name: "Tentang", path: "/about" },
+    // Removing Dashboard from navigation items as requested
   ];
 
-  const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
+  const { isAuthenticated, logout } = useAuth();
 
   const handleLogout = async () => {
-    await signOut();
-    toast({
-      title: "Logout Berhasil",
-      description: "Anda telah berhasil keluar dari akun",
-      variant: "default",
-    });
+    await logout();
   };
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    setIsOpen(!isOpen);
   };
 
   const onScroll = useCallback(() => {
@@ -44,12 +38,12 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, [onScroll]);
 
-  // Tutup menu burger ketika berpindah halaman
+  // Tutup menu burger setiap kali berpindah halaman
   useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
+    setIsOpen(false);
+  }, [location]);
 
-  const isActive = (path) => {
+  const isActive = (path: string) => {
     if (path === "/" && location.pathname === "/") return true;
     if (path !== "/" && location.pathname.startsWith(path)) return true;
     return false;
@@ -81,7 +75,7 @@ const Navbar = () => {
                     : "text-foreground/80 hover:text-primary"
                 }`}
               >
-                {item.label}
+                {item.name}
               </Link>
             ))}
           </div>
@@ -99,9 +93,9 @@ const Navbar = () => {
                   variant="outline"
                   size="sm"
                   onClick={handleLogout}
-                  className="text-slate-50 bg-sky-800 hover:bg-sky-150 focus:ring-2 focus:ring-sky-500"
+                  className="text-primary-foreground bg-primary hover:bg-primary/90 focus:ring-2 focus:ring-primary/30"
                 >
-                  Logout
+                  Log Out
                 </Button>
               </>
             ) : (
@@ -109,7 +103,7 @@ const Navbar = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-slate-50 bg-sky-800 hover:bg-sky-150 focus:ring-2 focus:ring-sky-500"
+                  className="text-primary-foreground bg-primary hover:bg-primary/90 focus:ring-2 focus:ring-primary/30"
                 >
                   Login
                 </Button>
@@ -123,17 +117,13 @@ const Navbar = () => {
             onClick={toggleMenu}
             aria-label="Toggle menu"
           >
-            {isMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
       </nav>
 
       {/* Mobile Menu Dropdown */}
-      {isMenuOpen && (
+      {isOpen && (
         <div className="md:hidden fixed top-16 left-0 w-full glass-effect z-40">
           <div className="px-6 py-4 space-y-4">
             {navigationItems.map((item) => (
@@ -146,7 +136,7 @@ const Navbar = () => {
                     : "text-foreground/80 hover:text-primary"
                 }`}
               >
-                {item.label}
+                {item.name}
               </Link>
             ))}
             <div className="pt-4 flex flex-col space-y-2">
@@ -161,9 +151,9 @@ const Navbar = () => {
                     variant="outline"
                     size="sm"
                     onClick={handleLogout}
-                    className="w-full text-slate-50 bg-sky-800 hover:bg-sky-150 focus:ring-2 focus:ring-sky-500"
+                    className="w-full text-primary-foreground bg-primary hover:bg-primary/90 focus:ring-2 focus:ring-primary/30"
                   >
-                    Logout
+                    Log Out
                   </Button>
                 </>
               ) : (
@@ -171,7 +161,7 @@ const Navbar = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full text-slate-50 bg-sky-800 hover:bg-sky-150 focus:ring-2 focus:ring-sky-500"
+                    className="w-full text-primary-foreground bg-primary hover:bg-primary/90 focus:ring-2 focus:ring-primary/30"
                   >
                     Login
                   </Button>
