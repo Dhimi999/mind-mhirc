@@ -1,4 +1,3 @@
-
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "./Button";
@@ -22,7 +21,43 @@ const HeroSection = () => {
       <div className="absolute top-1/3 left-[15%] w-32 h-32 rounded-full bg-accent/5 animate-float blur-3xl" style={{ animationDelay: '1s' }}></div>
       
       <div className="container relative z-10 mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <div className="space-y-6 md:space-y-8 fade-in">
+        {/* Hero Additional Container */}
+        <div 
+          className="relative fade-in order-first lg:order-last" 
+          style={{ animationDelay: '0.3s' }}
+        >
+          <div className="relative z-10 glass-effect p-6 rounded-2xl shadow-highlight max-w-md mx-auto">
+            <img 
+              src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=600" 
+              alt="Profesional kesehatan mental" 
+              className="w-full h-auto rounded-xl object-cover"
+            />
+            
+            <div className="absolute -bottom-6 -right-6 glass-effect p-4 rounded-xl shadow-soft">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-secondary rounded-full"></div>
+                <span className="text-sm font-medium">Didukung oleh penelitian ilmiah</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="absolute top-1/2 -left-12 transform -translate-y-1/2 glass-effect p-4 rounded-xl shadow-soft animate-float max-w-[200px]">
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-primary rounded-full"></div>
+              <span className="text-sm font-medium">Terapi Berbasis Bukti</span>
+            </div>
+          </div>
+          
+          <div className="absolute -top-8 right-12 glass-effect p-4 rounded-xl shadow-soft animate-float max-w-[220px]" style={{ animationDelay: '1.5s' }}>
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-accent rounded-full"></div>
+              <span className="text-sm font-medium">Pendekatan Peka Budaya</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Text Container */}
+        <div className="space-y-6 md:space-y-8 fade-in order-last lg:order-first">
           <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-1 text-primary text-sm font-medium">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse-soft"></span>
             <span>Kesehatan Mental untuk Semua</span>
@@ -62,37 +97,6 @@ const HeroSection = () => {
             <div>
               <p className="text-2xl md:text-3xl font-bold text-primary">15+</p>
               <p className="text-xs sm:text-sm text-muted-foreground">Pakar Kesehatan</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="relative hidden lg:block fade-in" style={{ animationDelay: '0.3s' }}>
-          <div className="relative z-10 glass-effect p-6 rounded-2xl shadow-highlight max-w-md mx-auto">
-            <img 
-              src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=600" 
-              alt="Profesional kesehatan mental" 
-              className="w-full h-auto rounded-xl object-cover"
-            />
-            
-            <div className="absolute -bottom-6 -right-6 glass-effect p-4 rounded-xl shadow-soft">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-secondary rounded-full"></div>
-                <span className="text-sm font-medium">Didukung oleh penelitian ilmiah</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="absolute top-1/2 -left-12 transform -translate-y-1/2 glass-effect p-4 rounded-xl shadow-soft animate-float max-w-[200px]">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-primary rounded-full"></div>
-              <span className="text-sm font-medium">Terapi Berbasis Bukti</span>
-            </div>
-          </div>
-          
-          <div className="absolute -top-8 right-12 glass-effect p-4 rounded-xl shadow-soft animate-float max-w-[220px]" style={{ animationDelay: '1.5s' }}>
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-accent rounded-full"></div>
-              <span className="text-sm font-medium">Pendekatan Peka Budaya</span>
             </div>
           </div>
         </div>
