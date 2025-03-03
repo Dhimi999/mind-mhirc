@@ -10,18 +10,18 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
 
-  // Navigation Items
+  // Navigation items untuk semua pengguna (desktop & mobile)
   const navigationItems = [
-    { label: "Tes Mental", path: "/tests" },
+    { label: "Tes", path: "/tests" },
     { label: "Layanan", path: "/services" },
     { label: "Blog", path: "/blog" },
     { label: "Tentang", path: "/about" },
   ];
 
-  // Logout Handler
+  const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
+
   const handleLogout = async () => {
     await signOut();
     toast({
@@ -31,12 +31,10 @@ const Navbar = () => {
     });
   };
 
-  // Toggle Menu Burger
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Scroll Handler
   const onScroll = useCallback(() => {
     setIsScrolled(window.scrollY > 20);
   }, []);
@@ -46,12 +44,11 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, [onScroll]);
 
-  // Tutup menu burger saat ganti halaman
+  // Tutup menu burger ketika berpindah halaman
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
-  // Check Active Link
   const isActive = (path) => {
     if (path === "/" && location.pathname === "/") return true;
     if (path !== "/" && location.pathname.startsWith(path)) return true;
@@ -72,7 +69,7 @@ const Navbar = () => {
             <span className="font-bold text-xl tracking-tight">Mind MHIRC</span>
           </Link>
 
-          {/* Menu Desktop */}
+          {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
             {navigationItems.map((item) => (
               <Link
@@ -89,19 +86,14 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Bagian Authentication (Desktop) */}
+          {/* Desktop Authentication */}
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className={`font-medium text-sm transition-colors ${
-                    isActive("/dashboard")
-                      ? "text-primary"
-                      : "text-foreground/80 hover:text-primary"
-                  }`}
-                >
-                  Dashboard
+                <Link to="/dashboard">
+                  <Button variant="outline" size="sm">
+                    Dashboard
+                  </Button>
                 </Link>
                 <Button
                   variant="outline"
@@ -125,20 +117,24 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Tombol Burger (Mobile) */}
+          {/* Mobile Menu Button */}
           <button
             className="md:hidden focus:outline-none"
             onClick={toggleMenu}
             aria-label="Toggle menu"
           >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
       </nav>
 
-      {/* Menu Dropdown (Mobile) */}
+      {/* Mobile Menu Dropdown */}
       {isMenuOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full glass-effect z-40">
+        <div className="md:hidden fixed top-16 left-0 w-full glass-effect z-40">
           <div className="px-6 py-4 space-y-4">
             {navigationItems.map((item) => (
               <Link
@@ -156,21 +152,16 @@ const Navbar = () => {
             <div className="pt-4 flex flex-col space-y-2">
               {isAuthenticated ? (
                 <>
-                  <Link
-                    to="/dashboard"
-                    className={`block font-medium text-sm transition-colors ${
-                      isActive("/dashboard")
-                        ? "text-primary"
-                        : "text-foreground/80 hover:text-primary"
-                    }`}
-                  >
-                    Dashboard
+                  <Link to="/dashboard">
+                    <Button variant="outline" size="sm" className="w-full">
+                      Dashboard
+                    </Button>
                   </Link>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleLogout}
-                    className="text-slate-50 bg-sky-800 hover:bg-sky-150 focus:ring-2 focus:ring-sky-500"
+                    className="w-full text-slate-50 bg-sky-800 hover:bg-sky-150 focus:ring-2 focus:ring-sky-500"
                   >
                     Logout
                   </Button>
@@ -180,7 +171,7 @@ const Navbar = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-slate-50 bg-sky-800 hover:bg-sky-150 focus:ring-2 focus:ring-sky-500 w-full"
+                    className="w-full text-slate-50 bg-sky-800 hover:bg-sky-150 focus:ring-2 focus:ring-sky-500"
                   >
                     Login
                   </Button>
