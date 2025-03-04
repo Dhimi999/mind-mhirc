@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Users, Sparkles, Heart, Brain, BookOpen, 
@@ -15,6 +14,12 @@ import { toast } from "@/components/ui/use-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TeamMember from "@/components/TeamMember";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nama minimal 2 karakter"),
@@ -343,64 +348,61 @@ const About = () => {
                 </div>
               </div>
               
-              <div className="space-y-6 order-1 lg:order-2">
-                <div className="grid grid-cols-1 gap-6">
-                  <div className="bg-white shadow-xl rounded-xl border border-primary/10 overflow-hidden transform transition-all duration-300 hover:shadow-primary/20 hover:-translate-y-1">
-                    <div className="flex items-stretch">
-                      <div className="w-3 bg-primary"></div>
-                      <div className="flex-1 p-6">
-                        <div className="flex items-center space-x-4 mb-3">
-                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                            <Lightbulb className="h-6 w-6 text-primary" />
-                          </div>
-                          <h3 className="font-bold text-xl">Lampu Pengetahuan</h3>
+              <div className="space-y-4 order-1 lg:order-2">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="lamp">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          <Lightbulb className="h-5 w-5 text-primary" />
                         </div>
-                        <p className="text-muted-foreground">
-                          Melambangkan pencerahan, inovasi, dan solusi baru dalam kesehatan mental.
-                          Cahaya yang menerangi jalan untuk pemahaman yang lebih baik tentang kesehatan mental.
-                        </p>
+                        <span className="font-semibold text-lg">Lampu Pengetahuan</span>
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white shadow-xl rounded-xl border border-secondary/10 overflow-hidden transform transition-all duration-300 hover:shadow-secondary/20 hover:-translate-y-1">
-                    <div className="flex items-stretch">
-                      <div className="w-3 bg-secondary"></div>
-                      <div className="flex-1 p-6">
-                        <div className="flex items-center space-x-4 mb-3">
-                          <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                            <Network className="h-6 w-6 text-secondary" />
-                          </div>
-                          <h3 className="font-bold text-xl">Koneksi Jaringan</h3>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-muted-foreground pl-[52px]">
+                        Melambangkan pencerahan, inovasi, dan solusi baru dalam kesehatan mental.
+                        Cahaya yang menerangi jalan untuk pemahaman yang lebih baik tentang kesehatan mental.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="network">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center">
+                          <Network className="h-5 w-5 text-secondary" />
                         </div>
-                        <p className="text-muted-foreground">
-                          Garis-garis yang menghubungkan melambangkan integrasi ilmu pengetahuan, 
-                          teknologi, dan praktik klinis. Juga mewakili kolaborasi antara berbagai 
-                          pemangku kepentingan dalam ekosistem kesehatan mental.
-                        </p>
+                        <span className="font-semibold text-lg">Koneksi Jaringan</span>
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white shadow-xl rounded-xl border border-accent/10 overflow-hidden transform transition-all duration-300 hover:shadow-accent/20 hover:-translate-y-1">
-                    <div className="flex items-stretch">
-                      <div className="w-3 bg-accent"></div>
-                      <div className="flex-1 p-6">
-                        <div className="flex items-center space-x-4 mb-3">
-                          <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
-                            <Brain className="h-6 w-6 text-accent-600" />
-                          </div>
-                          <h3 className="font-bold text-xl">Titik Koneksi</h3>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-muted-foreground pl-[52px]">
+                        Garis-garis yang menghubungkan melambangkan integrasi ilmu pengetahuan, 
+                        teknologi, dan praktik klinis. Juga mewakili kolaborasi antara berbagai 
+                        pemangku kepentingan dalam ekosistem kesehatan mental.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="connection">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
+                          <Brain className="h-5 w-5 text-accent-600" />
                         </div>
-                        <p className="text-muted-foreground">
-                          Lingkaran oranye di setiap ujung melambangkan berbagai aspek kesehatan 
-                          mental yang kami teliti dan kembangkan, serta menggambarkan pendekatan 
-                          holistik kami terhadap kesehatan mental.
-                        </p>
+                        <span className="font-semibold text-lg">Titik Koneksi</span>
                       </div>
-                    </div>
-                  </div>
-                </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-muted-foreground pl-[52px]">
+                        Lingkaran oranye di setiap ujung melambangkan berbagai aspek kesehatan 
+                        mental yang kami teliti dan kembangkan, serta menggambarkan pendekatan 
+                        holistik kami terhadap kesehatan mental.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
             </div>
           </div>
@@ -462,7 +464,7 @@ const About = () => {
                             <BookOpen className="h-4 w-4 text-primary" />
                           </div>
                           <div>
-                            <h4 className="font-medium mb-1">Riset Berkualitas</h4>
+                            <h4 className="font-medium text-xl">Riset Berkualitas</h4>
                             <p className="text-sm text-muted-foreground">
                               Menghasilkan penelitian berkualitas tinggi yang relevan dengan konteks lokal
                             </p>
@@ -474,7 +476,7 @@ const About = () => {
                             <Users className="h-4 w-4 text-secondary" />
                           </div>
                           <div>
-                            <h4 className="font-medium mb-1">Inklusif</h4>
+                            <h4 className="font-medium text-xl">Inklusif</h4>
                             <p className="text-sm text-muted-foreground">
                               Layanan kesehatan mental yang dapat diakses oleh semua kalangan masyarakat
                             </p>
@@ -640,8 +642,8 @@ const About = () => {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              <div className="lg:col-span-1">
                 <div className="bg-background rounded-2xl p-6 shadow-medium">
                   <h3 className="font-bold text-xl mb-4">Informasi Kontak</h3>
                   
@@ -684,69 +686,20 @@ const About = () => {
                     </div>
                   </div>
                 </div>
-                
-                <div className="bg-background rounded-2xl p-6 shadow-medium">
-                  <h3 className="font-bold text-xl mb-4">Jam Operasional</h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center pb-2 border-b border-border">
-                      <span className="text-muted-foreground">Senin - Jumat</span>
-                      <span className="font-medium">08:00 - 17:00</span>
-                    </div>
-                    <div className="flex justify-between items-center pb-2 border-b border-border">
-                      <span className="text-muted-foreground">Sabtu</span>
-                      <span className="font-medium">09:00 - 15:00</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Minggu & Hari Libur</span>
-                      <span className="font-medium">Tutup</span>
-                    </div>
-                  </div>
-                </div>
               </div>
               
-              <div className="lg:col-span-3">
-                <div className="bg-background rounded-2xl p-6 shadow-medium">
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nama Lengkap</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Masukkan nama lengkap Anda" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input placeholder="email@example.com" type="email" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
+              <div className="lg:col-span-2">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="subject"
+                        name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Subjek</FormLabel>
+                            <FormLabel>Nama Lengkap</FormLabel>
                             <FormControl>
-                              <Input placeholder="Subjek pesan Anda" {...field} />
+                              <Input placeholder="Masukkan nama lengkap Anda" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -755,41 +708,69 @@ const About = () => {
                       
                       <FormField
                         control={form.control}
-                        name="message"
+                        name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Pesan</FormLabel>
+                            <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="Tuliskan pesan Anda di sini" 
-                                className="min-h-32" 
-                                {...field} 
-                              />
+                              <Input placeholder="email@example.com" type="email" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
-                      <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <span className="flex items-center">
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Mengirim...
-                          </span>
-                        ) : (
-                          <span className="flex items-center">
-                            <Send className="h-4 w-4 mr-2" />
-                            Kirim Pesan
-                          </span>
-                        )}
-                      </Button>
-                    </form>
-                  </Form>
-                </div>
+                    </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="subject"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Subjek</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Subjek pesan Anda" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="message"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pesan</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Tuliskan pesan Anda di sini" 
+                              className="min-h-32" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Mengirim...
+                        </span>
+                      ) : (
+                        <span className="flex items-center">
+                          <Send className="h-4 w-4 mr-2" />
+                          Kirim Pesan
+                        </span>
+                      )}
+                    </Button>
+                  </form>
+                </Form>
               </div>
             </div>
           </div>
@@ -806,4 +787,3 @@ const About = () => {
 };
 
 export default About;
-
