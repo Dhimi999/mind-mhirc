@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Brain } from "lucide-react";
+import { Menu, X, Brain, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -16,7 +16,6 @@ const Navbar = () => {
     { name: "Layanan", path: "/services" },
     { name: "Blog", path: "/blog" },
     { name: "Tentang", path: "/about" },
-    // Removing Dashboard from navigation items as requested
   ];
 
   const { isAuthenticated, logout } = useAuth();
@@ -38,7 +37,6 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, [onScroll]);
 
-  // Tutup menu burger setiap kali berpindah halaman
   useEffect(() => {
     setIsOpen(false);
   }, [location]);
@@ -57,13 +55,11 @@ const Navbar = () => {
         }`}
       >
         <div className="container mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
-          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <Brain className="h-8 w-8 text-primary" />
             <span className="font-bold text-xl tracking-tight">Mind MHIRC</span>
           </Link>
 
-          {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
             {navigationItems.map((item) => (
               <Link
@@ -80,7 +76,6 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Desktop Authentication */}
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
@@ -111,7 +106,6 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             className="md:hidden focus:outline-none"
             onClick={toggleMenu}
@@ -122,7 +116,6 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu Dropdown */}
       {isOpen && (
         <div className="md:hidden fixed top-16 left-0 w-full glass-effect z-40">
           <div className="px-6 py-4 space-y-4">

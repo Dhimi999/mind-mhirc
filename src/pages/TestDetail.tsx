@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, User, CheckCircle2, ChevronRight } from 'lucide-react';
+import { ChevronLeft, User, CheckCircle2, ChevronRight, Lightbulb, BookOpen, Globe, ExternalLink, ArrowRight, HelpCircle, Info, Download, Share2 } from 'lucide-react';
 import TestPersonSelector, { OtherPersonData } from '@/components/TestPersonSelector';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import AnonymousUserForm, { AnonymousUserData } from '@/components/AnonymousUserForm';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Define local interfaces for question types to match what we're using in the component
 type TestQuestionType = {
@@ -79,6 +82,9 @@ const TestDetail = () => {
   } = useAuth();
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [ageGroup, setAgeGroup] = useState<'younger' | 'older'>('older');
+  const [activeResultTab, setActiveResultTab] = useState("summary");
+  const [relatedResources, setRelatedResources] = useState<any[]>([]);
+  const [expertSuggestions, setExpertSuggestions] = useState<any[]>([]);
   useEffect(() => {
     if (!id) return;
 
@@ -98,11 +104,141 @@ const TestDetail = () => {
           questions: foundTest.questions
         };
         setTest(adaptedTest);
+
+        // Prepare related resources based on test type
+        prepareRelatedResources(foundTest.id);
       } else {
         navigate('/tests');
       }
     });
   }, [id, navigate]);
+  const prepareRelatedResources = (testId: string) => {
+    // Set up related resources based on test type
+    const resourcesByType: Record<string, any[]> = {
+      bfi: [{
+        title: "Memahami Lima Faktor Kepribadian",
+        description: "Artikel lengkap tentang bagaimana kepribadian mempengaruhi berbagai aspek kehidupan",
+        link: "https://www.verywellmind.com/the-big-five-personality-dimensions-2795422",
+        image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=300&h=200"
+      }, {
+        title: "Mengembangkan Kekuatan Kepribadian",
+        description: "Panduan praktis untuk memaksimalkan potensi diri berdasarkan tipe kepribadian",
+        link: "https://www.psychologytoday.com/us/basics/big-5-personality-traits",
+        image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=300&h=200"
+      }, {
+        title: "Kepribadian dan Karir yang Sesuai",
+        description: "Temukan jalur karir yang paling cocok dengan profil kepribadian Anda",
+        link: "https://www.themuse.com/advice/the-big-five-personality-test-and-what-it-can-reveal-about-your-career",
+        image: "https://images.unsplash.com/photo-1581090464777-f3220bbe1b8b?auto=format&fit=crop&q=80&w=300&h=200"
+      }],
+      srq: [{
+        title: "Manajemen Stres & Kecemasan",
+        description: "Panduan praktis untuk mengelola stres dan kecemasan dalam kehidupan sehari-hari",
+        link: "https://www.helpguide.org/articles/stress/stress-management.htm",
+        image: "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&q=80&w=300&h=200"
+      }, {
+        title: "Mengenal Gejala Depresi",
+        description: "Informasi lengkap tentang tanda-tanda depresi dan kapan harus mencari bantuan",
+        link: "https://www.mayoclinic.org/diseases-conditions/depression/symptoms-causes/syc-20356007",
+        image: "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&q=80&w=300&h=200"
+      }, {
+        title: "Kesehatan Mental di Tempat Kerja",
+        description: "Tips menjaga keseimbangan mental dalam lingkungan kerja yang penuh tekanan",
+        link: "https://www.who.int/news-room/fact-sheets/detail/mental-health-at-work",
+        image: "https://images.unsplash.com/photo-1573497161229-462206a6f8c9?auto=format&fit=crop&q=80&w=300&h=200"
+      }],
+      sdq: [{
+        title: "Perkembangan Anak & Remaja",
+        description: "Memahami tahapan perkembangan normal anak dan remaja",
+        link: "https://www.cdc.gov/ncbddd/childdevelopment/positiveparenting/index.html",
+        image: "https://images.unsplash.com/photo-1602030638412-bb8dcc0bc8b0?auto=format&fit=crop&q=80&w=300&h=200"
+      }, {
+        title: "Dukungan untuk Kesulitan Perilaku",
+        description: "Strategi efektif untuk mengatasi masalah perilaku pada anak",
+        link: "https://childmind.org/article/what-to-do-and-not-do-when-children-are-anxious/",
+        image: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=300&h=200"
+      }, {
+        title: "Membangun Ketahanan Mental Anak",
+        description: "Cara membantu anak mengembangkan ketahanan menghadapi tantangan hidup",
+        link: "https://www.apa.org/topics/resilience/guide-parents-teachers",
+        image: "https://images.unsplash.com/photo-1588117472013-59bb13edafec?auto=format&fit=crop&q=80&w=300&h=200"
+      }],
+      "sas-sv": [{
+        title: "Digital Detox: Panduan Lengkap",
+        description: "Langkah-langkah praktis untuk mengurangi ketergantungan pada teknologi",
+        link: "https://www.helpguide.org/articles/addictions/smartphone-addiction.htm",
+        image: "https://images.unsplash.com/photo-1586473219010-2ffc57b0d282?auto=format&fit=crop&q=80&w=300&h=200"
+      }, {
+        title: "Teknologi & Kesehatan Mental",
+        description: "Dampak penggunaan gadget terhadap kesejahteraan psikologis",
+        link: "https://www.apa.org/monitor/2020/04/cover-covid-technology",
+        image: "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&q=80&w=300&h=200"
+      }, {
+        title: "Keseimbangan Digital dalam Keluarga",
+        description: "Cara menciptakan hubungan sehat dengan teknologi di lingkungan keluarga",
+        link: "https://www.commonsensemedia.org/articles/family-media-agreement",
+        image: "https://images.unsplash.com/photo-1576579639123-1461f5e9b695?auto=format&fit=crop&q=80&w=300&h=200"
+      }]
+    };
+
+    // Set expert suggestions based on test type
+    const suggestionsByType: Record<string, any[]> = {
+      bfi: [{
+        expert: "Dr. Sarah Johnson",
+        role: "Psikolog Kepribadian",
+        suggestion: "Memahami kepribadian diri adalah langkah awal untuk pengembangan diri yang efektif. Gunakan hasil tes ini sebagai cermin, bukan batasan.",
+        image: "https://randomuser.me/api/portraits/women/41.jpg"
+      }, {
+        expert: "Prof. David Chen",
+        role: "Peneliti Psikologi Positif",
+        suggestion: "Setiap tipe kepribadian memiliki kekuatan unik. Fokus pada pengembangan aspek positif daripada mencoba mengubah siapa diri Anda sebenarnya.",
+        image: "https://randomuser.me/api/portraits/men/32.jpg"
+      }],
+      srq: [{
+        expert: "Dr. Maya Patel",
+        role: "Psikiater",
+        suggestion: "Kesehatan mental sama pentingnya dengan kesehatan fisik. Jangan ragu mencari bantuan profesional jika Anda mengalami gejala yang mengganggu.",
+        image: "https://randomuser.me/api/portraits/women/63.jpg"
+      }, {
+        expert: "Tono Wijaya",
+        role: "Konselor Kesehatan Mental",
+        suggestion: "Praktik mindfulness dan teknik relaksasi sederhana setiap hari dapat membantu mengurangi kecemasan dan meningkatkan kesejahteraan mental.",
+        image: "https://randomuser.me/api/portraits/men/72.jpg"
+      }],
+      sdq: [{
+        expert: "Dr. Siti Nurhaliza",
+        role: "Psikolog Anak",
+        suggestion: "Perkembangan anak bersifat individual. Pahami kebutuhan unik anak Anda dan berikan dukungan yang sesuai dengan karakteristiknya.",
+        image: "https://randomuser.me/api/portraits/women/28.jpg"
+      }, {
+        expert: "Budi Santoso, M.Psi",
+        role: "Terapis Keluarga",
+        suggestion: "Komunikasi terbuka dan konsisten adalah kunci utama dalam membantu anak menghadapi tantangan perkembangan dan perilaku.",
+        image: "https://randomuser.me/api/portraits/men/52.jpg"
+      }],
+      "sas-sv": [{
+        expert: "Dr. Anita Rahman",
+        role: "Psikolog Teknologi",
+        suggestion: "Buat batasan yang jelas untuk penggunaan gadget. Tetapkan zona dan waktu bebas teknologi di rumah dan patuhi bersama.",
+        image: "https://randomuser.me/api/portraits/women/90.jpg"
+      }, {
+        expert: "Hendra Gunawan",
+        role: "Konsultan Adiksi Digital",
+        suggestion: "Mulailah dengan digital detox ringan selama 24 jam. Perhatikan perasaan dan reaksi Anda sebagai indikator tingkat ketergantungan.",
+        image: "https://randomuser.me/api/portraits/men/22.jpg"
+      }]
+    };
+    if (resourcesByType[testId]) {
+      setRelatedResources(resourcesByType[testId]);
+    } else {
+      setRelatedResources(resourcesByType.bfi); // Default to BFI resources
+    }
+    if (suggestionsByType[testId]) {
+      setExpertSuggestions(suggestionsByType[testId]);
+    } else {
+      setExpertSuggestions(suggestionsByType.bfi); // Default to BFI suggestions
+    }
+  };
   const handleTestPersonSelection = (option: 'self' | 'other', data?: OtherPersonData) => {
     setTestPerson(option);
     if (option === 'other' && data) {
@@ -318,11 +454,15 @@ const TestDetail = () => {
     if (!test) return;
     setTestStatus('completed');
 
+    // Set default active tab
+    setActiveResultTab("summary");
+
     // We'll calculate a generic result since we can't rely on correctAnswer property
     import('@/data/testsData').then(module => {
       let resultMessage: string | React.ReactNode = 'Terima kasih telah menyelesaikan tes ini.';
       let resultSummary = '';
       const testId = test.id;
+
       // Using the test ID to determine which result function to call
       if (testId === 'srq') {
         // Count "Ya" answers as 1 point each
@@ -334,11 +474,11 @@ const TestDetail = () => {
               {result.level}
             </h3>
             <p className="mb-6">{result.message}</p>
-            <img src={result.image} alt="Result illustration" className="mx-auto mb-6 rounded-lg max-w-sm" />
+            <img src={result.image} alt="Result illustration" className="mx-auto mb-6 rounded-lg max-w-sm object-fill" />
             <div className="recommendations mt-6">
               <h4 className="font-semibold mb-2">Rekomendasi:</h4>
-              <ul className="space-y-2 text-left max-w-md mx-auto">
-                {result.recommendations.map((rec, index) => <li key={index} className="flex items-start">
+              <ul className="space-y-2 text-left max-w-xl mx-auto">
+                {result.recommendations.map((rec: string, index: number) => <li key={index} className="flex items-start">
                     <CheckCircle2 className="mr-2 h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
                     <span>{rec}</span>
                   </li>)}
@@ -359,7 +499,7 @@ const TestDetail = () => {
             <div className="recommendations mt-6">
               <h4 className="font-semibold mb-2">Rekomendasi:</h4>
               <ul className="space-y-2 text-left max-w-md mx-auto">
-                {result.recommendations.map((rec, index) => <li key={index} className="flex items-start">
+                {result.recommendations.map((rec: string, index: number) => <li key={index} className="flex items-start">
                     <CheckCircle2 className="mr-2 h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
                     <span>{rec}</span>
                   </li>)}
@@ -407,36 +547,36 @@ const TestDetail = () => {
 
           // Add specific recommendations based on dominant trait
           if (dominantTrait === "extraversion") {
-          recommendations.push("Gunakan kekuatan sosial Anda untuk membangun jaringan yang lebih luas");
-          recommendations.push("Luangkan waktu untuk merenung dan meresapi pengalaman pribadi di tengah aktivitas sosial");
-          recommendations.push("Ikuti kegiatan komunitas untuk memperkuat koneksi interpersonal");
-          recommendations.push("Tingkatkan kemampuan komunikasi agar hubungan Anda semakin bermakna");
-          recommendations.push("Manfaatkan energi positif Anda untuk menginspirasi orang di sekitar");
-        } else if (dominantTrait === "agreeableness") {
-          recommendations.push("Belajar menetapkan batas agar kebutuhan pribadi tetap terpenuhi");
-          recommendations.push("Manfaatkan empati Anda untuk mendukung orang lain sambil menjaga keseimbangan diri");
-          recommendations.push("Luangkan waktu untuk mengeksplorasi minat pribadi secara mandiri");
-          recommendations.push("Ungkapkan pendapat Anda dengan asertif tanpa mengurangi kebaikan hati");
-          recommendations.push("Ciptakan ruang bagi diri sendiri agar tidak selalu mengorbankan kepentingan orang lain");
-        } else if (dominantTrait === "conscientiousness") {
-          recommendations.push("Jangan terlalu keras pada diri sendiri saat menghadapi kegagalan kecil");
-          recommendations.push("Gunakan disiplin Anda untuk menetapkan dan mencapai tujuan jangka panjang secara bertahap");
-          recommendations.push("Ambil waktu istirahat yang cukup untuk menjaga produktivitas dan kesehatan");
-          recommendations.push("Eksplorasi metode kerja baru yang dapat meningkatkan efisiensi tanpa mengorbankan kualitas");
-          recommendations.push("Refleksikan pencapaian Anda untuk terus belajar dari setiap pengalaman");
-        } else if (dominantTrait === "neuroticism") {
-          recommendations.push("Kembangkan strategi manajemen stres seperti meditasi atau olahraga secara rutin");
-          recommendations.push("Luangkan waktu untuk teknik relaksasi dan mindfulness guna meredakan kecemasan");
-          recommendations.push("Pertimbangkan konsultasi dengan profesional jika emosi negatif mulai mengganggu aktivitas");
-          recommendations.push("Catat dan evaluasi pemicu emosi agar dapat mengidentifikasi pola reaksi diri");
-          recommendations.push("Ciptakan rutinitas harian yang mendukung keseimbangan emosi dan kesehatan mental");
-        } else if (dominantTrait === "openness") {
-          recommendations.push("Eksplorasi minat baru yang dapat memperluas wawasan dan kreativitas Anda");
-          recommendations.push("Gabungkan ide-ide inovatif dalam pemecahan masalah sehari-hari untuk hasil yang optimal");
-          recommendations.push("Luangkan waktu untuk membaca dan mendalami topik-topik yang belum pernah Anda eksplorasi");
-          recommendations.push("Terlibat dalam kegiatan seni atau musik untuk menyalurkan kreativitas secara bebas");
-          recommendations.push("Berpartisipasilah dalam diskusi yang menantang pemikiran konvensional dan memperkaya perspektif");
-        }
+            recommendations.push("Gunakan kekuatan sosial Anda untuk membangun jaringan yang lebih luas");
+            recommendations.push("Luangkan waktu untuk merenung dan meresapi pengalaman pribadi di tengah aktivitas sosial");
+            recommendations.push("Ikuti kegiatan komunitas untuk memperkuat koneksi interpersonal");
+            recommendations.push("Tingkatkan kemampuan komunikasi agar hubungan Anda semakin bermakna");
+            recommendations.push("Manfaatkan energi positif Anda untuk menginspirasi orang di sekitar");
+          } else if (dominantTrait === "agreeableness") {
+            recommendations.push("Belajar menetapkan batas agar kebutuhan pribadi tetap terpenuhi");
+            recommendations.push("Manfaatkan empati Anda untuk mendukung orang lain sambil menjaga keseimbangan diri");
+            recommendations.push("Luangkan waktu untuk mengeksplorasi minat pribadi secara mandiri");
+            recommendations.push("Ungkapkan pendapat Anda dengan asertif tanpa mengurangi kebaikan hati");
+            recommendations.push("Ciptakan ruang bagi diri sendiri agar tidak selalu mengorbankan kepentingan orang lain");
+          } else if (dominantTrait === "conscientiousness") {
+            recommendations.push("Jangan terlalu keras pada diri sendiri saat menghadapi kegagalan kecil");
+            recommendations.push("Gunakan disiplin Anda untuk menetapkan dan mencapai tujuan jangka panjang secara bertahap");
+            recommendations.push("Ambil waktu istirahat yang cukup untuk menjaga produktivitas dan kesehatan");
+            recommendations.push("Eksplorasi metode kerja baru yang dapat meningkatkan efisiensi tanpa mengorbankan kualitas");
+            recommendations.push("Refleksikan pencapaian Anda untuk terus belajar dari setiap pengalaman");
+          } else if (dominantTrait === "neuroticism") {
+            recommendations.push("Kembangkan strategi manajemen stres seperti meditasi atau olahraga secara rutin");
+            recommendations.push("Luangkan waktu untuk teknik relaksasi dan mindfulness guna meredakan kecemasan");
+            recommendations.push("Pertimbangkan konsultasi dengan profesional jika emosi negatif mulai mengganggu aktivitas");
+            recommendations.push("Catat dan evaluasi pemicu emosi agar dapat mengidentifikasi pola reaksi diri");
+            recommendations.push("Ciptakan rutinitas harian yang mendukung keseimbangan emosi dan kesehatan mental");
+          } else if (dominantTrait === "openness") {
+            recommendations.push("Eksplorasi minat baru yang dapat memperluas wawasan dan kreativitas Anda");
+            recommendations.push("Gabungkan ide-ide inovatif dalam pemecahan masalah sehari-hari untuk hasil yang optimal");
+            recommendations.push("Luangkan waktu untuk membaca dan mendalami topik-topik yang belum pernah Anda eksplorasi");
+            recommendations.push("Terlibat dalam kegiatan seni atau musik untuk menyalurkan kreativitas secara bebas");
+            recommendations.push("Berpartisipasilah dalam diskusi yang menantang pemikiran konvensional dan memperkaya perspektif");
+          }
           resultSummary = `Dominan: ${traitNames[dominantTrait]}`;
           resultMessage = <div className="result-content text-center">
               <h3 className={`text-xl font-bold mb-4 text-${traitColors[dominantTrait].replace('bg-', '')}`}>
@@ -448,7 +588,7 @@ const TestDetail = () => {
               
               <div className="mt-8 mb-8">
                 <h4 className="font-semibold mb-4">Distribusi Dimensi Kepribadian:</h4>
-                <div className="space-y-3 max-w-md mx-auto">
+                <div className="space-y-3 max-w-xl mx-auto">
                   {Object.entries(percentages).map(([trait, percentage]) => <div key={trait} className="space-y-1">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">{traitNames[trait]}</span>
@@ -465,7 +605,7 @@ const TestDetail = () => {
               
               <div className="recommendations mt-6">
                 <h4 className="font-semibold mb-2">Rekomendasi:</h4>
-                <ul className="space-y-2 text-left max-w-md mx-auto">
+                <ul className="space-y-2 text-left max-w-xl mx-auto">
                   {recommendations.map((rec, index) => <li key={index} className="flex items-start">
                       <CheckCircle2 className="mr-2 h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
                       <span>{rec}</span>
@@ -673,29 +813,304 @@ const TestDetail = () => {
               </>}
           </div>;
       case 'completed':
-        return <div className="test-completed bg-white rounded-xl shadow-soft p-8 max-w-3xl mx-auto">
+        return <div className="test-completed bg-white rounded-xl shadow-soft p-8 max-w-4xl mx-auto">
             <div className="text-center mb-6">
               <div className="w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
                 <CheckCircle2 className="h-10 w-10 text-green-600" />
               </div>
               <h2 className="text-2xl font-bold mb-2">{test?.title}</h2>
+              <p className="text-muted-foreground">
+                Terima kasih telah menyelesaikan tes ini. Berikut adalah hasil dan rekomendasi untuk Anda.
+              </p>
             </div>
             
-            {testResult && <div className="result-content mt-8 bg-card p-6 rounded-lg border">
-                {testResult as React.ReactNode}
-              </div>}
+            <Tabs value={activeResultTab} onValueChange={setActiveResultTab} className="mt-8">
+              <TabsList className="grid grid-cols-4 mb-8">
+                <TabsTrigger value="summary" className="flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  <span>Ringkasan</span>
+                </TabsTrigger>
+                <TabsTrigger value="tips" className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4" />
+                  <span>Tips & Saran</span>
+                </TabsTrigger>
+                <TabsTrigger value="resources" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  <span>Sumber Belajar</span>
+                </TabsTrigger>
+                <TabsTrigger value="experts" className="flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  <span>Pendapat Ahli</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="summary" className="mt-0">
+                <div className="result-content p-6 bg-card rounded-lg border">
+                  {testResult as React.ReactNode}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="tips" className="mt-0">
+                <div className="p-6 bg-card rounded-lg border">
+                  <h3 className="text-xl font-bold mb-4">Tips & Saran Praktis</h3>
+                  <p className="mb-6">Berikut adalah beberapa tips praktis yang dapat membantu Anda:</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg flex items-center">
+                          <Lightbulb className="h-5 w-5 mr-2 text-yellow-500" />
+                          Aktivitas Sehari-hari
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          <li className="flex items-start">
+                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span>Tetapkan rutinitas harian yang konsisten</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span>Luangkan waktu untuk aktivitas yang menyenangkan</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span>Tetapkan batasan yang jelas dalam interaksi sosial</span>
+                          </li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg flex items-center">
+                          <Lightbulb className="h-5 w-5 mr-2 text-yellow-500" />
+                          Pengembangan Diri
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          <li className="flex items-start">
+                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span>Luangkan waktu untuk refleksi dan mindfulness</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span>Catat perubahan perasaan dan pemicu emosi</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span>Tetapkan tujuan kecil yang dapat dicapai</span>
+                          </li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <Separator className="my-6" />
+                  
+                  <div className="mt-4">
+                    <h4 className="font-semibold mb-4">Praktik Harian yang Direkomendasikan</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 border rounded-lg hover:border-primary transition-colors">
+                        <h5 className="font-medium mb-2">Pagi</h5>
+                        <ul className="space-y-1 text-sm">
+                          <li>• Meditasi singkat 5-10 menit</li>
+                          <li>• Tuliskan 3 hal yang disyukuri</li>
+                          <li>• Tetapkan satu tujuan utama hari ini</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg hover:border-primary transition-colors">
+                        <h5 className="font-medium mb-2">Siang</h5>
+                        <ul className="space-y-1 text-sm">
+                          <li>• Jeda sejenak untuk relaksasi</li>
+                          <li>• Evaluasi progres tujuan hari ini</li>
+                          <li>• Istirahat yang cukup dari layar</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg hover:border-primary transition-colors">
+                        <h5 className="font-medium mb-2">Malam</h5>
+                        <ul className="space-y-1 text-sm">
+                          <li>• Refleksi harian singkat</li>
+                          <li>• Aktivitas menenangkan sebelum tidur</li>
+                          <li>• Hindari layar 1 jam sebelum tidur</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center mt-8">
+                    <Button className="flex items-center">
+                      <Download className="mr-2 h-4 w-4" />
+                      Unduh Tips Lengkap (PDF)
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="resources" className="mt-0">
+                <div className="p-6 bg-card rounded-lg border">
+                  <h3 className="text-xl font-bold mb-4">Sumber Belajar Terkait</h3>
+                  <p className="mb-6">Perkaya pemahaman Anda dengan materi-materi terpilih berikut:</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {relatedResources.map((resource, index) => <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
+                        <div className="aspect-video overflow-hidden">
+                          <img src={resource.image} alt={resource.title} className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                        </div>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">{resource.title}</CardTitle>
+                          <CardDescription className="line-clamp-2 text-xs">
+                            {resource.description}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardFooter>
+                          <a href={resource.link} target="_blank" rel="noopener noreferrer" className="text-primary text-sm font-medium inline-flex items-center hover:underline">
+                            Baca Selengkapnya
+                            <ExternalLink className="ml-1 h-3 w-3" />
+                          </a>
+                        </CardFooter>
+                      </Card>)}
+                  </div>
+                  
+                  <Separator className="my-6" />
+                  
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-4">Video Pembelajaran</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg flex items-start space-x-3">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                          <Globe className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h5 className="font-medium">Pengantar Konsep Dasar</h5>
+                          <p className="text-sm text-muted-foreground mb-2">Seri video pengenalan untuk pemahaman dasar</p>
+                          <a href="#" className="text-primary text-sm flex items-center hover:underline">
+                            Tonton Sekarang <ArrowRight className="ml-1 h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg flex items-start space-x-3">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                          <BookOpen className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h5 className="font-medium">Studi Kasus & Aplikasi</h5>
+                          <p className="text-sm text-muted-foreground mb-2">Contoh penerapan dalam berbagai situasi</p>
+                          <a href="#" className="text-primary text-sm flex items-center hover:underline">
+                            Tonton Sekarang <ArrowRight className="ml-1 h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <h4 className="font-medium flex items-center text-primary mb-2">
+                      <Info className="mr-2 h-4 w-4" />
+                      Ingin Materi Lebih Lanjut?
+                    </h4>
+                    <p className="text-sm mb-3">
+                      Hubungi konselor kami untuk mendapatkan rekomendasi sumber belajar yang disesuaikan dengan kebutuhan spesifik Anda.
+                    </p>
+                    <Button variant="outline" size="sm" className="text-xs">
+                      Hubungi Konselor
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="experts" className="mt-0">
+                <div className="p-6 bg-card rounded-lg border">
+                  <h3 className="text-xl font-bold mb-4">Pendapat Para Ahli</h3>
+                  <p className="mb-6">Berikut adalah pandangan dari para pakar terkait hasil tes Anda:</p>
+                  
+                  <div className="space-y-6 mb-8">
+                    {expertSuggestions.map((expert, index) => <div key={index} className="flex gap-4 p-4 border rounded-lg">
+                        <div className="flex-shrink-0">
+                          <img src={expert.image} alt={expert.expert} className="w-16 h-16 rounded-full object-cover border-2 border-primary/20" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">{expert.expert}</h4>
+                          <p className="text-sm text-muted-foreground mb-2">{expert.role}</p>
+                          <div className="text-sm italic">"{expert.suggestion}"</div>
+                        </div>
+                      </div>)}
+                  </div>
+                  
+                  <Separator className="my-6" />
+                  
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-4">Konsultasi Lanjutan</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Sesi Privat</CardTitle>
+                          <CardDescription>Konsultasi one-on-one dengan ahli</CardDescription>
+                        </CardHeader>
+                        <CardFooter>
+                          <Button variant="outline" size="sm" className="w-full">
+                            Jadwalkan
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                      
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Webinar</CardTitle>
+                          <CardDescription>Sesi tanya jawab dengan pakar</CardDescription>
+                        </CardHeader>
+                        <CardFooter>
+                          <Button variant="outline" size="sm" className="w-full">
+                            Daftar
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                      
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Komunitas</CardTitle>
+                          <CardDescription>Bergabung dengan grup pendukung</CardDescription>
+                        </CardHeader>
+                        <CardFooter>
+                          <Button variant="outline" size="sm" className="w-full">
+                            Gabung
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
             
-            <div className="mt-12 flex flex-col md:flex-row gap-4 justify-center">
-              {!isAuthenticated && <Link to="/login">
-                  <Button variant="outline" className="w-full md:w-auto">
-                    Daftar untuk Menyimpan Hasil
-                  </Button>
-                </Link>}
-              <Link to="/tests">
-                <Button className="w-full md:w-auto">
-                  Kembali ke Daftar Tes
+            <div className="mt-8 flex justify-between items-center">
+              <div className="flex space-x-4">
+                <Button variant="outline" size="sm" className="flex items-center">
+                  <Download className="mr-2 h-4 w-4" />
+                  <span>Simpan Hasil</span>
                 </Button>
-              </Link>
+                <Button variant="outline" size="sm" className="flex items-center">
+                  <Share2 className="mr-2 h-4 w-4" />
+                  <span>Bagikan</span>
+                </Button>
+              </div>
+              
+              <div className="flex space-x-4">
+                {!isAuthenticated && <Link to="/login">
+                    <Button variant="outline" size="sm">
+                      Daftar untuk Menyimpan Hasil
+                    </Button>
+                  </Link>}
+                <Link to="/tests">
+                  <Button size="sm">
+                    Kembali ke Daftar Tes
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>;
       default:
