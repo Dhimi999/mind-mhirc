@@ -1,4 +1,3 @@
-
 export interface TestQuestion {
   id: number;
   text: string;
@@ -16,7 +15,7 @@ export interface TestData {
   answerOptions?: Array<{value: string | number; label: string}>;
   category: string;
   image: string;
-  featured: string;
+  featured: boolean;
 }
 
 export interface TestResult {
@@ -109,6 +108,7 @@ const testsData: Record<string, TestData> = {
     ],
     category: "Perkembangan Anak",
     image: "https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    featured: false,
     questions: [
       { id: 1, text: "Saya berusaha baik kepada orang lain. Saya peduli dengan perasaan mereka." },
       { id: 2, text: "Saya gelisah. Saya tidak dapat diam untuk waktu lama." },
@@ -248,9 +248,7 @@ export const getTestResultSDQ = (difficultyScore: number, strengthScore: number,
   let strengthLevel = "";
   let strengthColor = "";
   
-  // Determine difficulty level based on age
   if (isYounger) {
-    // Usia < 11 tahun
     if (difficultyScore <= 13) {
       difficultyLevel = "Normal";
       difficultyColor = "text-green-500";
@@ -262,7 +260,6 @@ export const getTestResultSDQ = (difficultyScore: number, strengthScore: number,
       difficultyColor = "text-red-500";
     }
   } else {
-    // Usia 11-18 tahun
     if (difficultyScore <= 15) {
       difficultyLevel = "Normal";
       difficultyColor = "text-green-500";
@@ -275,9 +272,7 @@ export const getTestResultSDQ = (difficultyScore: number, strengthScore: number,
     }
   }
   
-  // Determine strength level based on age
   if (isYounger) {
-    // Usia < 11 tahun
     if (strengthScore >= 6) {
       strengthLevel = "Normal";
       strengthColor = "text-green-500";
@@ -289,7 +284,6 @@ export const getTestResultSDQ = (difficultyScore: number, strengthScore: number,
       strengthColor = "text-red-500";
     }
   } else {
-    // Usia 11-18 tahun
     if (strengthScore >= 7) {
       strengthLevel = "Normal";
       strengthColor = "text-green-500";
@@ -302,7 +296,6 @@ export const getTestResultSDQ = (difficultyScore: number, strengthScore: number,
     }
   }
   
-  // Determine overall result based on combined scores
   let overallLevel, overallMessage, overallColor, recommendations, resultImage;
   
   if (difficultyLevel === "Normal" && strengthLevel === "Normal") {
@@ -349,16 +342,13 @@ export const getTestResultSDQ = (difficultyScore: number, strengthScore: number,
 };
 
 export const getTestResultBFI = (scores: Record<string, number>): TestResult => {
-  // Calculate total score of all dimensions
   const totalScore = Object.values(scores).reduce((sum, score) => sum + score, 0);
   
-  // Calculate percentages
   const percentages: Record<string, number> = {};
   for (const [key, score] of Object.entries(scores)) {
     percentages[key] = Math.round((score / totalScore) * 100);
   }
   
-  // Determine dominant trait (highest percentage)
   let dominantTrait = "";
   let highestPercentage = 0;
   
@@ -369,7 +359,6 @@ export const getTestResultBFI = (scores: Record<string, number>): TestResult => 
     }
   }
   
-  // Define trait descriptions
   const traitDescriptions: Record<string, string> = {
     extraversion: "cenderung menikmati interaksi sosial dan merasa terstimulasi oleh lingkungan di sekitarnya. Orang dengan Ekstraversi yang tinggi sering kali energik, antusias, dan merasa nyaman dalam keramaian. Individu yang ekstrover cenderung memiliki kepercayaan diri yang tinggi, senang mengambil inisiatif dalam situasi sosial, dan sering kali menjadi pusat perhatian. Mereka juga biasanya lebih optimis dan mampu menginspirasi orang lain dengan semangat serta energi positif yang mereka pancarkan. Di sisi lain, mereka mungkin kadang-kadang kurang menyadari kebutuhan untuk waktu sendiri guna mengisi ulang energi.",
     agreeableness: "mudah bekerjasama, bersahabat, penuh kepercayaan, dan hangat. Individu dengan tingkat agreeableness yang tinggi biasanya memiliki empati yang baik, mampu memahami perasaan orang lain, dan cenderung mengutamakan kerjasama serta keharmonisan dalam hubungan. Mereka dipercaya, penuh kepercayaan, dan selalu berusaha untuk menghindari konflik. Kelebihan ini membuat mereka mudah diajak bekerja sama dalam tim dan lingkungan sosial, meskipun terkadang sikap yang terlalu mengalah atau kompromistis bisa membuat mereka rentan terhadap manipulasi.",
@@ -378,10 +367,8 @@ export const getTestResultBFI = (scores: Record<string, number>): TestResult => 
     openness: "memiliki minat intelektual, berpikiran terbuka, dan imajinatif. Openness menggambarkan tingkat keterbukaan seseorang terhadap pengalaman baru, ide-ide kreatif, dan pemikiran abstrak. Individu yang tinggi pada trait ini memiliki rasa ingin tahu yang besar dan cenderung berpikiran terbuka terhadap berbagai perspektif. Mereka menikmati eksplorasi intelektual, memiliki imajinasi yang kuat, dan seringkali menemukan solusi inovatif untuk masalah. Keingintahuan dan kecenderungan untuk bereksperimen memungkinkan mereka untuk menikmati seni, budaya, dan diskusi filosofis. Namun, mereka juga mungkin terlihat tidak konvensional atau sulit diprediksi dalam beberapa situasi, karena kecenderungan untuk mencari pengalaman yang berbeda dari norma yang ada."
   };
   
-  // Create result message
   const message = `Anda memiliki dominasi kepribadian ${dominantTrait} (${highestPercentage}%), yang berarti Anda ${traitDescriptions[dominantTrait]}.`;
   
-  // Define color based on dominant trait
   const traitColors: Record<string, string> = {
     extraversion: "text-yellow-500",
     agreeableness: "text-green-500",
@@ -390,46 +377,43 @@ export const getTestResultBFI = (scores: Record<string, number>): TestResult => 
     openness: "text-red-500"
   };
   
-  // Create recommendations based on scores
   const recommendations: string[] = [
     "Kepribadian ini hanya indikasi umum dan bukan diagnosis profesional",
     "Kenali kekuatan kepribadian Anda dan manfaatkan dalam kehidupan sehari-hari",
     "Terus kembangkan aspek kepribadian positif yang Anda miliki"
   ];
   
-  // Add specific recommendations based on dominant trait
- if (dominantTrait === "extraversion") {
-   recommendations.push("Gunakan kekuatan sosial Anda untuk membangun jaringan yang lebih luas");
-   recommendations.push("Luangkan waktu untuk merenung dan meresapi pengalaman pribadi di tengah aktivitas sosial");
-   recommendations.push("Ikuti kegiatan komunitas untuk memperkuat koneksi interpersonal");
-   recommendations.push("Tingkatkan kemampuan komunikasi agar hubungan Anda semakin bermakna");
-   recommendations.push("Manfaatkan energi positif Anda untuk menginspirasi orang di sekitar");
- } else if (dominantTrait === "agreeableness") {
-   recommendations.push("Belajar menetapkan batas agar kebutuhan pribadi tetap terpenuhi");
-   recommendations.push("Manfaatkan empati Anda untuk mendukung orang lain sambil menjaga keseimbangan diri");
-   recommendations.push("Luangkan waktu untuk mengeksplorasi minat pribadi secara mandiri");
-   recommendations.push("Ungkapkan pendapat Anda dengan asertif tanpa mengurangi kebaikan hati");
-   recommendations.push("Ciptakan ruang bagi diri sendiri agar tidak selalu mengorbankan kepentingan orang lain");
- } else if (dominantTrait === "conscientiousness") {
-   recommendations.push("Jangan terlalu keras pada diri sendiri saat menghadapi kegagalan kecil");
-   recommendations.push("Gunakan disiplin Anda untuk menetapkan dan mencapai tujuan jangka panjang secara bertahap");
-   recommendations.push("Ambil waktu istirahat yang cukup untuk menjaga produktivitas dan kesehatan");
-   recommendations.push("Eksplorasi metode kerja baru yang dapat meningkatkan efisiensi tanpa mengorbankan kualitas");
-   recommendations.push("Refleksikan pencapaian Anda untuk terus belajar dari setiap pengalaman");
- } else if (dominantTrait === "neuroticism") {
-   recommendations.push("Kembangkan strategi manajemen stres seperti meditasi atau olahraga secara rutin");
-   recommendations.push("Luangkan waktu untuk teknik relaksasi dan mindfulness guna meredakan kecemasan");
-   recommendations.push("Pertimbangkan konsultasi dengan profesional jika emosi negatif mulai mengganggu aktivitas");
-   recommendations.push("Catat dan evaluasi pemicu emosi agar dapat mengidentifikasi pola reaksi diri");
-   recommendations.push("Ciptakan rutinitas harian yang mendukung keseimbangan emosi dan kesehatan mental");
- } else if (dominantTrait === "openness") {
-   recommendations.push("Eksplorasi minat baru yang dapat memperluas wawasan dan kreativitas Anda");
-   recommendations.push("Gabungkan ide-ide inovatif dalam pemecahan masalah sehari-hari untuk hasil yang optimal");
-   recommendations.push("Luangkan waktu untuk membaca dan mendalami topik-topik yang belum pernah Anda eksplorasi");
-   recommendations.push("Terlibat dalam kegiatan seni atau musik untuk menyalurkan kreativitas secara bebas");
-   recommendations.push("Berpartisipasilah dalam diskusi yang menantang pemikiran konvensional dan memperkaya perspektif");
- }
-
+  if (dominantTrait === "extraversion") {
+    recommendations.push("Gunakan kekuatan sosial Anda untuk membangun jaringan yang lebih luas");
+    recommendations.push("Luangkan waktu untuk merenung dan meresapi pengalaman pribadi di tengah aktivitas sosial");
+    recommendations.push("Ikuti kegiatan komunitas untuk memperkuat koneksi interpersonal");
+    recommendations.push("Tingkatkan kemampuan komunikasi agar hubungan Anda semakin bermakna");
+    recommendations.push("Manfaatkan energi positif Anda untuk menginspirasi orang di sekitar");
+  } else if (dominantTrait === "agreeableness") {
+    recommendations.push("Belajar menetapkan batas agar kebutuhan pribadi tetap terpenuhi");
+    recommendations.push("Manfaatkan empati Anda untuk mendukung orang lain sambil menjaga keseimbangan diri");
+    recommendations.push("Luangkan waktu untuk mengeksplorasi minat pribadi secara mandiri");
+    recommendations.push("Ungkapkan pendapat Anda dengan asertif tanpa mengurangi kebaikan hati");
+    recommendations.push("Ciptakan ruang bagi diri sendiri agar tidak selalu mengorbankan kepentingan orang lain");
+  } else if (dominantTrait === "conscientiousness") {
+    recommendations.push("Jangan terlalu keras pada diri sendiri saat menghadapi kegagalan kecil");
+    recommendations.push("Gunakan disiplin Anda untuk menetapkan dan mencapai tujuan jangka panjang secara bertahap");
+    recommendations.push("Ambil waktu istirahat yang cukup untuk menjaga produktivitas dan kesehatan");
+    recommendations.push("Eksplorasi metode kerja baru yang dapat meningkatkan efisiensi tanpa mengorbankan kualitas");
+    recommendations.push("Refleksikan pencapaian Anda untuk terus belajar dari setiap pengalaman");
+  } else if (dominantTrait === "neuroticism") {
+    recommendations.push("Kembangkan strategi manajemen stres seperti meditasi atau olahraga secara rutin");
+    recommendations.push("Luangkan waktu untuk teknik relaksasi dan mindfulness guna meredakan kecemasan");
+    recommendations.push("Pertimbangkan konsultasi dengan profesional jika emosi negatif mulai mengganggu aktivitas");
+    recommendations.push("Catat dan evaluasi pemicu emosi agar dapat mengidentifikasi pola reaksi diri");
+    recommendations.push("Ciptakan rutinitas harian yang mendukung keseimbangan emosi dan kesehatan mental");
+  } else if (dominantTrait === "openness") {
+    recommendations.push("Eksplorasi minat baru yang dapat memperluas wawasan dan kreativitas Anda");
+    recommendations.push("Gabungkan ide-ide inovatif dalam pemecahan masalah sehari-hari untuk hasil yang optimal");
+    recommendations.push("Luangkan waktu untuk membaca dan mendalami topik-topik yang belum pernah Anda eksplorasi");
+    recommendations.push("Terlibat dalam kegiatan seni atau musik untuk menyalurkan kreativitas secara bebas");
+    recommendations.push("Berpartisipasilah dalam diskusi yang menantang pemikiran konvensional dan memperkaya perspektif");
+  }
   
   return {
     level: dominantTrait.charAt(0).toUpperCase() + dominantTrait.slice(1),

@@ -1,164 +1,129 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Calendar, User, ArrowLeft, MessageSquare, Heart } from "lucide-react";
+import { Calendar, User, ArrowLeft, MessageSquare, Heart, Send } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
-
-const BlogPost = () => {
-  const { id } = useParams<{ id: string }>();
-  const [post, setPost] = useState<any>(null);
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { formatDate } from "@/lib/utils";
+type BlogPost = Tables<'blog_posts'>;
+type Comment = {
+  name: string;
+  email: string;
+  content: string;
+  date: string;
+};
+const BlogPostPage = () => {
+  const {
+    id
+  } = useParams<{
+    id: string;
+  }>();
+  const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Sample blog posts data
-  const allPosts = [
-    {
-      id: "mengenal-anxietas",
-      title: "Mengenal Anxietas: Gejala, Penyebab, dan Cara Mengatasinya",
-      content: `
-        <p class="mb-4">Anxietas atau kecemasan adalah reaksi normal terhadap stres dan dapat menjadi adaptif dalam beberapa situasi. Namun, ketika kecemasan menjadi berlebihan dan mengganggu fungsi sehari-hari, hal ini dapat menjadi gangguan mental yang membutuhkan penanganan.</p>
-        
-        <h2 class="text-2xl font-semibold mt-8 mb-4">Gejala Anxietas</h2>
-        <p class="mb-4">Gangguan kecemasan dapat memiliki berbagai gejala, baik fisik maupun psikologis:</p>
-        <ul class="list-disc ml-6 mb-4 space-y-2">
-          <li>Kekhawatiran berlebihan</li>
-          <li>Perasaan tegang atau gelisah</li>
-          <li>Iritabilitas</li>
-          <li>Kesulitan berkonsentrasi</li>
-          <li>Gangguan tidur</li>
-          <li>Debaran jantung cepat</li>
-          <li>Berkeringat</li>
-          <li>Gemetar</li>
-          <li>Sensasi sesak napas</li>
-          <li>Nyeri dada</li>
-        </ul>
-        
-        <h2 class="text-2xl font-semibold mt-8 mb-4">Penyebab Anxietas</h2>
-        <p class="mb-4">Gangguan kecemasan dapat disebabkan oleh kombinasi faktor berikut:</p>
-        <ul class="list-disc ml-6 mb-4 space-y-2">
-          <li>Faktor genetik dan biologis</li>
-          <li>Pengalaman traumatis atau peristiwa hidup yang penuh stres</li>
-          <li>Pola pikir dan kepribadian tertentu</li>
-          <li>Kondisi medis tertentu atau efek samping obat</li>
-          <li>Penggunaan atau penghentian zat tertentu (misalnya kafein, alkohol, atau obat-obatan)</li>
-        </ul>
-        
-        <h2 class="text-2xl font-semibold mt-8 mb-4">Cara Mengatasi Anxietas</h2>
-        <p class="mb-4">Beberapa strategi yang dapat membantu mengelola kecemasan meliputi:</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">1. Terapi Psikologis</h3>
-        <p class="mb-4">Cognitive Behavioral Therapy (CBT) sangat efektif untuk mengatasi gangguan kecemasan. Terapi ini membantu mengidentifikasi dan mengubah pola pikir negatif yang berkontribusi pada kecemasan, serta mengajarkan teknik untuk menghadapi situasi yang menimbulkan kecemasan.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">2. Latihan Pernapasan dan Relaksasi</h3>
-        <p class="mb-4">Teknik pernapasan dalam dan relaksasi otot progresif dapat membantu menenangkan tubuh dan pikiran, serta mengurangi gejala fisik kecemasan seperti detak jantung cepat dan ketegangan otot.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">3. Mindfulness dan Meditasi</h3>
-        <p class="mb-4">Praktik mindfulness dan meditasi dapat meningkatkan kesadaran akan momen sekarang dan mengurangi kekhawatiran tentang masa depan atau masa lalu. Teknik-teknik ini dapat membantu mengelola pikiran dan emosi yang memicu kecemasan.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">4. Gaya Hidup Sehat</h3>
-        <p class="mb-4">Menjaga gaya hidup sehat dengan tidur yang cukup, olahraga teratur, dan pola makan seimbang dapat membantu mengelola kecemasan. Batasi konsumsi kafein dan alkohol yang dapat memperburuk gejala kecemasan.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">5. Dukungan Sosial</h3>
-        <p class="mb-4">Berbicara dengan keluarga, teman, atau bergabung dengan kelompok dukungan dapat memberikan perspektif baru dan melegakan perasaan. Mengetahui bahwa Anda tidak sendirian dalam pengalaman Anda dapat sangat membantu.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">6. Pengobatan</h3>
-        <p class="mb-4">Dalam beberapa kasus, dokter mungkin merekomendasikan obat-obatan untuk membantu mengelola gejala kecemasan. Obat yang umum digunakan termasuk antidepresan, obat anti-kecemasan, dan beta-blocker.</p>
-        
-        <h2 class="text-2xl font-semibold mt-8 mb-4">Kapan Mencari Bantuan Profesional</h2>
-        <p class="mb-4">Jika kecemasan Anda mengganggu kemampuan Anda untuk bekerja, belajar, bersosialisasi, atau melakukan aktivitas sehari-hari, penting untuk mencari bantuan profesional. Psikolog, psikiater, atau dokter umum dapat membantu menilai gejala Anda dan menyarankan rencana perawatan yang tepat.</p>
-        
-        <div class="bg-primary/5 p-6 rounded-xl mt-8">
-          <p class="font-medium">Ingat: Anxietas adalah kondisi yang dapat diobati. Dengan bantuan, dukungan, dan strategi pengelolaan yang tepat, Anda dapat mengurangi gejala kecemasan dan meningkatkan kualitas hidup Anda.</p>
-        </div>
-      `,
-      coverImage: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80",
-      date: "3 Jun 2023",
-      author: {
-        name: "Dr. Anita Wijaya",
-        avatar: "https://randomuser.me/api/portraits/women/44.jpg"
-      },
-      category: "Edukasi",
-      readTime: "8 menit",
-      tags: ["anxietas", "kesehatan mental", "kecemasan", "terapi"]
-    },
-    {
-      id: "digital-wellbeing",
-      title: "Digital Wellbeing: Menjaga Kesehatan Mental di Era Digital",
-      content: `
-        <p class="mb-4">Di era digital saat ini, kita menghabiskan sebagian besar waktu kita berinteraksi dengan perangkat digital. Meskipun teknologi membawa banyak manfaat, penggunaan yang berlebihan dapat berdampak negatif pada kesehatan mental kita. Digital wellbeing atau kesejahteraan digital mengacu pada hubungan yang sehat dan seimbang dengan teknologi.</p>
-        
-        <h2 class="text-2xl font-semibold mt-8 mb-4">Dampak Teknologi Digital pada Kesehatan Mental</h2>
-        <p class="mb-4">Beberapa cara teknologi dapat memengaruhi kesehatan mental kita meliputi:</p>
-        <ul class="list-disc ml-6 mb-4 space-y-2">
-          <li>Kecemasan sosial media dan FOMO (Fear of Missing Out)</li>
-          <li>Gangguan tidur akibat paparan cahaya biru</li>
-          <li>Penurunan fokus dan span perhatian</li>
-          <li>Perasaan terisolasi meskipun "terhubung" secara digital</li>
-          <li>Cyberbullying dan dampak negatifnya</li>
-          <li>Kecanduan internet, game, atau media sosial</li>
-        </ul>
-        
-        <h2 class="text-2xl font-semibold mt-8 mb-4">Tips Menjaga Keseimbangan Digital</h2>
-        <p class="mb-4">Berikut adalah beberapa tips untuk menjaga kesejahteraan digital:</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">1. Tetapkan Batasan Waktu</h3>
-        <p class="mb-4">Tentukan berapa lama Anda ingin menggunakan perangkat digital setiap hari dan tetapkan pengingat atau gunakan aplikasi yang dapat membantu Anda melacak dan membatasi penggunaan.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">2. Ciptakan Zona Bebas Teknologi</h3>
-        <p class="mb-4">Tetapkan area di rumah Anda (seperti kamar tidur atau ruang makan) sebagai zona bebas teknologi untuk mendorong interaksi langsung dan istirahat dari layar.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">3. Praktikkan Digital Detox</h3>
-        <p class="mb-4">Luangkan waktu secara teratur (misalnya akhir pekan atau liburan) untuk sepenuhnya "offline" dan fokus pada aktivitas dunia nyata yang Anda nikmati.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">4. Kelola Notifikasi</h3>
-        <p class="mb-4">Matikan notifikasi yang tidak perlu untuk mengurangi gangguan dan kecemasan yang terkait dengan perasaan harus selalu merespons segera.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">5. Pilih Konten dengan Bijak</h3>
-        <p class="mb-4">Ikuti akun yang menginspirasi dan memberi energi positif. Jangan ragu untuk berhenti mengikuti atau membisukan akun yang membuat Anda merasa tidak nyaman atau tidak aman.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">6. Hindari Penggunaan Sebelum Tidur</h3>
-        <p class="mb-4">Hindari menggunakan perangkat digital setidaknya satu jam sebelum tidur untuk mengurangi dampak cahaya biru pada kualitas tidur Anda.</p>
-        
-        <h3 class="text-xl font-medium mt-6 mb-3">7. Praktikkan Mindfulness Digital</h3>
-        <p class="mb-4">Sadari kapan, mengapa, dan bagaimana Anda menggunakan teknologi. Apakah itu bermanfaat atau hanya kebiasaan? Tetap hadir dan sadar saat online maupun offline.</p>
-        
-        <div class="bg-primary/5 p-6 rounded-xl mt-8">
-          <p class="font-medium">Ingat: Teknologi diciptakan untuk melayani kita, bukan sebaliknya. Dengan menetapkan batasan yang jelas dan kebiasaan yang sehat, kita dapat memanfaatkan manfaat dunia digital sambil menjaga kesehatan mental kita.</p>
-        </div>
-      `,
-      coverImage: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80",
-      date: "15 Mei 2023",
-      author: {
-        name: "Budi Santoso, M.Psi",
-        avatar: "https://randomuser.me/api/portraits/men/32.jpg"
-      },
-      category: "Tips",
-      readTime: "6 menit",
-      tags: ["digital wellbeing", "kesehatan mental", "teknologi", "keseimbangan digital"]
-    }
-  ];
-  
+  const [likeCount, setLikeCount] = useState(0);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentName, setCommentName] = useState("");
+  const [commentEmail, setCommentEmail] = useState("");
+  const [commentContent, setCommentContent] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
   useEffect(() => {
-    // Simulate API call
-    setLoading(true);
-    
-    setTimeout(() => {
-      const foundPost = allPosts.find(post => post.id === id);
-      if (foundPost) {
-        setPost(foundPost);
-        setLoading(false);
-      } else {
-        setError("Artikel tidak ditemukan");
+    const fetchPostData = async () => {
+      try {
+        setLoading(true);
+        const {
+          data,
+          error
+        } = await supabase.from('blog_posts').select('*').eq('slug', id).single();
+        if (error) {
+          throw error;
+        }
+        if (data) {
+          setPost(data);
+          setLikeCount(data.likes || 0);
+          if (data.comments && Array.isArray(data.comments)) {
+            setComments(data.comments as Comment[]);
+          } else {
+            setComments([]);
+          }
+        } else {
+          setError('Artikel tidak ditemukan');
+        }
+      } catch (err) {
+        console.error('Error fetching blog post:', err);
+        setError('Failed to load blog post. Please try again later.');
+      } finally {
         setLoading(false);
       }
-    }, 500);
+    };
+    if (id) {
+      fetchPostData();
+    }
   }, [id]);
-  
+  const handleLike = async () => {
+    if (!post) return;
+    try {
+      setLikeLoading(true);
+      const newLikeCount = likeCount + 1;
+      const {
+        error
+      } = await supabase.from('blog_posts').update({
+        likes: newLikeCount
+      }).eq('id', post.id);
+      if (error) {
+        throw error;
+      }
+      setLikeCount(newLikeCount);
+      toast.success('Terima kasih atas dukungan Anda!');
+    } catch (err) {
+      console.error('Error updating likes:', err);
+      toast.error('Gagal menyimpan. Silakan coba lagi.');
+    } finally {
+      setLikeLoading(false);
+    }
+  };
+  const handleSubmitComment = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!post || !commentName || !commentEmail || !commentContent) {
+      toast.error('Mohon lengkapi semua kolom komentar');
+      return;
+    }
+    try {
+      setCommentLoading(true);
+      const newComment: Comment = {
+        name: commentName,
+        email: commentEmail,
+        content: commentContent,
+        date: new Date().toISOString()
+      };
+      const updatedComments = [...comments, newComment];
+      const {
+        error
+      } = await supabase.from('blog_posts').update({
+        comments: updatedComments
+      }).eq('id', post.id);
+      if (error) {
+        throw error;
+      }
+      setComments(updatedComments);
+      setCommentName("");
+      setCommentEmail("");
+      setCommentContent("");
+      toast.success('Komentar berhasil ditambahkan!');
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      toast.error('Gagal menambahkan komentar. Silakan coba lagi.');
+    } finally {
+      setCommentLoading(false);
+    }
+  };
   if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col">
+    return <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 pt-24">
           <div className="container mx-auto px-6 py-12">
@@ -177,13 +142,10 @@ const BlogPost = () => {
           </div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
-  
   if (error) {
-    return (
-      <div className="min-h-screen flex flex-col">
+    return <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 pt-24">
           <div className="container mx-auto px-6 py-12">
@@ -200,14 +162,10 @@ const BlogPost = () => {
           </div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
-  
   if (!post) return null;
-  
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-1 pt-24">
@@ -225,59 +183,111 @@ const BlogPost = () => {
                 </span>
                 <span className="flex items-center text-xs text-muted-foreground">
                   <Calendar size={14} className="mr-1" />
-                  {post.date}
+                  {formatDate(post.published_date)}
                 </span>
                 <span className="flex items-center text-xs text-muted-foreground">
                   <User size={14} className="mr-1" />
-                  {post.author.name}
+                  {post.author_name}
                 </span>
               </div>
               
               <h1 className="text-3xl md:text-4xl font-bold">{post.title}</h1>
               
               <div className="flex items-center space-x-3 pt-2">
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                <img src={post.author_avatar} alt={post.author_name} className="w-10 h-10 rounded-full object-cover" />
                 <div>
-                  <p className="font-medium text-sm">{post.author.name}</p>
-                  <p className="text-xs text-muted-foreground">{post.readTime} waktu baca</p>
+                  <p className="font-medium text-sm">{post.author_name}</p>
+                  <p className="text-xs text-muted-foreground">{post.read_time || "5 menit"} waktu baca</p>
                 </div>
               </div>
             </div>
             
             <div className="rounded-xl overflow-hidden mb-8 aspect-[16/9]">
-              <img
-                src={post.coverImage}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
+              <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
             </div>
             
             <article className="prose prose-lg max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: post.content }} />
+              <div dangerouslySetInnerHTML={{
+              __html: post.content
+            }} />
+              
+              {post.references_cit && <div className="mt-12 pt-6 border-t">
+                  <h2 className="text-xl font-semibold mb-4">Referensi</h2>
+                  <div dangerouslySetInnerHTML={{
+                __html: post.references_cit as string
+              }} />
+                </div>}
             </article>
             
-            <div className="border-t border-border mt-12 pt-8 flex items-center justify-between">
-              <div className="flex space-x-4">
-                <button className="flex items-center text-sm text-muted-foreground hover:text-primary">
-                  <Heart className="mr-1.5 h-5 w-5" />
-                  Suka
+            <div className="border-t border-border mt-12 pt-8">
+              <div className="flex items-center justify-between mb-8 text-rose-700">
+                <button className={`flex items-center text-sm ${likeLoading ? 'opacity-70' : 'hover:text-primary'}`} onClick={handleLike} disabled={likeLoading}>
+                  <Heart className={`mr-1.5 h-5 w-5 ${likeLoading && 'animate-pulse'}`} />
+                  Suka ({likeCount})
                 </button>
-                <button className="flex items-center text-sm text-muted-foreground hover:text-primary">
-                  <MessageSquare className="mr-1.5 h-5 w-5" />
-                  Komentar
-                </button>
+                
+                <div className="flex space-x-2">
+                  {post.tags && post.tags.map((tag, index) => <span key={index} className="px-3 py-1 bg-muted text-xs font-medium rounded-full">
+                      #{tag}
+                    </span>)}
+                </div>
               </div>
               
-              <div className="flex space-x-2">
-                {post.tags && post.tags.map((tag: string, index: number) => (
-                  <span key={index} className="px-3 py-1 bg-muted text-xs font-medium rounded-full">
-                    #{tag}
-                  </span>
-                ))}
+              <div className="mt-12">
+                <h3 className="text-xl font-semibold mb-6 flex items-center">
+                  <MessageSquare className="mr-2 h-5 w-5" />
+                  Komentar ({comments.length})
+                </h3>
+                
+                {comments.length > 0 ? <div className="space-y-6 mb-8">
+                    {comments.map((comment, index) => <div key={index} className="border border-border rounded-lg p-4 bg-slate-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium">{comment.name}</h4>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(comment.date)}
+                          </span>
+                        </div>
+                        <p className="text-sm whitespace-pre-line">{comment.content}</p>
+                      </div>)}
+                  </div> : <p className="text-muted-foreground text-sm mb-6">
+                    Belum ada komentar. Jadilah yang pertama berkomentar!
+                  </p>}
+                
+                <form onSubmit={handleSubmitComment} className="border border-border rounded-lg p-5">
+                  <h4 className="font-semibold mb-4">Tambahkan Komentar</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium mb-1">
+                        Nama
+                      </label>
+                      <input id="name" type="text" value={commentName} onChange={e => setCommentName(e.target.value)} className="w-full p-2 border border-input rounded-md" required />
+                    </div>
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium mb-1">
+                        Email
+                      </label>
+                      <input id="email" type="email" value={commentEmail} onChange={e => setCommentEmail(e.target.value)} className="w-full p-2 border border-input rounded-md" required />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label htmlFor="comment" className="block text-sm font-medium mb-1">
+                      Komentar
+                    </label>
+                    <Textarea id="comment" value={commentContent} onChange={e => setCommentContent(e.target.value)} className="w-full min-h-24" placeholder="Tulis komentar Anda di sini..." required />
+                  </div>
+                  
+                  <button type="submit" className="flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors disabled:opacity-70" disabled={commentLoading}>
+                    {commentLoading ? <>
+                        <span className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></span>
+                        Mengirim...
+                      </> : <>
+                        <Send className="mr-1.5 h-4 w-4" />
+                        Kirim Komentar
+                      </>}
+                  </button>
+                </form>
               </div>
             </div>
           </div>
@@ -285,8 +295,6 @@ const BlogPost = () => {
       </main>
       
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
-export default BlogPost;
+export default BlogPostPage;

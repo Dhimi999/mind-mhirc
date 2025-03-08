@@ -11,6 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Import Settings icon with an alias to avoid name conflict
 import { Settings as SettingsIcon } from "lucide-react";
+import ContentManagement from "@/components/dashboard/ContentManagement";
+import BlogEditor from "@/components/dashboard/BlogEditor";
+import UserManagement from "@/components/dashboard/UserManagement";
+import HelpSection from "@/components/dashboard/HelpSection";
+
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [userName, setUserName] = useState("Pengguna");
@@ -249,8 +254,10 @@ const Dashboard = () => {
                 
                 {/* Admin Routes */}
                 {mockUser.role === "Admin" && <>
-                    <Route path="users/*" element={<DashboardUsers user={mockUser} />} />
-                    <Route path="content/*" element={<DashboardContent user={mockUser} />} />
+                    <Route path="users/*" element={<UserManagement />} />
+                    <Route path="content" element={<DashboardContent user={mockUser} />} />
+                    <Route path="content/new" element={<DashboardContentNew user={mockUser} />} />
+                    <Route path="content/edit/:slug" element={<DashboardContentEdit user={mockUser} />} />
                     <Route path="analytics/*" element={<DashboardAnalytics user={mockUser} />} />
                   </>}
                 
@@ -408,7 +415,6 @@ const DashboardOverview = ({
     </div>;
 };
 
-// Keep other dashboard pages unchanged
 const DashboardTests = ({
   user
 }: {
@@ -420,7 +426,6 @@ const DashboardTests = ({
     </div>
   </div>;
 
-// Dashboard Results page with tabs for professional users
 const DashboardResults = ({
   user
 }: {
@@ -564,7 +569,6 @@ const DashboardResults = ({
     </div>;
 };
 
-// Keep other dashboard pages unchanged
 const DashboardAppointments = ({
   user
 }: {
@@ -609,12 +613,34 @@ const DashboardContent = ({
   user
 }: {
   user: any;
-}) => <div>
+}) => {
+  return <div>
     <h1 className="text-2xl font-semibold mb-6">Manajemen Konten</h1>
-    <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>Halaman ini akan memungkinkan Anda mengelola konten website, termasuk artikel blog, informasi tes, dan konten edukasi lainnya.</p>
-    </div>
+    <ContentManagement />
   </div>;
+};
+
+const DashboardContentNew = ({
+  user
+}: {
+  user: any;
+}) => {
+  return <div>
+    <h1 className="text-2xl font-semibold mb-6">Tambah Konten Baru</h1>
+    <BlogEditor />
+  </div>;
+};
+
+const DashboardContentEdit = ({
+  user
+}: {
+  user: any;
+}) => {
+  return <div>
+    <h1 className="text-2xl font-semibold mb-6">Edit Konten</h1>
+    <BlogEditor />
+  </div>;
+};
 const DashboardAnalytics = ({
   user
 }: {
@@ -641,9 +667,7 @@ const DashboardHelp = ({
   user: any;
 }) => <div>
     <h1 className="text-2xl font-semibold mb-6">Bantuan</h1>
-    <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>Halaman ini akan menyediakan panduan penggunaan, FAQ, dan informasi bantuan lainnya untuk membantu Anda menggunakan platform secara maksimal.</p>
-    </div>
+    <HelpSection />
   </div>;
 const DashboardNotFound = () => <div className="text-center py-12">
     <h1 className="text-2xl font-semibold mb-4">Halaman Tidak Ditemukan</h1>

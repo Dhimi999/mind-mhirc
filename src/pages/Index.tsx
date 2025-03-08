@@ -10,9 +10,9 @@ import BlogPost from "@/components/BlogPost";
 import Button from "@/components/Button";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
 import testsData from "@/data/testsData";
+import { Tables } from "@/integrations/supabase/types";
 
 const Index = () => {
-  // Konversi testsData ke array
   const allTests = Object.values(testsData).map(test => ({
     id: test.id,
     title: test.title,
@@ -24,7 +24,6 @@ const Index = () => {
     featured: test.featured
   }));
 
-  // Filter hanya untuk featured tests
   const featuredTests = allTests.filter(test => test.featured);
 
   const services = [{
@@ -47,28 +46,42 @@ const Index = () => {
     color: "bg-accent-600"
   }];
 
-  const blogPosts = [{
+  const blogPosts: Tables<'blog_posts'>[] = [{
     id: "mengenal-anxietas",
     title: "Mengenal Anxietas: Gejala, Penyebab, dan Cara Mengatasinya",
     excerpt: "Anxietas adalah reaksi normal terhadap stres, namun jika berlebihan dapat mengganggu kehidupan sehari-hari. Artikel ini membahas gejala, penyebab, dan strategi mengatasi anxietas.",
-    coverImage: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80",
-    date: "3 Jun 2023",
-    author: {
-      name: "Dr. Anita Wijaya",
-      avatar: "https://randomuser.me/api/portraits/women/44.jpg"
-    },
-    category: "Edukasi"
+    cover_image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80",
+    published_date: "2023-06-03T00:00:00Z",
+    updated_date: "2023-06-03T00:00:00Z",
+    author_name: "Dr. Anita Wijaya",
+    author_avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+    category: "Edukasi",
+    slug: "mengenal-anxietas",
+    content: "",
+    featured: false,
+    read_time: "5 menit",
+    references_cit: null,
+    tags: ["anxietas", "mental-health"],
+    likes: 0,
+    comments: []
   }, {
     id: "digital-wellbeing",
     title: "Digital Wellbeing: Menjaga Kesehatan Mental di Era Digital",
     excerpt: "Perkembangan teknologi membawa tantangan baru bagi kesehatan mental. Simak tips menjaga keseimbangan digital untuk kesejahteraan psikologis yang lebih baik.",
-    coverImage: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80",
-    date: "15 Mei 2023",
-    author: {
-      name: "Budi Santoso, M.Psi",
-      avatar: "https://randomuser.me/api/portraits/men/32.jpg"
-    },
-    category: "Tips"
+    cover_image: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80",
+    published_date: "2023-05-15T00:00:00Z",
+    updated_date: "2023-05-15T00:00:00Z",
+    author_name: "Budi Santoso, M.Psi",
+    author_avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+    category: "Tips",
+    slug: "digital-wellbeing",
+    content: "",
+    featured: false,
+    read_time: "7 menit",
+    references_cit: null,
+    tags: ["digital", "mental-health"],
+    likes: 0,
+    comments: []
   }];
 
   const testimonials = [{
@@ -351,7 +364,7 @@ const Index = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 fade-in">
-              {blogPosts.map(post => <BlogPost key={post.id} {...post} />)}
+              {blogPosts.map(post => <BlogPost key={post.id} post={post} />)}
             </div>
 
             <div className="text-center mt-12 fade-in">
