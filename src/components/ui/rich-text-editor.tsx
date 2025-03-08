@@ -37,6 +37,7 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface RichTextEditorProps {
   value: string;
@@ -52,6 +53,8 @@ export function RichTextEditor({
   className,
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const floatingToolbarRef = useRef<HTMLDivElement>(null);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
@@ -64,6 +67,13 @@ export function RichTextEditor({
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
   const [currentAlignment, setCurrentAlignment] = useState("left");
+  
+  // Floating toolbar state
+  const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
+  const [floatingToolbarPosition, setFloatingToolbarPosition] = useState({ top: 0, left: 0 });
+
+  // Save selection range for persistent selection
+  const [selectionRange, setSelectionRange] = useState<Range | null>(null);
 
   // Initialize the editor with the HTML content
   useEffect(() => {
@@ -86,24 +96,69 @@ export function RichTextEditor({
     }
   };
 
-  // Save selection range for popover usage
-  const [selectionRange, setSelectionRange] = useState<Range | null>(null);
-
+  // Save selection when user interacts with editor
   const saveSelection = () => {
     if (window.getSelection) {
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         setSelectionRange(selection.getRangeAt(0).cloneRange());
+        
+        // Check if the selection is a range (not a caret)
+        if (!selection.isCollapsed) {
+          // Show floating toolbar
+          showFloatingToolbarAtSelection(selection);
+        } else {
+          // Hide floating toolbar if there's no selected text
+          setShowFloatingToolbar(false);
+        }
       }
     }
   };
+  
+  // Show floating toolbar at selected text
+  const showFloatingToolbarAtSelection = (selection: Selection) => {
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    
+    if (rect.width > 0 && rect.height > 0 && editorRef.current) {
+      const editorRect = editorRef.current.getBoundingClientRect();
+      
+      // Calculate optimal position for the floating toolbar
+      // Position above the selected text
+      const toolbarTop = rect.top - editorRect.top - 45; // 40px for toolbar height + 5px gap
+      const toolbarLeft = rect.left - editorRect.left + rect.width / 2 - 150; // Center horizontally, adjust based on toolbar width
+      
+      setFloatingToolbarPosition({
+        top: Math.max(0, toolbarTop),
+        left: Math.max(0, Math.min(toolbarLeft, editorRect.width - 300)), // Ensure it doesn't go off the screen
+      });
+      
+      setShowFloatingToolbar(true);
+    }
+  };
 
+  // Restore selection before applying formatting
   const restoreSelection = () => {
-    if (selectionRange && window.getSelection) {
+    if (selectionRange && window.getSelection && editorRef.current) {
       const selection = window.getSelection();
       if (selection) {
         selection.removeAllRanges();
         selection.addRange(selectionRange);
+        
+        // Scroll the selected range into view
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        
+        if (editorRef.current.scrollHeight > editorRef.current.clientHeight) {
+          // Ensure the selection is visible in the editor
+          const editorRect = editorRef.current.getBoundingClientRect();
+          
+          if (rect.top < editorRect.top) {
+            editorRef.current.scrollTop -= (editorRect.top - rect.top + 50);
+          } else if (rect.bottom > editorRect.bottom) {
+            editorRef.current.scrollTop += (rect.bottom - editorRect.bottom + 50);
+          }
+        }
       }
     }
   };
@@ -119,18 +174,30 @@ export function RichTextEditor({
     else if (document.queryCommandState('justifyRight')) setCurrentAlignment("right");
   };
 
-  // Command functions
-  const execCommand = (command: string, value: string | null = null) => {
+  // Command functions with selection persistence
+  const execCommand = (command: string, value: string | undefined = undefined) => {
+    // Focus the editor if it's not already focused
     editorRef.current?.focus();
     
+    // Restore the saved selection
     if (selectionRange) {
       restoreSelection();
     }
     
-    document.execCommand(command, false, value);
+    // Execute the command with proper value type handling
+    if (typeof value === 'string') {
+      document.execCommand(command, false, value);
+    } else {
+      document.execCommand(command, false, '');
+    }
     
-    // Ensure change is registered
+    // Save the new selection
+    saveSelection();
+    
+    // Update parent with new content
     handleContentChange();
+    
+    // Update formatting state indicators
     checkFormattingState();
   };
 
@@ -200,13 +267,44 @@ export function RichTextEditor({
   };
 
   const handleQuote = () => {
-    // Create a blockquote or remove it
     execCommand("formatBlock", "blockquote");
   };
 
+  const handleKeyUp = (e: React.KeyboardEvent) => {
+    checkFormattingState();
+    saveSelection();
+  };
+
+  const handleMouseUp = () => {
+    checkFormattingState();
+    saveSelection();
+  };
+  
+  // Hide floating toolbar when clicking outside the editor
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        editorRef.current && 
+        !editorRef.current.contains(event.target as Node) &&
+        floatingToolbarRef.current &&
+        !floatingToolbarRef.current.contains(event.target as Node)
+      ) {
+        setShowFloatingToolbar(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <div className={cn("border rounded-md", className)}>
-      <div className="bg-muted p-2 flex flex-wrap gap-1 border-b">
+      <div 
+        ref={toolbarRef}
+        className="bg-muted p-2 flex flex-wrap gap-1 border-b sticky top-0 z-10"
+      >
         <Button
           type="button"
           variant={isBold ? "default" : "ghost"}
@@ -447,21 +545,95 @@ export function RichTextEditor({
         </Button>
       </div>
       
-      <div
-        ref={editorRef}
-        className="min-h-[200px] p-4 outline-none"
-        contentEditable={true}
-        onInput={handleContentChange}
-        onKeyUp={checkFormattingState}
-        onMouseUp={checkFormattingState}
-        onFocus={checkFormattingState}
-        data-placeholder={placeholder}
-        role="textbox"
-        style={{
-          position: 'relative',
-          minHeight: '200px',
-        }}
-      />
+      {/* Floating toolbar */}
+      {showFloatingToolbar && (
+        <div
+          ref={floatingToolbarRef}
+          className="absolute bg-white border border-input rounded shadow-md p-1 flex flex-wrap gap-1 z-50"
+          style={{
+            top: `${floatingToolbarPosition.top}px`,
+            left: `${floatingToolbarPosition.left}px`,
+          }}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => handleFormat("bold")}
+            title="Bold"
+          >
+            <Bold className="h-3 w-3" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => handleFormat("italic")}
+            title="Italic"
+          >
+            <Italic className="h-3 w-3" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => handleFormat("underline")}
+            title="Underline"
+          >
+            <Underline className="h-3 w-3" />
+          </Button>
+          <Separator orientation="vertical" className="mx-0.5 h-5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => handleHeading("h1")}
+            title="Heading 1"
+          >
+            <Heading1 className="h-3 w-3" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => handleHeading("h2")}
+            title="Heading 2"
+          >
+            <Heading2 className="h-3 w-3" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleLinkButtonClick}
+            title="Add Link"
+          >
+            <Link className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+      
+      <ScrollArea className="h-full max-h-[500px] relative">
+        <div
+          ref={editorRef}
+          className="min-h-[200px] p-4 outline-none"
+          contentEditable={true}
+          onInput={handleContentChange}
+          onKeyUp={handleKeyUp}
+          onMouseUp={handleMouseUp}
+          onClick={handleMouseUp} 
+          onFocus={() => {
+            checkFormattingState();
+            saveSelection();
+          }}
+          data-placeholder={placeholder}
+          role="textbox"
+          style={{
+            position: 'relative',
+            minHeight: '200px',
+          }}
+        />
+      </ScrollArea>
       
       <style>
         {`

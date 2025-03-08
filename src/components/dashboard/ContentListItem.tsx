@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tables } from "@/integrations/supabase/types";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type BlogPost = Tables<'blog_posts'>;
 
@@ -86,12 +87,15 @@ const ContentListItem = ({
                   Edit
                 </Button>
                 
-                <div className="relative group">
-                  <Button variant="outline" size="sm">
-                    <Tag size={16} className="mr-1" />
-                    Kategori
-                  </Button>
-                  <div className="absolute z-10 invisible group-hover:visible mt-1 w-36 bg-card shadow-lg rounded-md border p-1">
+                {/* Replace the dropdown with Popover */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Tag size={16} className="mr-1" />
+                      Kategori
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-36 p-1" align="start">
                     <button 
                       onClick={() => onUpdateCategory(post.id, 'Berita')}
                       className="block w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-muted"
@@ -110,8 +114,8 @@ const ContentListItem = ({
                     >
                       Tips
                     </button>
-                  </div>
-                </div>
+                  </PopoverContent>
+                </Popover>
                 
                 <Button 
                   variant="outline" 
