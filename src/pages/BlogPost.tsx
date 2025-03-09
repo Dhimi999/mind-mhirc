@@ -226,7 +226,7 @@ const BlogPostPage = () => {
               <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
             </div>
             
-            <article className="prose prose-lg max-w-none blog-content space-y-lg">
+            <article className="prose prose-lg max-w-none blog-content leading-relaxed">
               <div dangerouslySetInnerHTML={{ __html: post.content }} />
               
               {post.references_cit && (
