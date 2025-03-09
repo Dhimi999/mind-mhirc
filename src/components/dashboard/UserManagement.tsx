@@ -5,8 +5,48 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
-import { CalendarDays, MapPin, Briefcase, UserCircle, Shield } from "lucide-react";
+import { 
+  CalendarDays, 
+  MapPin, 
+  Briefcase, 
+  UserCircle, 
+  Shield,
+  Trash2,
+  Edit2,
+  KeyRound,
+  CheckCircle,
+  XCircle
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 
 type Profile = Tables<'profiles'>;
 
@@ -20,6 +60,20 @@ const UserManagement = () => {
   const [userRoles, setUserRoles] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    city: '',
+    profession: '',
+    birth_date: '',
+    account_type: ''
+  });
+  const [newPassword, setNewPassword] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
 
   useEffect(() => {
     const fetchProfilesAndRoles = async () => {
@@ -83,6 +137,174 @@ const UserManagement = () => {
     }
   };
 
+  const handleEditUser = (user: Profile) => {
+    setSelectedUser(user);
+    setEditForm({
+      full_name: user.full_name || '',
+      city: user.city || '',
+      profession: user.profession || '',
+      birth_date: user.birth_date ? new Date(user.birth_date).toISOString().split('T')[0] : '',
+      account_type: user.account_type || 'general'
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleResetPassword = (user: Profile) => {
+    setSelectedUser(user);
+    setNewPassword('');
+    
+    // Fetch user's email
+    const fetchUserEmail = async () => {
+      try {
+        // Since we can't query auth.users directly with the JavaScript client,
+        // we'll try to use a workaround if possible
+        // This is where an admin API or server-side function would be ideal
+        setResetEmail(''); // Reset for now
+      } catch (error) {
+        console.error('Error fetching user email:', error);
+      }
+    };
+    
+    fetchUserEmail();
+    setIsResetPasswordDialogOpen(true);
+  };
+
+  const handleDeleteUser = (user: Profile) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleToggleAdmin = async (user: Profile) => {
+    try {
+      setIsSubmitting(true);
+      
+      const newAdminStatus = !(user.is_admin);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_admin: newAdminStatus })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setProfiles(profiles.map(profile => 
+        profile.id === user.id ? { ...profile, is_admin: newAdminStatus } : profile
+      ));
+      
+      toast.success(`Status Admin untuk ${user.full_name} telah ${newAdminStatus ? 'diaktifkan' : 'dinonaktifkan'}`);
+    } catch (err) {
+      console.error('Error toggling admin status:', err);
+      toast.error('Gagal mengubah status admin. Silakan coba lagi.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const submitEditForm = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Prepare the form data
+      const formData: Partial<Profile> = {
+        full_name: editForm.full_name,
+        city: editForm.city,
+        profession: editForm.profession,
+        account_type: editForm.account_type
+      };
+      
+      // Add birth_date only if it's provided
+      if (editForm.birth_date) {
+        formData.birth_date = editForm.birth_date;
+      }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(formData)
+        .eq('id', selectedUser.id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setProfiles(profiles.map(profile => 
+        profile.id === selectedUser.id 
+          ? { ...profile, ...formData } 
+          : profile
+      ));
+      
+      setIsEditDialogOpen(false);
+      toast.success('Profil pengguna berhasil diperbarui');
+    } catch (err) {
+      console.error('Error updating user profile:', err);
+      toast.error('Gagal memperbarui profil. Silakan coba lagi.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const submitResetPassword = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // In an actual implementation, we would use Supabase's admin functions
+      // to reset a user's password. Since this requires admin/service role credentials,
+      // we would typically implement this on the server side.
+      
+      // For a user-facing frontend, we can use passwordResetEmail instead:
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Email reset password telah dikirim ke pengguna');
+      setIsResetPasswordDialogOpen(false);
+    } catch (err: any) {
+      console.error('Error resetting password:', err);
+      toast.error('Gagal mereset password. Silakan coba lagi.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // In an actual implementation, we would use Supabase's admin functions
+      // to delete a user, which requires admin/service role credentials.
+      // This would typically be implemented on the server side.
+      
+      // For now, we'll just delete the user's profile record
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', selectedUser.id);
+      
+      if (error) throw error;
+      
+      // Remove from local state
+      setProfiles(profiles.filter(profile => profile.id !== selectedUser.id));
+      
+      setIsDeleteDialogOpen(false);
+      toast.success('Profil pengguna berhasil dihapus');
+      
+      // Note: In a real application, you would also need to delete the user from auth.users
+      // using admin functions or an Edge Function with service role credentials
+    } catch (err: any) {
+      console.error('Error deleting user:', err);
+      toast.error('Gagal menghapus profil. Silakan coba lagi.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -142,6 +364,9 @@ const UserManagement = () => {
                               {role}
                             </Badge>
                           ))}
+                          {profile.is_admin && 
+                            <Badge className="bg-purple-500 text-white">Admin</Badge>
+                          }
                         </div>
                         <div className="mt-2 space-y-1">
                           <div className="flex items-center text-sm text-muted-foreground">
@@ -168,9 +393,45 @@ const UserManagement = () => {
                           )}
                         </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        <div>Bergabung: {formatDate(profile.created_at || '')}</div>
-                        <div>ID: {profile.id.substring(0, 8)}...</div>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="text-sm text-muted-foreground">
+                          <div>Bergabung: {formatDate(profile.created_at || '')}</div>
+                          <div>ID: {profile.id.substring(0, 8)}...</div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm mr-1">Admin:</span>
+                            <Switch 
+                              checked={!!profile.is_admin} 
+                              onCheckedChange={() => handleToggleAdmin(profile)}
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" disabled={isSubmitting}>
+                                Aksi
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditUser(profile)}>
+                                <Edit2 size={16} className="mr-2" />
+                                Edit Detail
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleResetPassword(profile)}>
+                                <KeyRound size={16} className="mr-2" />
+                                Reset Password
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteUser(profile)}
+                                className="text-red-500 focus:text-red-500"
+                              >
+                                <Trash2 size={16} className="mr-2" />
+                                Hapus Akun
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -180,6 +441,141 @@ const UserManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Profil Pengguna</DialogTitle>
+            <DialogDescription>
+              Perbarui detail profil untuk {selectedUser?.full_name || 'pengguna'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="full_name" className="text-right">
+                Nama Lengkap
+              </Label>
+              <Input
+                id="full_name"
+                value={editForm.full_name}
+                onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="city" className="text-right">
+                Kota
+              </Label>
+              <Input
+                id="city"
+                value={editForm.city}
+                onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="profession" className="text-right">
+                Profesi
+              </Label>
+              <Input
+                id="profession"
+                value={editForm.profession}
+                onChange={(e) => setEditForm({...editForm, profession: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="birth_date" className="text-right">
+                Tanggal Lahir
+              </Label>
+              <Input
+                id="birth_date"
+                type="date"
+                value={editForm.birth_date}
+                onChange={(e) => setEditForm({...editForm, birth_date: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="account_type" className="text-right">
+                Tipe Akun
+              </Label>
+              <select
+                id="account_type"
+                value={editForm.account_type}
+                onChange={(e) => setEditForm({...editForm, account_type: e.target.value})}
+                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="general">General</option>
+                <option value="professional">Professional</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSubmitting}>Batal</Button>
+            <Button onClick={submitEditForm} disabled={isSubmitting}>
+              {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Kirim instruksi reset password ke email pengguna.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="reset_email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="reset_email"
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="Email pengguna"
+                  className="col-span-3"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Link reset password akan dikirim ke email pengguna. Password baru hanya akan aktif setelah pengguna mengklik link tersebut.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsResetPasswordDialogOpen(false)} disabled={isSubmitting}>Batal</Button>
+            <Button onClick={submitResetPassword} disabled={isSubmitting || !resetEmail}>
+              {isSubmitting ? "Mengirim..." : "Kirim Link Reset"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Akun Pengguna</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus akun pengguna {selectedUser?.full_name}? Tindakan ini tidak dapat dibatalkan dan semua data pengguna akan dihapus secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteUser} className="bg-red-500 hover:bg-red-600" disabled={isSubmitting}>
+              {isSubmitting ? "Menghapus..." : "Hapus Akun"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

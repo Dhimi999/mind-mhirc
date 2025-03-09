@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,6 +21,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from "@/components/ui/badge";
 import { Megaphone, Clock, Send, Users, User, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Tables } from "@/integrations/supabase/types";
+import { useAuth } from "@/contexts/AuthContext";
+
+type Broadcast = Tables<'broadcasts'>;
 
 const BroadcastManagement = () => {
   const [title, setTitle] = useState('');
@@ -29,53 +35,85 @@ const BroadcastManagement = () => {
   const [priority, setPriority] = useState('regular');
   const [activeTab, setActiveTab] = useState('compose');
   const [isSending, setIsSending] = useState(false);
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  // Fetch broadcasts from Supabase
+  useEffect(() => {
+    const fetchBroadcasts = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('broadcasts')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        setBroadcasts(data || []);
+      } catch (err) {
+        console.error('Error fetching broadcasts:', err);
+        setError('Gagal memuat siaran. Silakan coba lagi nanti.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBroadcasts();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!title.trim() || !message.trim()) {
+      toast.error('Judul dan pesan tidak boleh kosong');
+      return;
+    }
+    
     setIsSending(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSending(false);
+    try {
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('broadcasts')
+        .insert([
+          { 
+            title, 
+            content: message, 
+            recipients: [recipient], 
+            priority, 
+            created_by: user?.id || null 
+          }
+        ])
+        .select();
+      
+      if (error) throw error;
+      
+      // Add the new broadcast to state
+      if (data && data.length > 0) {
+        setBroadcasts([data[0], ...broadcasts]);
+      }
+      
+      // Reset form
       setTitle('');
       setMessage('');
       setRecipient('all');
       setPriority('regular');
+      
+      // Switch to history tab
       setActiveTab('history');
-      // Add success notification here in a real app
-    }, 1500);
-  };
-
-  const mockBroadcasts = [
-    {
-      id: '1',
-      title: 'Pemeliharaan Sistem Terjadwal',
-      content: 'Kami ingin memberitahukan bahwa akan ada pemeliharaan sistem pada tanggal 15 Juni 2023 pukul 22:00 - 02:00 WIB. Selama waktu tersebut, sistem mungkin tidak dapat diakses.',
-      priority: 'high',
-      recipients: ['all'],
-      created_at: '2023-06-10T14:30:00Z',
-      created_by: 'Administrator'
-    },
-    {
-      id: '2',
-      title: 'Fitur Baru: Tes Kecemasan GAD-7',
-      content: 'Kami dengan senang hati mengumumkan peluncuran fitur baru: Tes Kecemasan GAD-7. Tes ini dapat membantu Anda mengevaluasi tingkat kecemasan dalam 7 pertanyaan singkat.',
-      priority: 'regular',
-      recipients: ['users'],
-      created_at: '2023-06-05T09:15:00Z',
-      created_by: 'Administrator'
-    },
-    {
-      id: '3',
-      title: 'Webinar Kesehatan Mental di Tempat Kerja',
-      content: 'Bergabunglah dengan kami dalam webinar "Menjaga Kesehatan Mental di Tempat Kerja" pada 20 Juni 2023 pukul 19:00 WIB. Webinar ini akan membahas strategi mengelola stres dan menciptakan lingkungan kerja yang mendukung kesehatan mental.',
-      priority: 'regular',
-      recipients: ['professionals'],
-      created_at: '2023-06-01T11:45:00Z',
-      created_by: 'Dr. Anita Wijaya'
+      
+      toast.success('Siaran berhasil dikirim');
+    } catch (err) {
+      console.error('Error sending broadcast:', err);
+      toast.error('Gagal mengirim siaran. Silakan coba lagi.');
+    } finally {
+      setIsSending(false);
     }
-  ];
+  };
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -110,6 +148,31 @@ const BroadcastManagement = () => {
       return <Badge variant="outline">Kustom</Badge>;
     }
   };
+
+  // Loading state
+  const renderLoadingState = () => (
+    <div className="space-y-4">
+      <div className="animate-pulse space-y-4">
+        <div className="h-10 bg-gray-200 rounded w-1/4"></div>
+        <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 bg-gray-200 rounded"></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Error state
+  const renderErrorState = () => (
+    <div className="bg-card shadow-soft rounded-xl p-6 text-center">
+      <p className="text-red-500 mb-4">{error}</p>
+      <Button onClick={() => setActiveTab('compose')} variant="outline">
+        Kembali ke Buat Siaran
+      </Button>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -214,54 +277,62 @@ const BroadcastManagement = () => {
             </CardHeader>
             
             <CardContent>
-              <div className="space-y-6">
-                {mockBroadcasts.map((broadcast) => (
-                  <div key={broadcast.id} className="rounded-lg border p-4 space-y-4">
-                    <div className="flex flex-wrap justify-between gap-2">
-                      <div className="space-y-1">
-                        <h3 className="font-medium">{broadcast.title}</h3>
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                          <div className="flex items-center">
-                            <Clock className="mr-1 h-4 w-4" />
-                            <span>{formatDate(broadcast.created_at)}</span>
+              {loading ? (
+                renderLoadingState()
+              ) : error ? (
+                renderErrorState()
+              ) : broadcasts.length === 0 ? (
+                <p className="text-center text-muted-foreground">Belum ada siaran yang dibuat.</p>
+              ) : (
+                <div className="space-y-6">
+                  {broadcasts.map((broadcast) => (
+                    <div key={broadcast.id} className="rounded-lg border p-4 space-y-4">
+                      <div className="flex flex-wrap justify-between gap-2">
+                        <div className="space-y-1">
+                          <h3 className="font-medium">{broadcast.title}</h3>
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center">
+                              <Clock className="mr-1 h-4 w-4" />
+                              <span>{formatDate(broadcast.created_at)}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <User className="mr-1 h-4 w-4" />
+                              <span>Administrator</span>
+                            </div>
                           </div>
-                          <div className="flex items-center">
-                            <User className="mr-1 h-4 w-4" />
-                            <span>{broadcast.created_by}</span>
-                          </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-2">
+                          {getPriorityBadge(broadcast.priority)}
+                          {getRecipientBadge(broadcast.recipients || [])}
                         </div>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-2">
-                        {getPriorityBadge(broadcast.priority)}
-                        {getRecipientBadge(broadcast.recipients)}
-                      </div>
-                    </div>
-                    
-                    <p className="text-muted-foreground text-sm">{broadcast.content}</p>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        <span>
-                          {broadcast.recipients.includes('all') 
-                            ? 'Dikirim ke semua pengguna' 
-                            : broadcast.recipients.includes('users')
-                              ? 'Dikirim ke pengguna reguler'
-                              : 'Dikirim ke profesional'}
-                        </span>
-                      </div>
+                      <p className="text-muted-foreground text-sm">{broadcast.content}</p>
                       
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-green-50 text-green-500 border-green-200">
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          Terkirim
-                        </Badge>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>
+                            {broadcast.recipients?.includes('all') 
+                              ? 'Dikirim ke semua pengguna' 
+                              : broadcast.recipients?.includes('users')
+                                ? 'Dikirim ke pengguna reguler'
+                                : 'Dikirim ke profesional'}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-green-50 text-green-500 border-green-200">
+                            <CheckCircle2 className="mr-1 h-3 w-3" />
+                            Terkirim
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
