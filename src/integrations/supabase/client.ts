@@ -6,8 +6,7 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://gfeuhclekmdxaatyyiez.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmZXVoY2xla21keGFhdHl5aWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5NDI2MzIsImV4cCI6MjA1NjUxODYzMn0.zl3T3J2a8cCJxq5OI9IdAnWEYXSwdUwcJ6D_5MglXCI";
 
-// Buat klien Supabase dengan opsi default yang lebih bersih 
-// untuk menghindari masalah dengan RLS policies
+// Create Supabase client with debugging enabled
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_PUBLISHABLE_KEY, 
@@ -17,7 +16,18 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
     },
     global: {
-      fetch: fetch
+      fetch: fetch,
+      headers: {
+        'x-debug-mode': 'true' // Enable debug mode for more detailed errors
+      }
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
+    },
+    db: {
+      schema: 'public'
     }
   }
 );

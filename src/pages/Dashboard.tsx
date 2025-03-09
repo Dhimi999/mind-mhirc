@@ -52,6 +52,8 @@ import Analytics from "@/components/dashboard/Analytics";
 import BroadcastManagement from "@/components/dashboard/BroadcastManagement";
 import AccountSettings from "@/components/dashboard/AccountSettings";
 import ReportsManagement from "@/components/dashboard/ReportsManagement";
+import MessageManagement from "@/components/dashboard/MessageManagement";
+
 let id = "";
 let isProfessional = false;
 let isAdmin = false;
@@ -64,7 +66,7 @@ const Dashboard = () => {
   const location = useLocation();
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  // Fetch user's full name and avatar from profiles table
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       id = user?.id;
@@ -109,7 +111,6 @@ const Dashboard = () => {
     fetchUserProfile();
   }, [user]);
 
-  // Handle logout
   const handleLogout = async () => {
     try {
       await logout();
@@ -123,17 +124,15 @@ const Dashboard = () => {
     }
   };
 
-  // Handle exit dashboard
   const handleExitDashboard = () => {
     navigate("/");
   };
 
-  // Mock user data - in a real app, this would come from user context or API
   const mockUser = {
     name: userName,
     email: user?.email || "pengguna@example.com",
-    role: "Admin", // Could be "Admin", "Teacher", or "User"
-    isProfessional: true, // New field to identify professional accounts
+    role: "Admin",
+    isProfessional: true,
     avatarUrl: userAvatar || "https://randomuser.me/api/portraits/men/32.jpg"
   };
 
@@ -143,7 +142,6 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col">
       <div className="flex-1 pt-1">
         <div className="flex min-h-screen">
-          {/* Sidebar - Mobile Overlay */}
           {isSidebarOpen && (
             <div
               className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -151,14 +149,12 @@ const Dashboard = () => {
             ></div>
           )}
 
-          {/* Sidebar */}
           <aside
             className={`fixed top-0 left-0 z-40 h-screen w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 ${
               isSidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
           >
             <div className="p-4 h-full flex flex-col max-h-screen h-auto">
-              {/* Brand Logo at the top of sidebar */}
               <div className="flex items-center space-x-2 mb-6 mt-4">
                 <Brain className="h-8 w-8 text-primary" />
                 <span className="font-bold text-xl tracking-tight">
@@ -235,7 +231,6 @@ const Dashboard = () => {
                     </Link>
                   </div>
 
-                  {/* Admin & Teacher Menu */}
                   {(isAdmin || mockUser.role === "Teacher") && (
                     <div>
                       <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
@@ -324,9 +319,7 @@ const Dashboard = () => {
             </div>
           </aside>
 
-          {/* Main Content */}
           <main className="flex-1 min-w-0 overflow-x-hidden">
-            {/* Top Bar */}
             <div className="bg-card border-b sticky top-0 z-30">
               <div className="flex items-center justify-between h-16 px-4">
                 <div className="flex items-center">
@@ -392,9 +385,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Page Content */}
             <div className="p-4 sm:p-6">
-              {/* Dashboard Routes */}
               <Routes>
                 <Route index element={<DashboardOverview user={mockUser} />} />
                 <Route
@@ -411,10 +402,9 @@ const Dashboard = () => {
                 />
                 <Route
                   path="messages/*"
-                  element={<DashboardMessages user={mockUser} />}
+                  element={<MessageManagement />}
                 />
 
-                {/* Teacher Routes */}
                 {mockUser.role === "Teacher" && (
                   <Route
                     path="students/*"
@@ -422,7 +412,6 @@ const Dashboard = () => {
                   />
                 )}
 
-                {/* Admin Routes */}
                 {isAdmin && (
                   <>
                     <Route path="users/*" element={<UserManagement />} />
@@ -488,30 +477,25 @@ const DashboardOverview = ({ user }: { user: any }) => {
       const sevenDaysAgoISO = sevenDaysAgo.toISOString();
 
       try {
-        // Menghitung total jumlah tes
         const { count: totalTests, error: totalError } = await supabase
           .from("test_results")
           .select("id", { count: "exact", head: true });
 
-        // Menghitung jumlah tes dalam 7 hari terakhir
         const { count: testsLast7Days, error: last7DaysError } = await supabase
           .from("test_results")
           .select("id", { count: "exact", head: true })
           .gte("created_at", sevenDaysAgoISO);
 
-        // Menghitung total jumlah blog posts
         const { count: totalBlogs, error: blogError } = await supabase
           .from("blog_posts")
           .select("id", { count: "exact", head: true });
 
-        // Menghitung jumlah blog posts dalam 7 hari terakhir
         const { count: blogsLast7Days, error: blogsLast7DaysError } =
           await supabase
             .from("blog_posts")
             .select("id", { count: "exact", head: true })
             .gte("published_date", sevenDaysAgoISO);
 
-        // Log untuk debugging
         console.log(
           "totalTests:",
           totalTests,
@@ -525,7 +509,6 @@ const DashboardOverview = ({ user }: { user: any }) => {
           blogsLast7Days
         );
 
-        // Jika ada error, tampilkan di console
         if (totalError || last7DaysError || blogError || blogsLast7DaysError) {
           console.error("Error fetching statistics:", {
             totalError,
@@ -747,7 +730,6 @@ const DashboardResults = ({ user }: { user: any }) => {
   const [loadingAllTests, setLoadingAllTests] = useState(true);
   console.log("User id:", id);
 
-  // Fungsi untuk mengambil hasil tes berdasarkan user_id
   const fetchAllTestResults = async () => {
     try {
       const { data, error } = await supabase
@@ -781,7 +763,6 @@ const DashboardResults = ({ user }: { user: any }) => {
     }
     return data;
   };
-  // Fungsi untuk mengambil semua hasil tes tanpa filter user_id
 
   useEffect(() => {
     if (!id) return;
@@ -796,12 +777,11 @@ const DashboardResults = ({ user }: { user: any }) => {
   useEffect(() => {
     setLoadingAllTests(true);
     fetchAllTestResults().then((results) => {
-      console.log("All Test Results:", results); // Pastikan mencetak 'results' langsung, bukan state lama!
+      console.log("All Test Results:", results);
       setLoadingAllTests(false);
     });
   }, []);
   console.log(isProfessional);
-  // Jika masih loading
 
   return (
     <div>
@@ -835,7 +815,6 @@ const DashboardResults = ({ user }: { user: any }) => {
                         } / ${parsedSummary.strengthLevel || "-"}`;
                       }
                     } catch {
-                      // Jika bukan JSON, gunakan metode split biasa
                       resultText = test.result_summary
                         ? test.result_summary.split(" ").slice(0, 3).join(" ") +
                           "..."
@@ -897,7 +876,6 @@ const DashboardResults = ({ user }: { user: any }) => {
                         } / ${parsedSummary.strengthLevel || "-"}`;
                       }
                     } catch {
-                      // Jika bukan JSON, gunakan metode split biasa
                       resultText = test.result_summary
                         ? test.result_summary.split(" ").slice(0, 3).join(" ") +
                           "..."
@@ -960,7 +938,6 @@ const DashboardResults = ({ user }: { user: any }) => {
                     }`;
                   }
                 } catch {
-                  // Jika bukan JSON, gunakan metode split biasa
                   resultText = test.result_summary
                     ? test.result_summary.split(" ").slice(0, 3).join(" ") +
                       "..."

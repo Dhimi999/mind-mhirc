@@ -29,7 +29,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshUser = async () => {
     try {
+      setIsLoading(true);
       const currentUser = await getCurrentUser();
+      console.log("Current user from refreshUser:", currentUser);
       setUser(currentUser);
     } catch (error) {
       console.error("Error refreshing user:", error);
@@ -45,8 +47,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { success, error } = await signOut();
       
       if (success) {
+        // Clear all session data
         setUser(null);
-        // Clear any local storage items related to auth
         localStorage.removeItem('supabase.auth.token');
         
         toast({
