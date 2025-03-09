@@ -1,11 +1,44 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, BookOpen, BoxSelect, Brain, Calendar, ChevronDown, ClipboardList, File, FileText, Home, LineChart, LogOut, Mail, Menu, MessageSquare, PieChart, Users, X, Megaphone, AlertCircle } from "lucide-react";
+import {
+  Routes,
+  Route,
+  Link,
+  useNavigate,
+  useLocation
+} from "react-router-dom";
+import {
+  ArrowLeft,
+  BookOpen,
+  BoxSelect,
+  Brain,
+  Calendar,
+  ChevronDown,
+  ClipboardList,
+  File,
+  FileText,
+  Home,
+  LineChart,
+  LogOut,
+  Mail,
+  Menu,
+  MessageSquare,
+  PieChart,
+  Users,
+  X,
+  Megaphone,
+  AlertCircle
+} from "lucide-react";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,6 +52,7 @@ import Analytics from "@/components/dashboard/Analytics";
 import BroadcastManagement from "@/components/dashboard/BroadcastManagement";
 import AccountSettings from "@/components/dashboard/AccountSettings";
 import ReportsManagement from "@/components/dashboard/ReportsManagement";
+let id = "";
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -32,19 +66,20 @@ const Dashboard = () => {
   // Fetch user's full name and avatar from profiles table
   useEffect(() => {
     const fetchUserProfile = async () => {
+      id = user?.id;
       if (user?.id) {
         try {
           const { data, error } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('id', user.id)
+            .from("profiles")
+            .select("full_name, avatar_url")
+            .eq("id", user.id)
             .single();
-            
+
           if (error) {
-            console.error('Error fetching user profile:', error);
+            console.error("Error fetching user profile:", error);
             return;
           }
-          
+
           if (data) {
             if (data.full_name) {
               setUserName(data.full_name);
@@ -54,11 +89,11 @@ const Dashboard = () => {
             }
           }
         } catch (error) {
-          console.error('Error in profile fetch:', error);
+          console.error("Error in profile fetch:", error);
         }
       }
     };
-    
+
     fetchUserProfile();
   }, [user]);
 
@@ -89,120 +124,186 @@ const Dashboard = () => {
     isProfessional: true, // New field to identify professional accounts
     avatarUrl: userAvatar || "https://randomuser.me/api/portraits/men/32.jpg"
   };
-  
+
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  
-  return <div className="min-h-screen flex flex-col">
+
+  return (
+    <div className="min-h-screen flex flex-col">
       <div className="flex-1 pt-1">
         <div className="flex min-h-screen">
           {/* Sidebar - Mobile Overlay */}
-          {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={toggleSidebar}></div>}
-          
+          {isSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+              onClick={toggleSidebar}
+            ></div>
+          )}
+
           {/* Sidebar */}
-          <aside className={`fixed top-0 left-0 z-40 h-screen w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+          <aside
+            className={`fixed top-0 left-0 z-40 h-screen w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 ${
+              isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
             <div className="p-4 h-full flex flex-col max-h-screen h-auto">
               {/* Brand Logo at the top of sidebar */}
               <div className="flex items-center space-x-2 mb-6 mt-4">
                 <Brain className="h-8 w-8 text-primary" />
-                <span className="font-bold text-xl tracking-tight">Mind MHIRC</span>
+                <span className="font-bold text-xl tracking-tight">
+                  Mind MHIRC
+                </span>
               </div>
-              
+
               <div className="flex items-center justify-between lg:hidden">
                 <span className="font-semibold">Menu</span>
-                <button onClick={toggleSidebar} className="p-1 rounded-full hover:bg-muted">
+                <button
+                  onClick={toggleSidebar}
+                  className="p-1 rounded-full hover:bg-muted"
+                >
                   <X size={20} />
                 </button>
               </div>
-              
+
               <div className="mt-5 flex-1 overflow-y-auto max-h-screen">
                 <nav className="space-y-1">
-                  <Link to="/dashboard" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                  >
                     <Home className="mr-3 h-5 w-5" />
                     Beranda
                   </Link>
-                  
-                  <button onClick={handleExitDashboard} className="w-full flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                  <button
+                    onClick={handleExitDashboard}
+                    className="w-full flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                  >
                     <ArrowLeft className="mr-3 h-5 w-5" />
                     Kembali ke Beranda
                   </button>
-                  
+
                   <div>
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
                       Menu Utama
                     </div>
-                    
-                    <Link to="/dashboard/tests" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                    <Link
+                      to="/dashboard/tests"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <ClipboardList className="mr-3 h-5 w-5" />
                       Tes Mental
                     </Link>
-                    
-                    <Link to="/dashboard/results" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                    <Link
+                      to="/dashboard/results"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <PieChart className="mr-3 h-5 w-5" />
                       Hasil Tes
                     </Link>
-                    
-                    <Link to="/dashboard/appointments" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                    <Link
+                      to="/dashboard/appointments"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <Calendar className="mr-3 h-5 w-5" />
                       Janji Konsultasi
                     </Link>
-                    
-                    <Link to="/dashboard/messages" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                    <Link
+                      to="/dashboard/messages"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <MessageSquare className="mr-3 h-5 w-5" />
                       Pesan
-                      <span className="ml-auto bg-primary text-white text-xs py-0.5 px-1.5 rounded-full">3</span>
+                      <span className="ml-auto bg-primary text-white text-xs py-0.5 px-1.5 rounded-full">
+                        3
+                      </span>
                     </Link>
                   </div>
-                  
+
                   {/* Admin & Teacher Menu */}
-                  {(mockUser.role === "Admin" || mockUser.role === "Teacher") && <div>
+                  {(mockUser.role === "Admin" ||
+                    mockUser.role === "Teacher") && (
+                    <div>
                       <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
                         {mockUser.role === "Admin" ? "Admin" : "Guru"}
                       </div>
-                      
-                      {mockUser.role === "Teacher" && <Link to="/dashboard/students" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                      {mockUser.role === "Teacher" && (
+                        <Link
+                          to="/dashboard/students"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
                           <Users className="mr-3 h-5 w-5" />
                           Daftar Murid
-                        </Link>}
-                      
-                      {mockUser.role === "Admin" && <>
-                          <Link to="/dashboard/users" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                        </Link>
+                      )}
+
+                      {mockUser.role === "Admin" && (
+                        <>
+                          <Link
+                            to="/dashboard/users"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <Users className="mr-3 h-5 w-5" />
                             Manajemen Pengguna
                           </Link>
-                          
-                          <Link to="/dashboard/content" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                          <Link
+                            to="/dashboard/content"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <FileText className="mr-3 h-5 w-5" />
                             Manajemen Konten
                           </Link>
-                          
-                          <Link to="/dashboard/broadcast" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                          <Link
+                            to="/dashboard/broadcast"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <Megaphone className="mr-3 h-5 w-5" />
                             Siaran
                           </Link>
-                          
-                          <Link to="/dashboard/reports" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                          <Link
+                            to="/dashboard/reports"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <AlertCircle className="mr-3 h-5 w-5" />
                             Laporan
                           </Link>
-                          
-                          <Link to="/dashboard/analytics" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                          <Link
+                            to="/dashboard/analytics"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <LineChart className="mr-3 h-5 w-5" />
                             Statistik & Analitik
                           </Link>
-                        </>}
-                    </div>}
-                  
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   <div>
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
                       Pengaturan
                     </div>
-                    
-                    <Link to="/dashboard/settings" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                    <Link
+                      to="/dashboard/settings"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <SettingsIcon className="mr-3 h-5 w-5" />
                       Pengaturan Akun
                     </Link>
-                    
-                    <Link to="/dashboard/help" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+
+                    <Link
+                      to="/dashboard/help"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <BookOpen className="mr-3 h-5 w-5" />
                       Bantuan
                     </Link>
@@ -211,32 +312,45 @@ const Dashboard = () => {
               </div>
             </div>
           </aside>
-          
+
           {/* Main Content */}
           <main className="flex-1 min-w-0 overflow-x-hidden">
             {/* Top Bar */}
             <div className="bg-card border-b sticky top-0 z-30">
               <div className="flex items-center justify-between h-16 px-4">
                 <div className="flex items-center">
-                  <button onClick={toggleSidebar} className="p-2 mr-2 rounded-md lg:hidden hover:bg-muted">
+                  <button
+                    onClick={toggleSidebar}
+                    className="p-2 mr-2 rounded-md lg:hidden hover:bg-muted"
+                  >
                     <Menu size={20} />
                   </button>
                   <div className="flex items-center text-lg font-semibold">
                     Dashboard
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-3">
-                  <Link to="/dashboard/messages" className="p-2 rounded-md hover:bg-muted relative">
+                  <Link
+                    to="/dashboard/messages"
+                    className="p-2 rounded-md hover:bg-muted relative"
+                  >
                     <Mail size={20} />
                     <span className="absolute top-1 right-1 w-2 h-2 bg-accent-500 rounded-full"></span>
                   </Link>
-                  
+
                   <div className="relative">
                     <DropdownMenu>
                       <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none">
-                        <img src={mockUser.avatarUrl} alt={mockUser.name} className="w-8 h-8 rounded-full object-cover" />
-                        <ChevronDown size={16} className="text-muted-foreground" />
+                        <img
+                          src={mockUser.avatarUrl}
+                          alt={mockUser.name}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                        <ChevronDown
+                          size={16}
+                          className="text-muted-foreground"
+                        />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <div className="px-2 py-1.5 text-sm font-medium">
@@ -253,7 +367,10 @@ const Dashboard = () => {
                           <ArrowLeft className="mr-2 h-4 w-4" />
                           <span>Keluar Dashboard</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={handleLogout}
+                        >
                           <LogOut className="mr-2 h-4 w-4" />
                           <span>Log Out</span>
                         </DropdownMenuItem>
@@ -263,56 +380,187 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Page Content */}
             <div className="p-4 sm:p-6">
               {/* Dashboard Routes */}
               <Routes>
                 <Route index element={<DashboardOverview user={mockUser} />} />
-                <Route path="tests/*" element={<DashboardTests user={mockUser} />} />
-                <Route path="results/*" element={<DashboardResults user={mockUser} />} />
-                <Route path="appointments/*" element={<DashboardAppointments user={mockUser} />} />
-                <Route path="messages/*" element={<DashboardMessages user={mockUser} />} />
-                
+                <Route
+                  path="tests/*"
+                  element={<DashboardTests user={mockUser} />}
+                />
+                <Route
+                  path="results/*"
+                  element={<DashboardResults user={mockUser} />}
+                />
+                <Route
+                  path="appointments/*"
+                  element={<DashboardAppointments user={mockUser} />}
+                />
+                <Route
+                  path="messages/*"
+                  element={<DashboardMessages user={mockUser} />}
+                />
+
                 {/* Teacher Routes */}
-                {mockUser.role === "Teacher" && <Route path="students/*" element={<DashboardStudents user={mockUser} />} />}
-                
+                {mockUser.role === "Teacher" && (
+                  <Route
+                    path="students/*"
+                    element={<DashboardStudents user={mockUser} />}
+                  />
+                )}
+
                 {/* Admin Routes */}
-                {mockUser.role === "Admin" && <>
+                {mockUser.role === "Admin" && (
+                  <>
                     <Route path="users/*" element={<UserManagement />} />
-                    <Route path="content" element={<DashboardContent user={mockUser} />} />
-                    <Route path="content/new" element={<DashboardContentNew user={mockUser} />} />
-                    <Route path="content/edit/:slug" element={<DashboardContentEdit user={mockUser} />} />
-                    <Route path="broadcast/*" element={<DashboardBroadcast user={mockUser} />} />
-                    <Route path="reports/*" element={<DashboardReports user={mockUser} />} />
-                    <Route path="analytics/*" element={<DashboardAnalytics user={mockUser} />} />
-                  </>}
-                
-                <Route path="settings/*" element={<DashboardSettings user={mockUser} />} />
-                <Route path="help/*" element={<DashboardHelp user={mockUser} />} />
+                    <Route
+                      path="content"
+                      element={<DashboardContent user={mockUser} />}
+                    />
+                    <Route
+                      path="content/new"
+                      element={<DashboardContentNew user={mockUser} />}
+                    />
+                    <Route
+                      path="content/edit/:slug"
+                      element={<DashboardContentEdit user={mockUser} />}
+                    />
+                    <Route
+                      path="broadcast/*"
+                      element={<DashboardBroadcast user={mockUser} />}
+                    />
+                    <Route
+                      path="reports/*"
+                      element={<DashboardReports user={mockUser} />}
+                    />
+                    <Route
+                      path="analytics/*"
+                      element={<DashboardAnalytics user={mockUser} />}
+                    />
+                  </>
+                )}
+
+                <Route
+                  path="settings/*"
+                  element={<DashboardSettings user={mockUser} />}
+                />
+                <Route
+                  path="help/*"
+                  element={<DashboardHelp user={mockUser} />}
+                />
                 <Route path="*" element={<DashboardNotFound />} />
               </Routes>
             </div>
           </main>
         </div>
       </div>
-      
+
       <Footer />
-    </div>;
+    </div>
+  );
 };
 
-const DashboardOverview = ({
-  user
-}: {
-  user: any;
-}) => {
-  return <div className="mt-1">
+const DashboardOverview = ({ user }: { user: any }) => {
+  const [stats, setStats] = useState({
+    totalTests: 0,
+    testsLast7Days: 0,
+    totalBlogs: 0,
+    blogsLast7Days: 0
+  });
+
+  useEffect(() => {
+    const fetchTestStats = async () => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+      try {
+        // Menghitung total jumlah tes
+        const { count: totalTests, error: totalError } = await supabase
+          .from("test_results")
+          .select("id", { count: "exact", head: true });
+
+        // Menghitung jumlah tes dalam 7 hari terakhir
+        const { count: testsLast7Days, error: last7DaysError } = await supabase
+          .from("test_results")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", sevenDaysAgoISO);
+
+        // Menghitung total jumlah blog posts
+        const { count: totalBlogs, error: blogError } = await supabase
+          .from("blog_posts")
+          .select("id", { count: "exact", head: true });
+
+        // Menghitung jumlah blog posts dalam 7 hari terakhir
+        const { count: blogsLast7Days, error: blogsLast7DaysError } =
+          await supabase
+            .from("blog_posts")
+            .select("id", { count: "exact", head: true })
+            .gte("published_date", sevenDaysAgoISO);
+
+        // Log untuk debugging
+        console.log(
+          "totalTests:",
+          totalTests,
+          "testsLast7Days:",
+          testsLast7Days
+        );
+        console.log(
+          "totalBlogs:",
+          totalBlogs,
+          "blogsLast7Days:",
+          blogsLast7Days
+        );
+
+        // Jika ada error, tampilkan di console
+        if (totalError || last7DaysError || blogError || blogsLast7DaysError) {
+          console.error("Error fetching statistics:", {
+            totalError,
+            last7DaysError,
+            blogError,
+            blogsLast7DaysError
+          });
+          return {
+            totalTests: 0,
+            testsLast7Days: 0,
+            totalBlogs: 0,
+            blogsLast7Days: 0
+          };
+        }
+
+        return { totalTests, testsLast7Days, totalBlogs, blogsLast7Days };
+      } catch (error) {
+        console.error("Unexpected error fetching statistics:", error);
+        return {
+          totalTests: 0,
+          testsLast7Days: 0,
+          totalBlogs: 0,
+          blogsLast7Days: 0
+        };
+      }
+    };
+
+    const fetchData = async () => {
+      const data = await fetchTestStats();
+      setStats(data);
+      console.log("Fetched Stats:", data);
+    };
+
+    fetchData();
+  }, []);
+  return (
+    <div className="mt-1">
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl font-semibold mb-1">Selamat Datang, {user.name}!</h1>
-        <p className="text-muted-foreground">Berikut adalah ringkasan aktivitas Anda.</p>
+        <h1 className="text-2xl font-semibold mb-1">
+          Selamat Datang, {user.name}!
+        </h1>
+        <p className="text-muted-foreground">
+          Berikut adalah ringkasan aktivitas Anda.
+        </p>
       </div>
-      
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
@@ -321,10 +569,12 @@ const DashboardOverview = ({
               <ClipboardList size={20} />
             </div>
           </div>
-          <p className="text-2xl font-bold">12</p>
-          <p className="text-xs text-muted-foreground">3 tes dalam 7 hari terakhir</p>
+          <p className="text-2xl font-bold">{stats.totalTests}</p>
+          <p className="text-xs text-muted-foreground">
+            {stats.testsLast7Days} tes dalam 7 hari terakhir
+          </p>
         </div>
-        
+
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium">Janji Terjadwal</h3>
@@ -333,9 +583,11 @@ const DashboardOverview = ({
             </div>
           </div>
           <p className="text-2xl font-bold">2</p>
-          <p className="text-xs text-muted-foreground">Janji berikutnya: Kamis, 10:00</p>
+          <p className="text-xs text-muted-foreground">
+            Janji berikutnya: Kamis, 10:00
+          </p>
         </div>
-        
+
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium">Pesan Baru</h3>
@@ -344,9 +596,11 @@ const DashboardOverview = ({
             </div>
           </div>
           <p className="text-2xl font-bold">3</p>
-          <p className="text-xs text-muted-foreground">1 belum dibaca dari Dr. Anita</p>
+          <p className="text-xs text-muted-foreground">
+            1 belum dibaca dari Dr. Anita
+          </p>
         </div>
-        
+
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium">Artikel Terbaru</h3>
@@ -354,40 +608,51 @@ const DashboardOverview = ({
               <File size={20} />
             </div>
           </div>
-          <p className="text-2xl font-bold">8</p>
-          <p className="text-xs text-muted-foreground">4 artikel edukasi baru minggu ini</p>
+          <p className="text-2xl font-bold">{stats.totalBlogs}</p>
+          <p className="text-xs text-muted-foreground">
+            {stats.blogsLast7Days} artikel edukasi baru minggu ini
+          </p>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <h3 className="font-semibold mb-4">Aktivitas Terbaru</h3>
           <div className="space-y-4">
-            {[{
-            title: "Menyelesaikan Tes SRQ",
-            date: "Hari ini, 14:30",
-            icon: ClipboardList
-          }, {
-            title: "Menjadwalkan Konsultasi",
-            date: "Kemarin, 09:15",
-            icon: Calendar
-          }, {
-            title: "Membaca Artikel: Mengelola Stres",
-            date: "3 hari lalu",
-            icon: BookOpen
-          }, {
-            title: "Menyelesaikan Tes Big Five",
-            date: "1 minggu lalu",
-            icon: BoxSelect
-          }].map((activity, index) => <div key={index} className="flex items-start">
+            {[
+              {
+                title: "Menyelesaikan Tes SRQ",
+                date: "Hari ini, 14:30",
+                icon: ClipboardList
+              },
+              {
+                title: "Menjadwalkan Konsultasi",
+                date: "Kemarin, 09:15",
+                icon: Calendar
+              },
+              {
+                title: "Membaca Artikel: Mengelola Stres",
+                date: "3 hari lalu",
+                icon: BookOpen
+              },
+              {
+                title: "Menyelesaikan Tes Big Five",
+                date: "1 minggu lalu",
+                icon: BoxSelect
+              }
+            ].map((activity, index) => (
+              <div key={index} className="flex items-start">
                 <div className="mr-3 p-2 bg-muted rounded-lg">
                   <activity.icon size={18} />
                 </div>
                 <div>
                   <p className="font-medium">{activity.title}</p>
-                  <p className="text-xs text-muted-foreground">{activity.date}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {activity.date}
+                  </p>
                 </div>
-              </div>)}
+              </div>
+            ))}
           </div>
           <div className="mt-4 pt-4 border-t">
             <Button variant="outline" size="sm" className="w-full">
@@ -395,23 +660,31 @@ const DashboardOverview = ({
             </Button>
           </div>
         </div>
-        
+
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <h3 className="font-semibold mb-4">Tes yang Direkomendasikan</h3>
           <div className="space-y-4">
-            {[{
-            title: "Tes Kecemasan GAD-7",
-            desc: "Evaluasi tingkat kecemasan Anda saat ini",
-            duration: "5-7 menit"
-          }, {
-            title: "Tes Kesehatan Mental Harian",
-            desc: "Lacak kondisi kesehatan mental Anda sehari-hari",
-            duration: "3-5 menit"
-          }, {
-            title: "Tes Manajemen Stres",
-            desc: "Evaluasi kemampuan Anda mengelola stres",
-            duration: "8-10 menit"
-          }].map((test, index) => <div key={index} className="p-4 border rounded-lg hover:border-primary transition-colors">
+            {[
+              {
+                title: "Tes Kecemasan GAD-7",
+                desc: "Evaluasi tingkat kecemasan Anda saat ini",
+                duration: "5-7 menit"
+              },
+              {
+                title: "Tes Kesehatan Mental Harian",
+                desc: "Lacak kondisi kesehatan mental Anda sehari-hari",
+                duration: "3-5 menit"
+              },
+              {
+                title: "Tes Manajemen Stres",
+                desc: "Evaluasi kemampuan Anda mengelola stres",
+                duration: "8-10 menit"
+              }
+            ].map((test, index) => (
+              <div
+                key={index}
+                className="p-4 border rounded-lg hover:border-primary transition-colors"
+              >
                 <div className="flex justify-between items-start">
                   <div>
                     <h4 className="font-medium">{test.title}</h4>
@@ -423,10 +696,13 @@ const DashboardOverview = ({
                 </div>
                 <div className="mt-3">
                   <Link to={`/dashboard/tests`}>
-                    <Button variant="outline" size="sm">Mulai Tes</Button>
+                    <Button variant="outline" size="sm">
+                      Mulai Tes
+                    </Button>
                   </Link>
                 </div>
-              </div>)}
+              </div>
+            ))}
           </div>
           <div className="mt-4 pt-4 border-t">
             <Link to="/tests">
@@ -437,31 +713,92 @@ const DashboardOverview = ({
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 
-const DashboardTests = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardTests = ({ user }: { user: any }) => (
+  <div>
     <h1 className="text-2xl font-semibold mb-6">Tes Mental</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>Halaman ini akan berisi daftar tes mental yang tersedia, baik yang gratis maupun berbayar, beserta informasi tentang masing-masing tes.</p>
+      <p>
+        Halaman ini akan berisi daftar tes mental yang tersedia, baik yang
+        gratis maupun berbayar, beserta informasi tentang masing-masing tes.
+      </p>
     </div>
-  </div>;
+  </div>
+);
 
-const DashboardResults = ({
-  user
-}: {
-  user: any;
-}) => {
-  const isProfessional = user.isProfessional;
-  return <div>
+const DashboardResults = ({ user }: { user: any }) => {
+  const isProfessional = user?.isProfessional;
+  const [testResultsByUser, setTestResultsByUser] = useState<any[]>([]);
+  const [allTestResults, setAllTestResults] = useState<any[]>([]);
+  const [loadingUserTests, setLoadingUserTests] = useState(true);
+  const [loadingAllTests, setLoadingAllTests] = useState(true);
+  console.log("User id:", id);
+
+  // Fungsi untuk mengambil hasil tes berdasarkan user_id
+  const fetchAllTestResults = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("test_results")
+        .select("*")
+        .order("created_at", {
+          ascending: false
+        });
+      if (error) {
+        throw error;
+      }
+      if (data) {
+        setAllTestResults(data);
+      }
+    } catch (err) {
+      console.error("Error fetching blog posts:", err);
+    }
+  };
+
+  const fetchTestResultsByUser = async (id: string) => {
+    if (!id) return [];
+    const { data, error } = await supabase
+      .from("test_results")
+      .select("*")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching test results:", error);
+      return [];
+    }
+    return data;
+  };
+  // Fungsi untuk mengambil semua hasil tes tanpa filter user_id
+
+  useEffect(() => {
+    if (!id) return;
+    setLoadingUserTests(true);
+    fetchTestResultsByUser(id).then((results) => {
+      console.log("User Test Results:", results);
+      setTestResultsByUser(results);
+      setLoadingUserTests(false);
+    });
+  }, [id]);
+
+  useEffect(() => {
+    setLoadingAllTests(true);
+    fetchAllTestResults().then((results) => {
+      console.log("All Test Results:", results); // Pastikan mencetak 'results' langsung, bukan state lama!
+      setLoadingAllTests(false);
+    });
+  }, []);
+
+  // Jika masih loading
+
+  return (
+    <div>
       <h1 className="text-2xl font-semibold mb-6">Hasil Tes</h1>
-      
-      
-      {isProfessional ? <Tabs defaultValue="self" className="mb-6">
+
+      {isProfessional ? (
+        <Tabs defaultValue="self" className="mb-6">
           <TabsList className="w-full max-w-md">
             <TabsTrigger value="self" className="flex-1">
               Hasil Tes Diri Sendiri
@@ -470,253 +807,311 @@ const DashboardResults = ({
               Hasil Tes Orang Lain
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="self" className="mt-6">
             <div className="bg-card shadow-soft rounded-xl p-6">
               <h2 className="text-lg font-medium mb-4">Hasil Tes Anda</h2>
               <div className="space-y-4">
-                {[{
-              title: "Tes SRQ-20",
-              date: "15 Mei 2023",
-              result: "Rendah",
-              resultColor: "text-green-500"
-            }, {
-              title: "Big Five Personality Test",
-              date: "3 April 2023",
-              result: "Detail",
-              resultColor: "text-blue-500"
-            }, {
-              title: "Tes Kecemasan GAD-7",
-              date: "28 Maret 2023",
-              result: "Sedang",
-              resultColor: "text-yellow-500"
-            }].map((test, index) => <div key={index} className="border rounded-lg p-4 hover:border-primary transition-colors">
-                    <div className="flex justify-between">
-                      <div>
-                        <h3 className="font-medium">{test.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Tanggal: {test.date}
-                        </p>
+                {testResultsByUser.length > 0 ? (
+                  testResultsByUser.map((test, index) => {
+                    let resultText = "Tidak Ada Ringkasan";
+
+                    try {
+                      const parsedSummary = JSON.parse(test.result_summary);
+
+                      if (test.test_id === "sdq" && parsedSummary) {
+                        resultText = `${
+                          parsedSummary.difficultyLevel || "-"
+                        } / ${parsedSummary.strengthLevel || "-"}`;
+                      }
+                    } catch {
+                      // Jika bukan JSON, gunakan metode split biasa
+                      resultText = test.result_summary
+                        ? test.result_summary.split(" ").slice(0, 3).join(" ") +
+                          "..."
+                        : "Tidak Ada Ringkasan";
+                    }
+
+                    return (
+                      <div
+                        key={index}
+                        className="border rounded-lg p-4 hover:border-primary transition-colors"
+                      >
+                        <div className="flex justify-between">
+                          <div>
+                            <h3 className="font-medium">{test.test_title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Tanggal:{" "}
+                              {new Date(test.created_at).toLocaleDateString(
+                                "id-ID"
+                              )}
+                            </p>
+                          </div>
+                          <div className="font-semibold text-blue-500">
+                            {resultText}
+                          </div>
+                        </div>
+                        <div className="flex justify-end mt-3 space-x-2">
+                          <Button variant="outline" size="sm">
+                            Lihat Detail
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            Unduh PDF
+                          </Button>
+                        </div>
                       </div>
-                      <div className={`font-semibold ${test.resultColor}`}>
-                        {test.result}
-                      </div>
-                    </div>
-                    <div className="flex justify-end mt-3 space-x-2">
-                      <Button variant="outline" size="sm">Lihat Detail</Button>
-                      <Button variant="outline" size="sm">Unduh PDF</Button>
-                    </div>
-                  </div>)}
+                    );
+                  })
+                ) : (
+                  <p className="text-center text-gray-500">
+                    Belum ada hasil tes.
+                  </p>
+                )}
               </div>
             </div>
           </TabsContent>
-          
           <TabsContent value="others" className="mt-6">
             <div className="bg-card shadow-soft rounded-xl p-6">
               <h2 className="text-lg font-medium mb-4">Hasil Tes Orang Lain</h2>
-              
               <div className="space-y-4">
-                {[{
-              name: "Ani Wijaya",
-              title: "Tes SRQ-20",
-              date: "18 Mei 2023",
-              result: "Sedang",
-              resultColor: "text-yellow-500"
-            }, {
-              name: "Budi Hartono",
-              title: "Tes Kecemasan GAD-7",
-              date: "10 Mei 2023",
-              result: "Rendah",
-              resultColor: "text-green-500"
-            }, {
-              name: "Dewi Sari",
-              title: "Tes Depresi PHQ-9",
-              date: "5 Mei 2023",
-              result: "Sedang",
-              resultColor: "text-yellow-500"
-            }].map((test, index) => <div key={index} className="border rounded-lg p-4 hover:border-primary transition-colors">
-                    <div className="flex justify-between">
-                      <div>
-                        <h3 className="font-medium">{test.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {test.title} • {test.date}
-                        </p>
+                {allTestResults.length > 0 ? (
+                  allTestResults.map((test, index) => {
+                    let resultText = "Tidak Ada Ringkasan";
+
+                    try {
+                      const parsedSummary = JSON.parse(test.result_summary);
+
+                      if (test.test_id === "sdq" && parsedSummary) {
+                        resultText = `${
+                          parsedSummary.difficultyLevel || "-"
+                        } / ${parsedSummary.strengthLevel || "-"}`;
+                      }
+                    } catch {
+                      // Jika bukan JSON, gunakan metode split biasa
+                      resultText = test.result_summary
+                        ? test.result_summary.split(" ").slice(0, 3).join(" ") +
+                          "..."
+                        : "Tidak Ada Ringkasan";
+                    }
+
+                    return (
+                      <div
+                        key={index}
+                        className="border rounded-lg p-4 hover:border-primary transition-colors"
+                      >
+                        <div className="flex justify-between">
+                          <div>
+                            <h3 className="font-medium">{test.test_title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Tanggal:{" "}
+                              {new Date(test.created_at).toLocaleDateString(
+                                "id-ID"
+                              )}
+                            </p>
+                          </div>
+                          <div className="font-semibold text-blue-500">
+                            {resultText}
+                          </div>
+                        </div>
+                        <div className="flex justify-end mt-3 space-x-2">
+                          <Button variant="outline" size="sm">
+                            Lihat Detail
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            Unduh PDF
+                          </Button>
+                        </div>
                       </div>
-                      <div className={`font-semibold ${test.resultColor}`}>
-                        {test.result}
-                      </div>
-                    </div>
-                    <div className="flex justify-end mt-3 space-x-2">
-                      <Button variant="outline" size="sm">Lihat Detail</Button>
-                      <Button variant="outline" size="sm">Unduh PDF</Button>
-                    </div>
-                  </div>)}
+                    );
+                  })
+                ) : (
+                  <p className="text-center text-gray-500">
+                    Belum ada hasil tes.
+                  </p>
+                )}
               </div>
             </div>
           </TabsContent>
-        </Tabs> : <div className="bg-card shadow-soft rounded-xl p-6">
+        </Tabs>
+      ) : (
+        <div className="bg-card shadow-soft rounded-xl p-6">
           <h2 className="text-lg font-medium mb-4">Hasil Tes Anda</h2>
           <div className="space-y-4">
-            {[{
-          title: "Tes SRQ-20",
-          date: "15 Mei 2023",
-          result: "Rendah",
-          resultColor: "text-green-500"
-        }, {
-          title: "Big Five Personality Test",
-          date: "3 April 2023",
-          result: "Detail",
-          resultColor: "text-blue-500"
-        }, {
-          title: "Tes Kecemasan GAD-7",
-          date: "28 Maret 2023",
-          result: "Sedang",
-          resultColor: "text-yellow-500"
-        }].map((test, index) => <div key={index} className="border rounded-lg p-4 hover:border-primary transition-colors">
-                <div className="flex justify-between">
-                  <div>
-                    <h3 className="font-medium">{test.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Tanggal: {test.date}
-                    </p>
+            {testResultsByUser.length > 0 ? (
+              testResultsByUser.map((test, index) => {
+                let resultText = "Tidak Ada Ringkasan";
+
+                try {
+                  const parsedSummary = JSON.parse(test.result_summary);
+
+                  if (test.test_id === "sdq" && parsedSummary) {
+                    resultText = `${parsedSummary.difficultyLevel || "-"} / ${
+                      parsedSummary.strengthLevel || "-"
+                    }`;
+                  }
+                } catch {
+                  // Jika bukan JSON, gunakan metode split biasa
+                  resultText = test.result_summary
+                    ? test.result_summary.split(" ").slice(0, 3).join(" ") +
+                      "..."
+                    : "Tidak Ada Ringkasan";
+                }
+
+                return (
+                  <div
+                    key={index}
+                    className="border rounded-lg p-4 hover:border-primary transition-colors"
+                  >
+                    <div className="flex justify-between">
+                      <div>
+                        <h3 className="font-medium">{test.test_title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Tanggal:{" "}
+                          {new Date(test.created_at).toLocaleDateString(
+                            "id-ID"
+                          )}
+                        </p>
+                      </div>
+                      <div className="font-semibold text-blue-500">
+                        {resultText}
+                      </div>
+                    </div>
+                    <div className="flex justify-end mt-3 space-x-2">
+                      <Button variant="outline" size="sm">
+                        Lihat Detail
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Unduh PDF
+                      </Button>
+                    </div>
                   </div>
-                  <div className={`font-semibold ${test.resultColor}`}>
-                    {test.result}
-                  </div>
-                </div>
-                <div className="flex justify-end mt-3 space-x-2">
-                  <Button variant="outline" size="sm">Lihat Detail</Button>
-                  <Button variant="outline" size="sm">Unduh PDF</Button>
-                </div>
-              </div>)}
+                );
+              })
+            ) : (
+              <p className="text-center text-gray-500">Belum ada hasil tes.</p>
+            )}
           </div>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 };
 
-const DashboardAppointments = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardAppointments = ({ user }: { user: any }) => (
+  <div>
     <h1 className="text-2xl font-semibold mb-6">Janji Konsultasi</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>Halaman ini akan memungkinkan Anda menjadwalkan, melihat, atau membatalkan janji konsultasi dengan psikolog atau konselor.</p>
+      <p>
+        Halaman ini akan memungkinkan Anda menjadwalkan, melihat, atau
+        membatalkan janji konsultasi dengan psikolog atau konselor.
+      </p>
     </div>
-  </div>;
+  </div>
+);
 
-const DashboardMessages = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardMessages = ({ user }: { user: any }) => (
+  <div>
     <h1 className="text-2xl font-semibold mb-6">Pesan</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>Halaman ini akan menampilkan sistem pesan untuk berkomunikasi dengan profesional kesehatan mental atau staf Mind MHIRC.</p>
+      <p>
+        Halaman ini akan menampilkan sistem pesan untuk berkomunikasi dengan
+        profesional kesehatan mental atau staf Mind MHIRC.
+      </p>
     </div>
-  </div>;
+  </div>
+);
 
-const DashboardStudents = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardStudents = ({ user }: { user: any }) => (
+  <div>
     <h1 className="text-2xl font-semibold mb-6">Daftar Murid</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>Halaman ini akan menampilkan daftar murid Anda, dengan opsi untuk melihat hasil tes, mengirim tes baru, atau mengelola data murid.</p>
+      <p>
+        Halaman ini akan menampilkan daftar murid Anda, dengan opsi untuk
+        melihat hasil tes, mengirim tes baru, atau mengelola data murid.
+      </p>
     </div>
-  </div>;
+  </div>
+);
 
-const DashboardUsers = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardUsers = ({ user }: { user: any }) => (
+  <div>
     <h1 className="text-2xl font-semibold mb-6">Manajemen Pengguna</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>Halaman ini akan memungkinkan Anda mengelola semua pengguna sistem, termasuk menambah, mengedit, atau menghapus akun pengguna.</p>
+      <p>
+        Halaman ini akan memungkinkan Anda mengelola semua pengguna sistem,
+        termasuk menambah, mengedit, atau menghapus akun pengguna.
+      </p>
     </div>
-  </div>;
+  </div>
+);
 
-const DashboardContent = ({
-  user
-}: {
-  user: any;
-}) => {
-  return <div>
-    <ContentManagement />
-  </div>;
+const DashboardContent = ({ user }: { user: any }) => {
+  return (
+    <div>
+      <ContentManagement />
+    </div>
+  );
 };
 
-const DashboardContentNew = ({
-  user
-}: {
-  user: any;
-}) => {
-  return <div>
-    <BlogEditor />
-  </div>;
+const DashboardContentNew = ({ user }: { user: any }) => {
+  return (
+    <div>
+      <BlogEditor />
+    </div>
+  );
 };
 
-const DashboardContentEdit = ({
-  user
-}: {
-  user: any;
-}) => {
-  return <div>
-    <BlogEditor />
-  </div>;
+const DashboardContentEdit = ({ user }: { user: any }) => {
+  return (
+    <div>
+      <BlogEditor />
+    </div>
+  );
 };
 
-const DashboardAnalytics = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardAnalytics = ({ user }: { user: any }) => (
+  <div>
     <Analytics />
-  </div>;
+  </div>
+);
 
-const DashboardBroadcast = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardBroadcast = ({ user }: { user: any }) => (
+  <div>
     <BroadcastManagement />
-  </div>;
+  </div>
+);
 
-const DashboardReports = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardReports = ({ user }: { user: any }) => (
+  <div>
     <ReportsManagement />
-  </div>;
+  </div>
+);
 
-const DashboardSettings = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardSettings = ({ user }: { user: any }) => (
+  <div>
     <AccountSettings />
-  </div>;
+  </div>
+);
 
-const DashboardHelp = ({
-  user
-}: {
-  user: any;
-}) => <div>
+const DashboardHelp = ({ user }: { user: any }) => (
+  <div>
     <HelpSection />
-  </div>;
+  </div>
+);
 
-const DashboardNotFound = () => <div className="text-center py-12">
+const DashboardNotFound = () => (
+  <div className="text-center py-12">
     <h1 className="text-2xl font-semibold mb-4">Halaman Tidak Ditemukan</h1>
-    <p className="text-muted-foreground mb-8">Maaf, halaman yang Anda cari tidak tersedia.</p>
+    <p className="text-muted-foreground mb-8">
+      Maaf, halaman yang Anda cari tidak tersedia.
+    </p>
     <Link to="/dashboard">
       <Button>
         <ArrowLeft className="mr-2 h-4 w-4" />
         Kembali ke Dashboard
       </Button>
     </Link>
-  </div>;
+  </div>
+);
 
 export default Dashboard;
