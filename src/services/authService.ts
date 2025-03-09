@@ -23,6 +23,9 @@ export interface AuthUser {
   full_name?: string;
   avatar_url?: string | null;
   account_type?: 'general' | 'professional';
+  birth_date?: string | null;
+  city?: string | null;
+  profession?: string | null;
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
@@ -42,8 +45,11 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     id: session.user.id,
     email: session.user.email,
     full_name: data?.full_name,
-    avatar_url: null, // Set to null since the column doesn't exist in profiles table
-    account_type: data?.account_type as 'general' | 'professional'
+    avatar_url: data?.avatar_url,
+    account_type: data?.account_type as 'general' | 'professional',
+    birth_date: data?.birth_date,
+    city: data?.city,
+    profession: data?.profession
   };
 };
 
@@ -115,6 +121,80 @@ export const signOut = async (): Promise<{ success: boolean; error?: string }> =
     return { 
       success: false, 
       error: error.message || "Terjadi kesalahan saat logout. Silakan coba lagi." 
+    };
+  }
+};
+
+export const updateProfile = async (profileData: Partial<{
+  full_name: string;
+  city: string;
+  profession: string;
+  avatar_url: string;
+}>): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      return { 
+        success: false, 
+        error: "Anda harus login untuk memperbarui profil" 
+      };
+    }
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update(profileData)
+      .eq('id', session.user.id);
+    
+    if (error) throw error;
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Profile update error:", error);
+    return { 
+      success: false, 
+      error: error.message || "Gagal memperbarui profil. Silakan coba lagi." 
+    };
+  }
+};
+
+export const updatePassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session || !session.user.email) {
+      return { 
+        success: false, 
+        error: "Sesi login tidak valid" 
+      };
+    }
+    
+    // First verify current password
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: session.user.email,
+      password: currentPassword,
+    });
+    
+    if (signInError) {
+      return { 
+        success: false, 
+        error: "Password saat ini tidak valid" 
+      };
+    }
+    
+    // Update to new password
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    
+    if (error) throw error;
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Password update error:", error);
+    return { 
+      success: false, 
+      error: error.message || "Gagal memperbarui password. Silakan coba lagi." 
     };
   }
 };

@@ -9,9 +9,214 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bfi_results: {
+        Row: {
+          anonymous_age: string | null
+          anonymous_email: string | null
+          anonymous_name: string | null
+          answers: Json
+          created_at: string | null
+          for_other: boolean | null
+          id: string
+          other_person_name: string | null
+          other_person_relationship: string | null
+          result_summary: string | null
+          test_id: string
+          test_title: string
+          user_id: string | null
+        }
+        Insert: {
+          anonymous_age?: string | null
+          anonymous_email?: string | null
+          anonymous_name?: string | null
+          answers: Json
+          created_at?: string | null
+          for_other?: boolean | null
+          id?: string
+          other_person_name?: string | null
+          other_person_relationship?: string | null
+          result_summary?: string | null
+          test_id: string
+          test_title: string
+          user_id?: string | null
+        }
+        Update: {
+          anonymous_age?: string | null
+          anonymous_email?: string | null
+          anonymous_name?: string | null
+          answers?: Json
+          created_at?: string | null
+          for_other?: boolean | null
+          id?: string
+          other_person_name?: string | null
+          other_person_relationship?: string | null
+          result_summary?: string | null
+          test_id?: string
+          test_title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: {
+          author_avatar: string
+          author_name: string
+          category: string
+          comments: Json | null
+          content: string
+          cover_image: string
+          excerpt: string
+          featured: boolean | null
+          id: string
+          likes: number | null
+          published_date: string
+          read_time: string | null
+          references_cit: Json | null
+          slug: string
+          tags: string[] | null
+          title: string
+          updated_date: string
+        }
+        Insert: {
+          author_avatar: string
+          author_name: string
+          category: string
+          comments?: Json | null
+          content: string
+          cover_image: string
+          excerpt: string
+          featured?: boolean | null
+          id?: string
+          likes?: number | null
+          published_date?: string
+          read_time?: string | null
+          references_cit?: Json | null
+          slug: string
+          tags?: string[] | null
+          title: string
+          updated_date?: string
+        }
+        Update: {
+          author_avatar?: string
+          author_name?: string
+          category?: string
+          comments?: Json | null
+          content?: string
+          cover_image?: string
+          excerpt?: string
+          featured?: boolean | null
+          id?: string
+          likes?: number | null
+          published_date?: string
+          read_time?: string | null
+          references_cit?: Json | null
+          slug?: string
+          tags?: string[] | null
+          title?: string
+          updated_date?: string
+        }
+        Relationships: []
+      }
+      broadcasts: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          priority: string
+          recipients: string[] | null
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          priority?: string
+          recipients?: string[] | null
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          priority?: string
+          recipients?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          status: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
+      help_reports: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_type: string | null
+          avatar_url: string | null
           birth_date: string | null
           city: string | null
           created_at: string | null
@@ -22,6 +227,7 @@ export type Database = {
         }
         Insert: {
           account_type?: string | null
+          avatar_url?: string | null
           birth_date?: string | null
           city?: string | null
           created_at?: string | null
@@ -32,6 +238,7 @@ export type Database = {
         }
         Update: {
           account_type?: string | null
+          avatar_url?: string | null
           birth_date?: string | null
           city?: string | null
           created_at?: string | null
@@ -90,15 +297,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super" | "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never

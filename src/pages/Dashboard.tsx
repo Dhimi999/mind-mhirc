@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, BookOpen, BoxSelect, Brain, Calendar, ChevronDown, ClipboardList, File, FileText, Home, LineChart, LogOut, Mail, Menu, MessageSquare, PieChart, Users, X } from "lucide-react";
+import { ArrowLeft, BookOpen, BoxSelect, Brain, Calendar, ChevronDown, ClipboardList, File, FileText, Home, LineChart, LogOut, Mail, Menu, MessageSquare, PieChart, Users, X, Megaphone, AlertCircle } from "lucide-react";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,33 +15,43 @@ import ContentManagement from "@/components/dashboard/ContentManagement";
 import BlogEditor from "@/components/dashboard/BlogEditor";
 import UserManagement from "@/components/dashboard/UserManagement";
 import HelpSection from "@/components/dashboard/HelpSection";
+import Analytics from "@/components/dashboard/Analytics";
+import BroadcastManagement from "@/components/dashboard/BroadcastManagement";
+import AccountSettings from "@/components/dashboard/AccountSettings";
+import ReportsManagement from "@/components/dashboard/ReportsManagement";
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [userName, setUserName] = useState("Pengguna");
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { user, logout } = useAuth();
 
-  // Fetch user's full name from profiles table
+  // Fetch user's full name and avatar from profiles table
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user?.id) {
         try {
           const { data, error } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select('full_name, avatar_url')
             .eq('id', user.id)
             .single();
-          
+            
           if (error) {
             console.error('Error fetching user profile:', error);
             return;
           }
           
-          if (data && data.full_name) {
-            setUserName(data.full_name);
+          if (data) {
+            if (data.full_name) {
+              setUserName(data.full_name);
+            }
+            if (data.avatar_url) {
+              setUserAvatar(data.avatar_url);
+            }
           }
         } catch (error) {
           console.error('Error in profile fetch:', error);
@@ -75,13 +85,13 @@ const Dashboard = () => {
   const mockUser = {
     name: userName,
     email: user?.email || "pengguna@example.com",
-    role: "Admin",
-    // Could be "Admin", "Teacher", or "User"
-    isProfessional: true,
-    // New field to identify professional accounts
-    avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg"
+    role: "Admin", // Could be "Admin", "Teacher", or "User"
+    isProfessional: true, // New field to identify professional accounts
+    avatarUrl: userAvatar || "https://randomuser.me/api/portraits/men/32.jpg"
   };
+  
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  
   return <div className="min-h-screen flex flex-col">
       <div className="flex-1 pt-1">
         <div className="flex min-h-screen">
@@ -90,7 +100,7 @@ const Dashboard = () => {
           
           {/* Sidebar */}
           <aside className={`fixed top-0 left-0 z-40 h-screen w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-            <div className="p-4 h-full flex flex-col max-h-screen">
+            <div className="p-4 h-full flex flex-col max-h-screen h-auto">
               {/* Brand Logo at the top of sidebar */}
               <div className="flex items-center space-x-2 mb-6 mt-4">
                 <Brain className="h-8 w-8 text-primary" />
@@ -110,6 +120,11 @@ const Dashboard = () => {
                     <Home className="mr-3 h-5 w-5" />
                     Beranda
                   </Link>
+                  
+                  <button onClick={handleExitDashboard} className="w-full flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                    <ArrowLeft className="mr-3 h-5 w-5" />
+                    Kembali ke Beranda
+                  </button>
                   
                   <div>
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
@@ -158,6 +173,16 @@ const Dashboard = () => {
                           <Link to="/dashboard/content" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
                             <FileText className="mr-3 h-5 w-5" />
                             Manajemen Konten
+                          </Link>
+                          
+                          <Link to="/dashboard/broadcast" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                            <Megaphone className="mr-3 h-5 w-5" />
+                            Siaran
+                          </Link>
+                          
+                          <Link to="/dashboard/reports" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                            <AlertCircle className="mr-3 h-5 w-5" />
+                            Laporan
                           </Link>
                           
                           <Link to="/dashboard/analytics" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
@@ -210,7 +235,7 @@ const Dashboard = () => {
                   <div className="relative">
                     <DropdownMenu>
                       <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none">
-                        <img src={mockUser.avatarUrl} alt={mockUser.name} className="w-8 h-8 rounded-full" />
+                        <img src={mockUser.avatarUrl} alt={mockUser.name} className="w-8 h-8 rounded-full object-cover" />
                         <ChevronDown size={16} className="text-muted-foreground" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -258,6 +283,8 @@ const Dashboard = () => {
                     <Route path="content" element={<DashboardContent user={mockUser} />} />
                     <Route path="content/new" element={<DashboardContentNew user={mockUser} />} />
                     <Route path="content/edit/:slug" element={<DashboardContentEdit user={mockUser} />} />
+                    <Route path="broadcast/*" element={<DashboardBroadcast user={mockUser} />} />
+                    <Route path="reports/*" element={<DashboardReports user={mockUser} />} />
                     <Route path="analytics/*" element={<DashboardAnalytics user={mockUser} />} />
                   </>}
                 
@@ -273,8 +300,6 @@ const Dashboard = () => {
       <Footer />
     </div>;
 };
-
-// Dashboard Pages
 
 const DashboardOverview = ({
   user
@@ -579,6 +604,7 @@ const DashboardAppointments = ({
       <p>Halaman ini akan memungkinkan Anda menjadwalkan, melihat, atau membatalkan janji konsultasi dengan psikolog atau konselor.</p>
     </div>
   </div>;
+
 const DashboardMessages = ({
   user
 }: {
@@ -589,6 +615,7 @@ const DashboardMessages = ({
       <p>Halaman ini akan menampilkan sistem pesan untuk berkomunikasi dengan profesional kesehatan mental atau staf Mind MHIRC.</p>
     </div>
   </div>;
+
 const DashboardStudents = ({
   user
 }: {
@@ -599,6 +626,7 @@ const DashboardStudents = ({
       <p>Halaman ini akan menampilkan daftar murid Anda, dengan opsi untuk melihat hasil tes, mengirim tes baru, atau mengelola data murid.</p>
     </div>
   </div>;
+
 const DashboardUsers = ({
   user
 }: {
@@ -609,13 +637,13 @@ const DashboardUsers = ({
       <p>Halaman ini akan memungkinkan Anda mengelola semua pengguna sistem, termasuk menambah, mengedit, atau menghapus akun pengguna.</p>
     </div>
   </div>;
+
 const DashboardContent = ({
   user
 }: {
   user: any;
 }) => {
   return <div>
-    <h1 className="text-2xl font-semibold mb-6">Manajemen Konten</h1>
     <ContentManagement />
   </div>;
 };
@@ -626,7 +654,6 @@ const DashboardContentNew = ({
   user: any;
 }) => {
   return <div>
-    <h1 className="text-2xl font-semibold mb-6">Tambah Konten Baru</h1>
     <BlogEditor />
   </div>;
 };
@@ -637,38 +664,50 @@ const DashboardContentEdit = ({
   user: any;
 }) => {
   return <div>
-    <h1 className="text-2xl font-semibold mb-6">Edit Konten</h1>
     <BlogEditor />
   </div>;
 };
+
 const DashboardAnalytics = ({
   user
 }: {
   user: any;
 }) => <div>
-    <h1 className="text-2xl font-semibold mb-6">Statistik & Analitik</h1>
-    <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>Halaman ini akan menampilkan data statistik dan analitik tentang penggunaan platform, hasil tes, dan tren kesehatan mental.</p>
-    </div>
+    <Analytics />
   </div>;
+
+const DashboardBroadcast = ({
+  user
+}: {
+  user: any;
+}) => <div>
+    <BroadcastManagement />
+  </div>;
+
+const DashboardReports = ({
+  user
+}: {
+  user: any;
+}) => <div>
+    <ReportsManagement />
+  </div>;
+
 const DashboardSettings = ({
   user
 }: {
   user: any;
 }) => <div>
-    <h1 className="text-2xl font-semibold mb-6">Pengaturan Akun</h1>
-    <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>Halaman ini akan memungkinkan Anda mengelola pengaturan akun Anda, termasuk informasi profil, preferensi notifikasi, dan keamanan.</p>
-    </div>
+    <AccountSettings />
   </div>;
+
 const DashboardHelp = ({
   user
 }: {
   user: any;
 }) => <div>
-    <h1 className="text-2xl font-semibold mb-6">Bantuan</h1>
     <HelpSection />
   </div>;
+
 const DashboardNotFound = () => <div className="text-center py-12">
     <h1 className="text-2xl font-semibold mb-4">Halaman Tidak Ditemukan</h1>
     <p className="text-muted-foreground mb-8">Maaf, halaman yang Anda cari tidak tersedia.</p>
@@ -679,4 +718,5 @@ const DashboardNotFound = () => <div className="text-center py-12">
       </Button>
     </Link>
   </div>;
+
 export default Dashboard;

@@ -1,257 +1,363 @@
 
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { UserCircle, AtSign, MapPin, Briefcase, Calendar, User, ShieldCheck, Image } from "lucide-react";
 
-const settingsFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  currentPassword: z.string().min(6, {
-    message: "Current password is required to change password.",
-  }),
-  newPassword: z.string().min(6, {
-    message: "Password must be at least 6 characters.",
-  }),
-  confirmPassword: z.string(),
-  marketingEmails: z.boolean().default(false),
-  promotionalNotifications: z.boolean().default(false),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+interface ProfileFormValues {
+  full_name: string;
+  avatar_url: string | null;
+  city: string;
+  profession: string;
+  birth_date: string;
+}
 
-type SettingsFormValues = z.infer<typeof settingsFormSchema>;
+interface PasswordFormValues {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
 
-const Settings = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const [avatar, setAvatar] = useState<string | null>(null);
-
-  const form = useForm<SettingsFormValues>({
-    resolver: zodResolver(settingsFormSchema),
-    defaultValues: {
-      marketingEmails: false,
-      promotionalNotifications: false,
-    },
+export default function Settings() {
+  const { user, refreshUser } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  
+  const [profileValues, setProfileValues] = useState<ProfileFormValues>({
+    full_name: "",
+    avatar_url: null,
+    city: "",
+    profession: "",
+    birth_date: ""
   });
-
-  const onSubmit = async (data: SettingsFormValues) => {
-    setIsLoading(true);
+  
+  const [passwordValues, setPasswordValues] = useState<PasswordFormValues>({
+    current_password: "",
+    new_password: "",
+    confirm_password: ""
+  });
+  
+  // Load user data
+  useEffect(() => {
+    if (user) {
+      setProfileValues({
+        full_name: user.full_name || "",
+        avatar_url: user.avatar_url || null,
+        city: "",
+        profession: "",
+        birth_date: ""
+      });
+      
+      // Fetch additional profile data
+      const fetchProfileData = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('city, profession, birth_date')
+            .eq('id', user.id)
+            .single();
+            
+          if (error) {
+            throw error;
+          }
+          
+          if (data) {
+            setProfileValues(prev => ({
+              ...prev,
+              city: data.city || "",
+              profession: data.profession || "",
+              birth_date: data.birth_date || "",
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching profile data:', error);
+        }
+      };
+      
+      fetchProfileData();
+    }
+  }, [user]);
+  
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfileValues(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordValues(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) return;
+    
+    setLoading(true);
     
     try {
-      // Here you would typically make an API call to update the user settings
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Update profile data in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profileValues.full_name,
+          city: profileValues.city,
+          profession: profileValues.profession,
+          birth_date: profileValues.birth_date,
+          avatar_url: profileValues.avatar_url
+        })
+        .eq('id', user.id);
+        
+      if (profileError) throw profileError;
       
-      toast({
-        title: "Settings updated",
-        description: "Your settings have been successfully updated.",
-      });
+      // Refresh user data in context
+      await refreshUser();
+      
+      toast.success("Profil berhasil diperbarui");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error updating profile:', error);
+      toast.error("Gagal memperbarui profil");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
-
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatar(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordValues.new_password !== passwordValues.confirm_password) {
+      toast.error("Konfirmasi password baru tidak cocok");
+      return;
+    }
+    
+    if (passwordValues.new_password.length < 6) {
+      toast.error("Password baru minimal 6 karakter");
+      return;
+    }
+    
+    setPasswordLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordValues.new_password
+      });
+      
+      if (error) throw error;
+      
+      // Reset form
+      setPasswordValues({
+        current_password: "",
+        new_password: "",
+        confirm_password: ""
+      });
+      
+      toast.success("Password berhasil diperbarui");
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      toast.error(error.message || "Gagal memperbarui password");
+    } finally {
+      setPasswordLoading(false);
     }
   };
-
+  
+  const avatarInitials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+    : 'U';
+  
   return (
-    <div className="container max-w-2xl mx-auto py-8 px-4 space-y-8">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold">Pengaturan Akun</h2>
-        <p className="text-muted-foreground">
-          Kelola pengaturan akun dan preferensi notifikasi Anda
+        <h1 className="text-2xl font-bold">Pengaturan Akun</h1>
+        <p className="text-muted-foreground mt-1">
+          Kelola informasi profil dan preferensi akun Anda
         </p>
       </div>
-
-      <div className="space-y-6">
-        <div className="flex items-center gap-6">
-          <Avatar className="w-24 h-24">
-            <AvatarImage src={avatar || ""} />
-            <AvatarFallback>NN</AvatarFallback>
-          </Avatar>
-          <div className="space-y-2">
-            <h3 className="font-semibold">Foto Profil</h3>
-            <div>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="max-w-[250px]"
-              />
-              <p className="text-sm text-muted-foreground mt-1">
-                Format yang didukung: JPG, PNG. Maksimal 2MB.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nama</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Masukkan nama Anda" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="nama@email.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-4">
-              <h3 className="font-semibold">Ubah Password</h3>
-              <FormField
-                control={form.control}
-                name="currentPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password Saat Ini</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password Baru</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Konfirmasi Password Baru</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-semibold">Notifikasi</h3>
-              <FormField
-                control={form.control}
-                name="marketingEmails"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Profile Section */}
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle className="text-xl">Profil Pengguna</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleProfileSubmit} className="space-y-6">
+              <div className="flex flex-col-reverse sm:flex-row gap-6">
+                {/* Avatar */}
+                <div className="flex justify-center sm:block">
+                  <div className="space-y-3">
+                    <Avatar className="w-24 h-24">
+                      <AvatarImage src={profileValues.avatar_url || undefined} alt={user?.full_name || ""} />
+                      <AvatarFallback className="text-xl">{avatarInitials}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                </div>
+                
+                {/* User Info */}
+                <div className="flex-1 space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="avatar_url" className="flex items-center gap-1">
+                        <Image className="w-4 h-4" />
+                        URL Avatar
+                      </Label>
+                      <Input 
+                        id="avatar_url" 
+                        name="avatar_url"
+                        placeholder="https://example.com/avatar.jpg"
+                        value={profileValues.avatar_url || ""}
+                        onChange={handleProfileChange}
                       />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Email Marketing</FormLabel>
-                      <FormDescription>
-                        Terima email tentang produk baru dan pembaruan.
-                      </FormDescription>
                     </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="promotionalNotifications"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name" className="flex items-center gap-1">
+                        <User className="w-4 h-4" />
+                        Nama Lengkap
+                      </Label>
+                      <Input 
+                        id="full_name" 
+                        name="full_name"
+                        value={profileValues.full_name}
+                        onChange={handleProfileChange}
+                        placeholder="Nama lengkap Anda"
                       />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Notifikasi Promosi</FormLabel>
-                      <FormDescription>
-                        Terima pemberitahuan tentang penawaran khusus dan promosi.
-                      </FormDescription>
                     </div>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex justify-end space-x-4">
-              <Button variant="outline" onClick={() => navigate(-1)}>
-                Batal
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Menyimpan..." : "Simpan Perubahan"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city" className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    Kota
+                  </Label>
+                  <Input 
+                    id="city" 
+                    name="city"
+                    value={profileValues.city}
+                    onChange={handleProfileChange}
+                    placeholder="Kota"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="profession" className="flex items-center gap-1">
+                    <Briefcase className="w-4 h-4" />
+                    Profesi
+                  </Label>
+                  <Input 
+                    id="profession" 
+                    name="profession"
+                    value={profileValues.profession}
+                    onChange={handleProfileChange}
+                    placeholder="Profesi"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="birth_date" className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    Tanggal Lahir
+                  </Label>
+                  <Input 
+                    id="birth_date" 
+                    name="birth_date"
+                    type="date"
+                    value={profileValues.birth_date}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="account_type" className="flex items-center gap-1">
+                    <UserCircle className="w-4 h-4" />
+                    Tipe Akun
+                  </Label>
+                  <Input 
+                    id="account_type" 
+                    value={user?.account_type || ""}
+                    readOnly
+                    disabled
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                >
+                  {loading ? "Menyimpan..." : "Simpan Perubahan"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+        
+        {/* Password & Security Section */}
+        <Card className="col-span-2 md:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-xl">Keamanan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="current_password">Password Saat Ini</Label>
+                <Input 
+                  id="current_password" 
+                  name="current_password"
+                  type="password"
+                  value={passwordValues.current_password}
+                  onChange={handlePasswordChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="new_password">Password Baru</Label>
+                <Input 
+                  id="new_password" 
+                  name="new_password"
+                  type="password"
+                  value={passwordValues.new_password}
+                  onChange={handlePasswordChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirm_password">Konfirmasi Password Baru</Label>
+                <Input 
+                  id="confirm_password" 
+                  name="confirm_password"
+                  type="password"
+                  value={passwordValues.confirm_password}
+                  onChange={handlePasswordChange}
+                />
+              </div>
+              
+              <div className="pt-2">
+                <Button 
+                  type="submit" 
+                  disabled={passwordLoading}
+                  className="w-full"
+                >
+                  {passwordLoading ? "Memperbarui..." : "Perbarui Password"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-};
-
-export default Settings;
+}

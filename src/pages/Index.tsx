@@ -11,8 +11,40 @@ import Button from "@/components/Button";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
 import testsData from "@/data/testsData";
 import { Tables } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const [blogPosts, setBlogPosts] = useState<Tables<'blog_posts'>[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBlogPosts = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('blog_posts')
+          .select('*')
+          .order('published_date', { ascending: false })
+          .limit(2);
+
+        if (error) {
+          console.error('Error fetching blog posts:', error);
+          return;
+        }
+
+        if (data) {
+          setBlogPosts(data);
+        }
+      } catch (error) {
+        console.error('Error fetching blog posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBlogPosts();
+  }, []);
+
   const allTests = Object.values(testsData).map(test => ({
     id: test.id,
     title: test.title,
@@ -46,7 +78,7 @@ const Index = () => {
     color: "bg-accent-600"
   }];
 
-  const blogPosts: Tables<'blog_posts'>[] = [{
+  const fallbackBlogPosts: Tables<'blog_posts'>[] = [{
     id: "mengenal-anxietas",
     title: "Mengenal Anxietas: Gejala, Penyebab, dan Cara Mengatasinya",
     excerpt: "Anxietas adalah reaksi normal terhadap stres, namun jika berlebihan dapat mengganggu kehidupan sehari-hari. Artikel ini membahas gejala, penyebab, dan strategi mengatasi anxietas.",
@@ -83,6 +115,8 @@ const Index = () => {
     likes: 0,
     comments: []
   }];
+
+  const displayedBlogPosts = blogPosts.length > 0 ? blogPosts : fallbackBlogPosts;
 
   const testimonials = [{
     content: "Mind MHIRC telah membantu saya memahami kondisi mental saya dengan lebih baik. Tes-tes yang disediakan sangat mudah diikuti dan hasilnya memberikan wawasan yang berharga.",
@@ -141,7 +175,6 @@ const Index = () => {
       <main className="flex-1">
         <HeroSection />
 
-        {/* Section Fakta Kesehatan Mental */}
         <section className="py-16 px-4 sm:px-6 bg-gradient-to-r from-primary/5 to-secondary/5 overflow-hidden relative">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
@@ -224,7 +257,6 @@ const Index = () => {
           <div className="absolute bottom-1/4 right-0 w-32 h-32 bg-secondary/5 blur-2xl rounded-full animate-float" style={{ animationDelay: '2s' }}></div>
         </section>
 
-        {/* Section Tes Mental (Featured Tests) */}
         <section className="section-padding bg-muted">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
@@ -253,7 +285,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Section Layanan */}
         <section className="section-padding">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
@@ -283,7 +314,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Section Riset & Inovasi */}
         <section className="section-padding bg-gradient-to-b from-muted to-background relative overflow-hidden">
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-primary/5 backdrop-blur-3xl"></div>
@@ -347,7 +377,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Section Blog */}
         <section className="section-padding">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
@@ -363,9 +392,28 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 fade-in">
-              {blogPosts.map(post => <BlogPost key={post.id} post={post} />)}
-            </div>
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 fade-in">
+                <div className="flex flex-col space-y-3">
+                  <div className="h-56 bg-muted animate-pulse rounded-xl mb-4"></div>
+                  <div className="h-4 bg-muted animate-pulse rounded w-1/4 mb-2"></div>
+                  <div className="h-8 bg-muted animate-pulse rounded w-3/4"></div>
+                  <div className="h-4 bg-muted animate-pulse rounded w-full"></div>
+                  <div className="h-4 bg-muted animate-pulse rounded w-2/3"></div>
+                </div>
+                <div className="flex flex-col space-y-3">
+                  <div className="h-56 bg-muted animate-pulse rounded-xl mb-4"></div>
+                  <div className="h-4 bg-muted animate-pulse rounded w-1/4 mb-2"></div>
+                  <div className="h-8 bg-muted animate-pulse rounded w-3/4"></div>
+                  <div className="h-4 bg-muted animate-pulse rounded w-full"></div>
+                  <div className="h-4 bg-muted animate-pulse rounded w-2/3"></div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 fade-in">
+                {displayedBlogPosts.map(post => <BlogPost key={post.id} post={post} />)}
+              </div>
+            )}
 
             <div className="text-center mt-12 fade-in">
               <Link to="/blog">
@@ -377,7 +425,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Section Testimoni */}
         <section className="section-padding bg-secondary/5">
           <div className="container mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
@@ -396,7 +443,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Section Ajakan Bergabung */}
         <section className="section-padding bg-primary/5">
           <div className="container mx-auto">
             <div className="max-w-4xl mx-auto text-center space-y-6 fade-in">
@@ -430,3 +476,4 @@ const Index = () => {
 };
 
 export default Index;
+
