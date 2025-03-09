@@ -226,7 +226,7 @@ const BlogPostPage = () => {
               <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
             </div>
             
-            <article className="prose prose-lg max-w-none blog-content leading-relaxed text-justify">
+            <article className="prose prose-lg max-w-none blog-content">
               <div dangerouslySetInnerHTML={{ __html: post.content }} />
               
               {post.references_cit && (
@@ -399,6 +399,11 @@ const BlogPostPage = () => {
           color: #2563eb;
           text-decoration: underline;
         }
+
+        .blog-content p {
+          text-align: justify;
+          line-height: 1.625;
+        }
         
         .blog-content img {
           display: block;
@@ -406,6 +411,8 @@ const BlogPostPage = () => {
           height: auto;
           border-radius: 8px;
           margin: 1em 0;
+          margin-left: auto;
+          margin-right: auto;
         }
         `}
       </style>
