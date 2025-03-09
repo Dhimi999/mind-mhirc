@@ -51,7 +51,8 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     account_type: data?.account_type as "general" | "professional",
     birth_date: data?.birth_date,
     city: data?.city,
-    profession: data?.profession
+    profession: data?.profession,
+    is_admin: data?.is_admin
   };
 };
 

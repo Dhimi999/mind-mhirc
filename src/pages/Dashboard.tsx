@@ -78,7 +78,7 @@ const Dashboard = () => {
       } else {
         isAdmin = false;
       }
-
+      console.log(user);
       if (user?.id) {
         try {
           const { data, error } = await supabase
