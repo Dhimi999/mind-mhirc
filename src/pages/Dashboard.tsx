@@ -53,6 +53,8 @@ import BroadcastManagement from "@/components/dashboard/BroadcastManagement";
 import AccountSettings from "@/components/dashboard/AccountSettings";
 import ReportsManagement from "@/components/dashboard/ReportsManagement";
 let id = "";
+let isProfessional = false;
+let isAdmin = false;
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -62,11 +64,21 @@ const Dashboard = () => {
   const location = useLocation();
   const { toast } = useToast();
   const { user, logout } = useAuth();
-
   // Fetch user's full name and avatar from profiles table
   useEffect(() => {
     const fetchUserProfile = async () => {
       id = user?.id;
+      if (user?.account_type == "professional") {
+        isProfessional = true;
+      } else {
+        isProfessional = false;
+      }
+      if (user?.is_admin == true) {
+        isAdmin = true;
+      } else {
+        isAdmin = false;
+      }
+
       if (user?.id) {
         try {
           const { data, error } = await supabase
@@ -224,11 +236,10 @@ const Dashboard = () => {
                   </div>
 
                   {/* Admin & Teacher Menu */}
-                  {(mockUser.role === "Admin" ||
-                    mockUser.role === "Teacher") && (
+                  {(isAdmin || mockUser.role === "Teacher") && (
                     <div>
                       <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
-                        {mockUser.role === "Admin" ? "Admin" : "Guru"}
+                        {isAdmin ? "Admin" : "Guru"}
                       </div>
 
                       {mockUser.role === "Teacher" && (
@@ -241,7 +252,7 @@ const Dashboard = () => {
                         </Link>
                       )}
 
-                      {mockUser.role === "Admin" && (
+                      {isAdmin && (
                         <>
                           <Link
                             to="/dashboard/users"
@@ -412,7 +423,7 @@ const Dashboard = () => {
                 )}
 
                 {/* Admin Routes */}
-                {mockUser.role === "Admin" && (
+                {isAdmin && (
                   <>
                     <Route path="users/*" element={<UserManagement />} />
                     <Route
@@ -730,7 +741,6 @@ const DashboardTests = ({ user }: { user: any }) => (
 );
 
 const DashboardResults = ({ user }: { user: any }) => {
-  const isProfessional = user?.isProfessional;
   const [testResultsByUser, setTestResultsByUser] = useState<any[]>([]);
   const [allTestResults, setAllTestResults] = useState<any[]>([]);
   const [loadingUserTests, setLoadingUserTests] = useState(true);
@@ -790,7 +800,7 @@ const DashboardResults = ({ user }: { user: any }) => {
       setLoadingAllTests(false);
     });
   }, []);
-
+  console.log(isProfessional);
   // Jika masih loading
 
   return (
