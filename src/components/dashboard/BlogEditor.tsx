@@ -35,6 +35,10 @@ const BlogEditor = () => {
   const [tags, setTags] = useState("");
   const [slug_, setSlug] = useState("");
   
+  // New fields
+  const [readTime, setReadTime] = useState("5 min");
+  const [references, setReferences] = useState("");
+  
   // Preview state
   const [showAuthorPreview, setShowAuthorPreview] = useState(false);
   const [showCoverPreview, setShowCoverPreview] = useState(false);
@@ -65,6 +69,25 @@ const BlogEditor = () => {
             setContent(data.content);
             setTags(data.tags ? data.tags.join(", ") : "");
             setSlug(data.slug);
+            setReadTime(data.read_time || "5 min");
+            
+            // Handle references_cit, which might be stored as a JSON array or string
+            if (data.references_cit) {
+              if (typeof data.references_cit === 'string') {
+                setReferences(data.references_cit);
+              } else if (Array.isArray(data.references_cit)) {
+                setReferences(data.references_cit.join("\n"));
+              } else {
+                // Handle JSON object if that's how it's stored
+                try {
+                  const refsArray = Object.values(data.references_cit);
+                  setReferences(refsArray.join("\n"));
+                } catch (e) {
+                  console.error("Error parsing references:", e);
+                  setReferences("");
+                }
+              }
+            }
           }
         } catch (err) {
           console.error("Error fetching post:", err);
@@ -83,8 +106,8 @@ const BlogEditor = () => {
   };
 
   const handleSave = async () => {
-    if (!title || !authorName || !authorAvatar || !category || !coverImage || !excerpt || !content || !slug_) {
-      toast.error("Semua field diperlukan");
+    if (!title || !authorName || !authorAvatar || !category || !coverImage || !excerpt || !content || !slug_ || !readTime) {
+      toast.error("Semua field diperlukan kecuali referensi");
       return;
     }
     
@@ -94,6 +117,11 @@ const BlogEditor = () => {
       const tagsArray = tags
         ? tags.split(",").map(tag => tag.trim()).filter(tag => tag)
         : [];
+      
+      // Process references - split by new line and create array
+      const referencesArray = references
+        ? references.split("\n").map(ref => ref.trim()).filter(ref => ref)
+        : null;
       
       const now = new Date().toISOString();
       
@@ -110,8 +138,8 @@ const BlogEditor = () => {
         comments: [],
         likes: 0,
         featured: false,
-        read_time: "5 min",
-        references_cit: null,
+        read_time: readTime,
+        references_cit: referencesArray,
         published_date: now,
         updated_date: now
       };
@@ -129,7 +157,9 @@ const BlogEditor = () => {
             excerpt: postData.excerpt,
             content: postData.content,
             tags: postData.tags,
-            updated_date: now
+            updated_date: now,
+            read_time: postData.read_time,
+            references_cit: postData.references_cit
           })
           .eq("slug", slug);
         
@@ -294,6 +324,31 @@ const BlogEditor = () => {
             </div>
           </div>
 
+          {/* New field: Read Time */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="font-medium" htmlFor="read-time">
+                Estimasi Waktu Baca
+              </label>
+              <Select
+                value={readTime}
+                onValueChange={(value) => setReadTime(value)}
+              >
+                <SelectTrigger id="read-time">
+                  <SelectValue placeholder="Pilih estimasi waktu" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3 min">3 menit</SelectItem>
+                  <SelectItem value="5 min">5 menit</SelectItem>
+                  <SelectItem value="7 min">7 menit</SelectItem>
+                  <SelectItem value="10 min">10 menit</SelectItem>
+                  <SelectItem value="15 min">15 menit</SelectItem>
+                  <SelectItem value="20 min">20+ menit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <label className="font-medium" htmlFor="cover-image">
               URL Gambar Sampul
@@ -329,6 +384,23 @@ const BlogEditor = () => {
               onChange={(e) => setExcerpt(e.target.value)}
               rows={3}
             />
+          </div>
+
+          {/* New field: References */}
+          <div className="space-y-2">
+            <label className="font-medium" htmlFor="references">
+              Referensi (opsional, satu referensi per baris)
+            </label>
+            <Textarea
+              id="references"
+              placeholder="Masukkan daftar referensi, satu per baris"
+              value={references}
+              onChange={(e) => setReferences(e.target.value)}
+              rows={4}
+            />
+            <p className="text-sm text-muted-foreground">
+              Contoh: Nama Pengarang. (Tahun). Judul artikel. Nama Jurnal, Volume(Nomor), Halaman.
+            </p>
           </div>
 
           <div className="space-y-2">

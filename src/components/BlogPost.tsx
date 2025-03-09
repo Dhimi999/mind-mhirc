@@ -1,28 +1,22 @@
-
 import { Calendar, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tables } from "@/integrations/supabase/types";
 import { formatDate } from "@/lib/utils";
-
 interface BlogPostProps {
   post: Tables<'blog_posts'>;
 }
-
-const BlogPost = ({ post }: BlogPostProps) => {
-  return (
-    <article className="group">
+const BlogPost = ({
+  post
+}: BlogPostProps) => {
+  return <article className="group">
       <Link to={`/blog/${post.slug}`} className="block">
         <div className="overflow-hidden rounded-xl mb-4 aspect-[16/9]">
-          <img
-            src={post.cover_image}
-            alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+          <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
         </div>
       </Link>
       
       <div className="space-y-3">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-start space-x-3 mb-2">
           <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
             {post.category}
           </span>
@@ -43,19 +37,13 @@ const BlogPost = ({ post }: BlogPostProps) => {
         </p>
         
         <div className="flex items-center space-x-3 pt-2">
-          <img
-            src={post.author_avatar}
-            alt={post.author_name}
-            className="w-8 h-8 rounded-full object-cover"
-          />
+          <img src={post.author_avatar} alt={post.author_name} className="w-8 h-8 rounded-full object-cover" />
           <span className="text-sm font-medium flex items-center">
             <User size={14} className="mr-1" />
             {post.author_name}
           </span>
         </div>
       </div>
-    </article>
-  );
+    </article>;
 };
-
 export default BlogPost;

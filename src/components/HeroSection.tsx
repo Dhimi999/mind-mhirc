@@ -23,7 +23,7 @@ const HeroSection = () => {
         <div className="relative fade-in order-first lg:order-last" style={{
         animationDelay: '0.3s'
       }}>
-          <div className="relative z-10 glass-effect p-6 rounded-2xl shadow-highlight max-w-md mx-auto">
+          <div className="relative z-10 glass-effect p-6 rounded-2xl shadow-highlight max-w-lg md:max-w-lg sm:max-w-md xs:max-w-sm mx-auto h-auto">
             <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=600" alt="Profesional kesehatan mental" className="w-full h-auto rounded-xl object-cover" />
             
             <div className="absolute -bottom-6 -right-6 glass-effect p-4 rounded-xl shadow-soft animate-float">
@@ -34,7 +34,7 @@ const HeroSection = () => {
             </div>
           </div>
           
-          <div className="absolute top-1/2 -left-24 lg:-left-16 md:left-8 sm:left-8 xs:left-8 transform -translate-y-1/2 glass-effect p-4 rounded-xl shadow-soft animate-float max-w-[200px]">
+          <div className="absolute top-1/2 -left-16 lg:-left-16 md:left-8 sm:left-8 xs:left-8 transform -translate-y-1/2 glass-effect p-4 rounded-xl shadow-soft animate-float max-w-[200px]">
             <div className="flex items-center space-x-3">
               <div className="w-3 h-3 bg-primary rounded-full"></div>
               <span className="text-sm font-medium">Terapi Berbasis Bukti</span>

@@ -6,10 +6,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { Mail, MessageSquare, FileText, HelpCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const HelpSection = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -20,26 +24,47 @@ const HelpSection = () => {
     e.preventDefault();
     
     if (!name || !email || !subject || !message) {
-      toast.error("Semua field diperlukan");
+      toast({
+        title: "Validasi Gagal",
+        description: "Semua field diperlukan",
+        variant: "destructive"
+      });
       return;
     }
     
     setSubmitting(true);
     
     try {
-      // In a real app, you would send this data to your backend
-      // For now, we'll just simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase
+        .from('help_reports')
+        .insert({
+          user_id: user?.id,
+          name,
+          email,
+          subject,
+          message,
+          status: 'pending'
+        });
       
-      toast.success("Laporan kendala berhasil dikirim");
+      if (error) throw error;
+      
+      toast({
+        title: "Laporan Terkirim",
+        description: "Laporan kendala berhasil dikirim. Tim kami akan segera menanggapi.",
+      });
       
       // Reset form
       setName("");
       setEmail("");
       setSubject("");
       setMessage("");
-    } catch (error) {
-      toast.error("Gagal mengirim laporan kendala");
+    } catch (error: any) {
+      console.error("Error submitting report:", error);
+      toast({
+        title: "Gagal Mengirim",
+        description: "Terjadi kesalahan saat mengirim laporan. Silakan coba lagi.",
+        variant: "destructive"
+      });
     } finally {
       setSubmitting(false);
     }
