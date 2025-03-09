@@ -226,7 +226,7 @@ const BlogPostPage = () => {
               <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
             </div>
             
-            <article className="prose prose-lg max-w-none blog-content leading-relaxed">
+            <article className="prose prose-lg max-w-none blog-content leading-relaxed text-justify">
               <div dangerouslySetInnerHTML={{ __html: post.content }} />
               
               {post.references_cit && (
@@ -401,6 +401,7 @@ const BlogPostPage = () => {
         }
         
         .blog-content img {
+          display: block;
           max-width: 100%;
           height: auto;
           border-radius: 8px;
