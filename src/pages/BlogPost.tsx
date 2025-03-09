@@ -1,4 +1,3 @@
-
 import { useState, useEffect, FormEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Calendar, User, ArrowLeft, MessageSquare, Heart, Send } from "lucide-react";
@@ -10,18 +9,19 @@ import { Tables } from "@/integrations/supabase/types";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
-
 type BlogPost = Tables<'blog_posts'>;
-
 type Comment = {
   name: string;
   email: string;
   content: string;
   date: string;
 };
-
 const BlogPostPage = () => {
-  const { id } = useParams<{ id: string; }>();
+  const {
+    id
+  } = useParams<{
+    id: string;
+  }>();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,21 +32,17 @@ const BlogPostPage = () => {
   const [commentEmail, setCommentEmail] = useState("");
   const [commentContent, setCommentContent] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
-
   useEffect(() => {
     const fetchPostData = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('blog_posts')
-          .select('*')
-          .eq('slug', id)
-          .single();
-
+        const {
+          data,
+          error
+        } = await supabase.from('blog_posts').select('*').eq('slug', id).single();
         if (error) {
           throw error;
         }
-
         if (data) {
           setPost(data);
           setLikeCount(data.likes || 0);
@@ -65,26 +61,23 @@ const BlogPostPage = () => {
         setLoading(false);
       }
     };
-
     if (id) {
       fetchPostData();
     }
   }, [id]);
-
   const handleLike = async () => {
     if (!post) return;
     try {
       setLikeLoading(true);
       const newLikeCount = likeCount + 1;
-      const { error } = await supabase
-        .from('blog_posts')
-        .update({ likes: newLikeCount })
-        .eq('id', post.id);
-
+      const {
+        error
+      } = await supabase.from('blog_posts').update({
+        likes: newLikeCount
+      }).eq('id', post.id);
       if (error) {
         throw error;
       }
-
       setLikeCount(newLikeCount);
       toast.success('Terima kasih atas dukungan Anda!');
     } catch (err) {
@@ -94,14 +87,12 @@ const BlogPostPage = () => {
       setLikeLoading(false);
     }
   };
-
   const handleSubmitComment = async (e: FormEvent) => {
     e.preventDefault();
     if (!post || !commentName || !commentEmail || !commentContent) {
       toast.error('Mohon lengkapi semua kolom komentar');
       return;
     }
-
     try {
       setCommentLoading(true);
       const newComment: Comment = {
@@ -110,17 +101,15 @@ const BlogPostPage = () => {
         content: commentContent,
         date: new Date().toISOString()
       };
-
       const updatedComments = [...comments, newComment];
-      const { error } = await supabase
-        .from('blog_posts')
-        .update({ comments: updatedComments })
-        .eq('id', post.id);
-
+      const {
+        error
+      } = await supabase.from('blog_posts').update({
+        comments: updatedComments
+      }).eq('id', post.id);
       if (error) {
         throw error;
       }
-
       setComments(updatedComments);
       setCommentName("");
       setCommentEmail("");
@@ -133,10 +122,8 @@ const BlogPostPage = () => {
       setCommentLoading(false);
     }
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col">
+    return <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 pt-24">
           <div className="container mx-auto px-6 py-12">
@@ -155,13 +142,10 @@ const BlogPostPage = () => {
           </div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
-
   if (error) {
-    return (
-      <div className="min-h-screen flex flex-col">
+    return <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 pt-24">
           <div className="container mx-auto px-6 py-12">
@@ -178,17 +162,13 @@ const BlogPostPage = () => {
           </div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
-
   if (!post) return null;
-
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <main className="flex-1 pt-24">
+      <main className="flex-1 pt-12">
         <div className="container mx-auto px-6 py-12">
           <div className="max-w-3xl mx-auto">
             <Link to="/blog" className="inline-flex items-center text-sm text-primary mb-8 hover:underline">
@@ -227,33 +207,29 @@ const BlogPostPage = () => {
             </div>
             
             <article className="prose prose-lg max-w-none blog-content">
-              <div dangerouslySetInnerHTML={{ __html: post.content }} />
+              <div dangerouslySetInnerHTML={{
+              __html: post.content
+            }} />
               
-              {post.references_cit && (
-                <div className="mt-12 pt-6 border-t">
+              {post.references_cit && <div className="mt-12 pt-6 border-t">
                   <h2 className="text-xl font-semibold mb-4">Referensi</h2>
-                  <div dangerouslySetInnerHTML={{ __html: post.references_cit as string }} />
-                </div>
-              )}
+                  <div dangerouslySetInnerHTML={{
+                __html: post.references_cit as string
+              }} />
+                </div>}
             </article>
             
             <div className="border-t border-border mt-12 pt-8">
               <div className="flex items-center justify-between mb-8 text-rose-700">
-                <button 
-                  className={`flex items-center text-sm ${likeLoading ? 'opacity-70' : 'hover:text-primary'}`} 
-                  onClick={handleLike} 
-                  disabled={likeLoading}
-                >
+                <button className={`flex items-center text-sm ${likeLoading ? 'opacity-70' : 'hover:text-primary'}`} onClick={handleLike} disabled={likeLoading}>
                   <Heart className={`mr-1.5 h-5 w-5 ${likeLoading && 'animate-pulse'}`} />
                   Suka ({likeCount})
                 </button>
                 
                 <div className="flex space-x-2">
-                  {post.tags && post.tags.map((tag, index) => (
-                    <span key={index} className="px-3 py-1 bg-muted text-xs font-medium rounded-full">
+                  {post.tags && post.tags.map((tag, index) => <span key={index} className="px-3 py-1 bg-muted text-xs font-medium rounded-full">
                       #{tag}
-                    </span>
-                  ))}
+                    </span>)}
                 </div>
               </div>
               
@@ -263,10 +239,8 @@ const BlogPostPage = () => {
                   Komentar ({comments.length})
                 </h3>
                 
-                {comments.length > 0 ? (
-                  <div className="space-y-6 mb-8">
-                    {comments.map((comment, index) => (
-                      <div key={index} className="border border-border rounded-lg p-4 bg-slate-200">
+                {comments.length > 0 ? <div className="space-y-6 mb-8">
+                    {comments.map((comment, index) => <div key={index} className="border border-border rounded-lg p-4 bg-slate-200">
                         <div className="flex justify-between items-start mb-2">
                           <h4 className="font-medium">{comment.name}</h4>
                           <span className="text-xs text-muted-foreground">
@@ -274,14 +248,10 @@ const BlogPostPage = () => {
                           </span>
                         </div>
                         <p className="text-sm whitespace-pre-line">{comment.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm mb-6">
+                      </div>)}
+                  </div> : <p className="text-muted-foreground text-sm mb-6">
                     Belum ada komentar. Jadilah yang pertama berkomentar!
-                  </p>
-                )}
+                  </p>}
                 
                 <form onSubmit={handleSubmitComment} className="border border-border rounded-lg p-5">
                   <h4 className="font-semibold mb-4">Tambahkan Komentar</h4>
@@ -291,27 +261,13 @@ const BlogPostPage = () => {
                       <label htmlFor="name" className="block text-sm font-medium mb-1">
                         Nama
                       </label>
-                      <input 
-                        id="name" 
-                        type="text" 
-                        value={commentName} 
-                        onChange={e => setCommentName(e.target.value)} 
-                        className="w-full p-2 border border-input rounded-md" 
-                        required 
-                      />
+                      <input id="name" type="text" value={commentName} onChange={e => setCommentName(e.target.value)} className="w-full p-2 border border-input rounded-md" required />
                     </div>
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium mb-1">
                         Email
                       </label>
-                      <input 
-                        id="email" 
-                        type="email" 
-                        value={commentEmail} 
-                        onChange={e => setCommentEmail(e.target.value)} 
-                        className="w-full p-2 border border-input rounded-md" 
-                        required 
-                      />
+                      <input id="email" type="email" value={commentEmail} onChange={e => setCommentEmail(e.target.value)} className="w-full p-2 border border-input rounded-md" required />
                     </div>
                   </div>
                   
@@ -319,32 +275,17 @@ const BlogPostPage = () => {
                     <label htmlFor="comment" className="block text-sm font-medium mb-1">
                       Komentar
                     </label>
-                    <Textarea 
-                      id="comment" 
-                      value={commentContent} 
-                      onChange={e => setCommentContent(e.target.value)} 
-                      className="w-full min-h-24" 
-                      placeholder="Tulis komentar Anda di sini..." 
-                      required 
-                    />
+                    <Textarea id="comment" value={commentContent} onChange={e => setCommentContent(e.target.value)} className="w-full min-h-24" placeholder="Tulis komentar Anda di sini..." required />
                   </div>
                   
-                  <button 
-                    type="submit" 
-                    className="flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors disabled:opacity-70" 
-                    disabled={commentLoading}
-                  >
-                    {commentLoading ? (
-                      <>
+                  <button type="submit" className="flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors disabled:opacity-70" disabled={commentLoading}>
+                    {commentLoading ? <>
                         <span className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></span>
                         Mengirim...
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         <Send className="mr-1.5 h-4 w-4" />
                         Kirim Komentar
-                      </>
-                    )}
+                      </>}
                   </button>
                 </form>
               </div>
@@ -399,7 +340,7 @@ const BlogPostPage = () => {
           color: #2563eb;
           text-decoration: underline;
         }
-
+        
         .blog-content p {
           text-align: justify;
           line-height: 1.625;
@@ -418,8 +359,6 @@ const BlogPostPage = () => {
       </style>
       
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default BlogPostPage;
