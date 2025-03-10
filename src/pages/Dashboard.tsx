@@ -53,6 +53,8 @@ import BroadcastManagement from "@/components/dashboard/BroadcastManagement";
 import AccountSettings from "@/components/dashboard/AccountSettings";
 import ReportsManagement from "@/components/dashboard/ReportsManagement";
 import MessageManagement from "@/components/dashboard/MessageManagement";
+import TestListResults from "@/components/dashboard/TestListResults";
+import TestResultsTable from "@/components/dashboard/TestResultsTable";
 
 let id = "";
 let isProfessional = false;
@@ -385,7 +387,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="p-4 sm:p-6">
+            <div className="p-4 sm:p-6 bg">
               <Routes>
                 <Route index element={<DashboardOverview user={mockUser} />} />
                 <Route
@@ -397,13 +399,17 @@ const Dashboard = () => {
                   element={<DashboardResults user={mockUser} />}
                 />
                 <Route
+                  path="results/:testName"
+                  element={
+                    <TestResultsTable category="" testName="" userId={id} />
+                  }
+                />
+
+                <Route
                   path="appointments/*"
                   element={<DashboardAppointments user={mockUser} />}
                 />
-                <Route
-                  path="messages/*"
-                  element={<MessageManagement />}
-                />
+                <Route path="messages/*" element={<MessageManagement />} />
 
                 {mockUser.role === "Teacher" && (
                   <Route
@@ -724,262 +730,9 @@ const DashboardTests = ({ user }: { user: any }) => (
 );
 
 const DashboardResults = ({ user }: { user: any }) => {
-  const [testResultsByUser, setTestResultsByUser] = useState<any[]>([]);
-  const [allTestResults, setAllTestResults] = useState<any[]>([]);
-  const [loadingUserTests, setLoadingUserTests] = useState(true);
-  const [loadingAllTests, setLoadingAllTests] = useState(true);
-  console.log("User id:", id);
-
-  const fetchAllTestResults = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("test_results")
-        .select("*")
-        .order("created_at", {
-          ascending: false
-        });
-      if (error) {
-        throw error;
-      }
-      if (data) {
-        setAllTestResults(data);
-      }
-    } catch (err) {
-      console.error("Error fetching blog posts:", err);
-    }
-  };
-
-  const fetchTestResultsByUser = async (id: string) => {
-    if (!id) return [];
-    const { data, error } = await supabase
-      .from("test_results")
-      .select("*")
-      .eq("user_id", id)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching test results:", error);
-      return [];
-    }
-    return data;
-  };
-
-  useEffect(() => {
-    if (!id) return;
-    setLoadingUserTests(true);
-    fetchTestResultsByUser(id).then((results) => {
-      console.log("User Test Results:", results);
-      setTestResultsByUser(results);
-      setLoadingUserTests(false);
-    });
-  }, [id]);
-
-  useEffect(() => {
-    setLoadingAllTests(true);
-    fetchAllTestResults().then((results) => {
-      console.log("All Test Results:", results);
-      setLoadingAllTests(false);
-    });
-  }, []);
-  console.log(isProfessional);
-
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">Hasil Tes</h1>
-
-      {isProfessional ? (
-        <Tabs defaultValue="self" className="mb-6">
-          <TabsList className="w-full max-w-md">
-            <TabsTrigger value="self" className="flex-1">
-              Hasil Tes Diri Sendiri
-            </TabsTrigger>
-            <TabsTrigger value="others" className="flex-1">
-              Hasil Tes Orang Lain
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="self" className="mt-6">
-            <div className="bg-card shadow-soft rounded-xl p-6">
-              <h2 className="text-lg font-medium mb-4">Hasil Tes Anda</h2>
-              <div className="space-y-4">
-                {testResultsByUser.length > 0 ? (
-                  testResultsByUser.map((test, index) => {
-                    let resultText = "Tidak Ada Ringkasan";
-
-                    try {
-                      const parsedSummary = JSON.parse(test.result_summary);
-
-                      if (test.test_id === "sdq" && parsedSummary) {
-                        resultText = `${
-                          parsedSummary.difficultyLevel || "-"
-                        } / ${parsedSummary.strengthLevel || "-"}`;
-                      }
-                    } catch {
-                      resultText = test.result_summary
-                        ? test.result_summary.split(" ").slice(0, 3).join(" ") +
-                          "..."
-                        : "Tidak Ada Ringkasan";
-                    }
-
-                    return (
-                      <div
-                        key={index}
-                        className="border rounded-lg p-4 hover:border-primary transition-colors"
-                      >
-                        <div className="flex justify-between">
-                          <div>
-                            <h3 className="font-medium">{test.test_title}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Tanggal:{" "}
-                              {new Date(test.created_at).toLocaleDateString(
-                                "id-ID"
-                              )}
-                            </p>
-                          </div>
-                          <div className="font-semibold text-blue-500">
-                            {resultText}
-                          </div>
-                        </div>
-                        <div className="flex justify-end mt-3 space-x-2">
-                          <Button variant="outline" size="sm">
-                            Lihat Detail
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            Unduh PDF
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-center text-gray-500">
-                    Belum ada hasil tes.
-                  </p>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="others" className="mt-6">
-            <div className="bg-card shadow-soft rounded-xl p-6">
-              <h2 className="text-lg font-medium mb-4">Hasil Tes Orang Lain</h2>
-              <div className="space-y-4">
-                {allTestResults.length > 0 ? (
-                  allTestResults.map((test, index) => {
-                    let resultText = "Tidak Ada Ringkasan";
-
-                    try {
-                      const parsedSummary = JSON.parse(test.result_summary);
-
-                      if (test.test_id === "sdq" && parsedSummary) {
-                        resultText = `${
-                          parsedSummary.difficultyLevel || "-"
-                        } / ${parsedSummary.strengthLevel || "-"}`;
-                      }
-                    } catch {
-                      resultText = test.result_summary
-                        ? test.result_summary.split(" ").slice(0, 3).join(" ") +
-                          "..."
-                        : "Tidak Ada Ringkasan";
-                    }
-
-                    return (
-                      <div
-                        key={index}
-                        className="border rounded-lg p-4 hover:border-primary transition-colors"
-                      >
-                        <div className="flex justify-between">
-                          <div>
-                            <h3 className="font-medium">{test.test_title}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Tanggal:{" "}
-                              {new Date(test.created_at).toLocaleDateString(
-                                "id-ID"
-                              )}
-                            </p>
-                          </div>
-                          <div className="font-semibold text-blue-500">
-                            {resultText}
-                          </div>
-                        </div>
-                        <div className="flex justify-end mt-3 space-x-2">
-                          <Button variant="outline" size="sm">
-                            Lihat Detail
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            Unduh PDF
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-center text-gray-500">
-                    Belum ada hasil tes.
-                  </p>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      ) : (
-        <div className="bg-card shadow-soft rounded-xl p-6">
-          <h2 className="text-lg font-medium mb-4">Hasil Tes Anda</h2>
-          <div className="space-y-4">
-            {testResultsByUser.length > 0 ? (
-              testResultsByUser.map((test, index) => {
-                let resultText = "Tidak Ada Ringkasan";
-
-                try {
-                  const parsedSummary = JSON.parse(test.result_summary);
-
-                  if (test.test_id === "sdq" && parsedSummary) {
-                    resultText = `${parsedSummary.difficultyLevel || "-"} / ${
-                      parsedSummary.strengthLevel || "-"
-                    }`;
-                  }
-                } catch {
-                  resultText = test.result_summary
-                    ? test.result_summary.split(" ").slice(0, 3).join(" ") +
-                      "..."
-                    : "Tidak Ada Ringkasan";
-                }
-
-                return (
-                  <div
-                    key={index}
-                    className="border rounded-lg p-4 hover:border-primary transition-colors"
-                  >
-                    <div className="flex justify-between">
-                      <div>
-                        <h3 className="font-medium">{test.test_title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Tanggal:{" "}
-                          {new Date(test.created_at).toLocaleDateString(
-                            "id-ID"
-                          )}
-                        </p>
-                      </div>
-                      <div className="font-semibold text-blue-500">
-                        {resultText}
-                      </div>
-                    </div>
-                    <div className="flex justify-end mt-3 space-x-2">
-                      <Button variant="outline" size="sm">
-                        Lihat Detail
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Unduh PDF
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-center text-gray-500">Belum ada hasil tes.</p>
-            )}
-          </div>
-        </div>
-      )}
+      <TestListResults isProfessional={isProfessional} userId={id} />
     </div>
   );
 };
