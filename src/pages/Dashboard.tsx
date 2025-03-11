@@ -63,7 +63,10 @@ let isAdmin = false;
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [userName, setUserName] = useState("Pengguna");
+  // Gunakan foto profil baru
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  // State baru untuk unread broadcasts
+  const [unreadBroadcastsCount, setUnreadBroadcastsCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -72,12 +75,12 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       id = user?.id;
-      if (user?.account_type == "professional") {
+      if (user?.account_type === "professional") {
         isProfessional = true;
       } else {
         isProfessional = false;
       }
-      if (user?.is_admin == true) {
+      if (user?.is_admin === true) {
         isAdmin = true;
       } else {
         isAdmin = false;
@@ -113,6 +116,96 @@ const Dashboard = () => {
     fetchUserProfile();
   }, [user]);
 
+  // Fetch unread broadcasts count
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchUnreadBroadcastsCount = async () => {
+      try {
+        // Get broadcasts berdasarkan tipe akun
+        let accountTypeFilter: string[] = [];
+        if (user.account_type === "professional") {
+          accountTypeFilter = ["professional", "all"];
+        } else {
+          accountTypeFilter = ["general", "all"];
+        }
+
+        const { data: broadcasts, error: broadcastError } = await supabase
+          .from("broadcasts")
+          .select("id, recipients")
+          .containedBy("recipients", accountTypeFilter);
+
+        if (broadcastError) throw broadcastError;
+
+        if (!broadcasts || broadcasts.length === 0) {
+          setUnreadBroadcastsCount(0);
+          return;
+        }
+
+        // Ambil semua ID broadcast
+        const broadcastIds = broadcasts.map(b => b.id);
+
+        // Cek broadcast yang telah dibaca user
+        const { data: recipientsData, error: recipientsError } = await supabase
+          .from("broadcast_recipients")
+          .select("broadcast_id, is_read")
+          .eq("user_id", user.id)
+          .in("broadcast_id", broadcastIds)
+          .eq("is_read", true);
+
+        if (recipientsError) throw recipientsError;
+
+        // Hitung jumlah broadcast yang belum dibaca
+        const readBroadcastIds = recipientsData?.map(r => r.broadcast_id) || [];
+        const unreadCount = broadcasts.filter(b => !readBroadcastIds.includes(b.id)).length;
+
+        setUnreadBroadcastsCount(unreadCount);
+      } catch (error) {
+        console.error("Error fetching unread broadcasts count:", error);
+      }
+    };
+
+    fetchUnreadBroadcastsCount();
+
+    // Real-time subscription untuk perubahan broadcasts
+    const broadcastsSubscription = supabase
+      .channel("broadcasts_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "broadcasts"
+        },
+        () => {
+          fetchUnreadBroadcastsCount();
+        }
+      )
+      .subscribe();
+
+    // Real-time subscription untuk broadcast_recipients
+    const recipientsSubscription = supabase
+      .channel("broadcast_recipients_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "broadcast_recipients",
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadBroadcastsCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(broadcastsSubscription);
+      supabase.removeChannel(recipientsSubscription);
+    };
+  }, [user]);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -135,7 +228,8 @@ const Dashboard = () => {
     email: user?.email || "pengguna@example.com",
     role: "Admin",
     isProfessional: true,
-    avatarUrl: userAvatar || "https://randomuser.me/api/portraits/men/32.jpg"
+    // Gunakan foto profil baru
+    avatarUrl: userAvatar || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQegOUQhLi-BzZMVWRISTFzDIO47cEfvnhd9g&s"
   };
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -227,9 +321,11 @@ const Dashboard = () => {
                     >
                       <MessageSquare className="mr-3 h-5 w-5" />
                       Pesan
-                      <span className="ml-auto bg-primary text-white text-xs py-0.5 px-1.5 rounded-full">
-                        3
-                      </span>
+                      {unreadBroadcastsCount > 0 && (
+                        <span className="ml-auto bg-primary text-white text-xs py-0.5 px-1.5 rounded-full">
+                          {unreadBroadcastsCount}
+                        </span>
+                      )}
                     </Link>
                   </div>
 
@@ -342,7 +438,9 @@ const Dashboard = () => {
                     className="p-2 rounded-md hover:bg-muted relative"
                   >
                     <Mail size={20} />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-accent-500 rounded-full"></span>
+                    {unreadBroadcastsCount > 0 && (
+                      <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+                    )}
                   </Link>
 
                   <div className="relative">
@@ -387,13 +485,14 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 bg">
+            <div className="p-4 sm:p-6">
               <Routes>
                 <Route index element={<DashboardOverview user={mockUser} />} />
                 <Route
                   path="tests/*"
                   element={<DashboardTests user={mockUser} />}
                 />
+                {/* Gunakan versi lama untuk DashboardResults */}
                 <Route
                   path="results/*"
                   element={<DashboardResults user={mockUser} />}
@@ -404,12 +503,14 @@ const Dashboard = () => {
                     <TestResultsTable category="" testName="" userId={id} />
                   }
                 />
-
                 <Route
                   path="appointments/*"
                   element={<DashboardAppointments user={mockUser} />}
                 />
-                <Route path="messages/*" element={<MessageManagement />} />
+                <Route
+                  path="messages/*"
+                  element={<MessageManagement />}
+                />
 
                 {mockUser.role === "Teacher" && (
                   <Route
@@ -717,6 +818,15 @@ const DashboardOverview = ({ user }: { user: any }) => {
   );
 };
 
+// Versi lama DashboardResults (tetap dipertahankan sesuai permintaan client)
+const DashboardResults = ({ user }: { user: any }) => {
+  return (
+    <div>
+      <TestListResults isProfessional={isProfessional} userId={id} />
+    </div>
+  );
+};
+
 const DashboardTests = ({ user }: { user: any }) => (
   <div>
     <h1 className="text-2xl font-semibold mb-6">Tes Mental</h1>
@@ -728,14 +838,6 @@ const DashboardTests = ({ user }: { user: any }) => (
     </div>
   </div>
 );
-
-const DashboardResults = ({ user }: { user: any }) => {
-  return (
-    <div>
-      <TestListResults isProfessional={isProfessional} userId={id} />
-    </div>
-  );
-};
 
 const DashboardAppointments = ({ user }: { user: any }) => (
   <div>
