@@ -159,6 +159,8 @@ export type Database = {
           created_by: string
           id: string
           priority: string
+          recepient_id: Json | null
+          recepient_read: Json | null
           recipients: string[] | null
           title: string
         }
@@ -168,6 +170,8 @@ export type Database = {
           created_by: string
           id?: string
           priority?: string
+          recepient_id?: Json | null
+          recepient_read?: Json | null
           recipients?: string[] | null
           title: string
         }
@@ -177,6 +181,8 @@ export type Database = {
           created_by?: string
           id?: string
           priority?: string
+          recepient_id?: Json | null
+          recepient_read?: Json | null
           recipients?: string[] | null
           title?: string
         }
@@ -349,6 +355,7 @@ export type Database = {
           birth_date: string | null
           city: string | null
           created_at: string | null
+          forwarding: string
           full_name: string | null
           id: string
           is_admin: boolean | null
@@ -361,6 +368,7 @@ export type Database = {
           birth_date?: string | null
           city?: string | null
           created_at?: string | null
+          forwarding?: string
           full_name?: string | null
           id?: string
           is_admin?: boolean | null
@@ -373,6 +381,7 @@ export type Database = {
           birth_date?: string | null
           city?: string | null
           created_at?: string | null
+          forwarding?: string
           full_name?: string | null
           id?: string
           is_admin?: boolean | null

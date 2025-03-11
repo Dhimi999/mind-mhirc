@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadAvatar } from "@/services/storageService";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useNavigate } from "react-router-dom";
 
 const AccountSettings = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
@@ -21,6 +23,7 @@ const AccountSettings = () => {
   const [birthDate, setBirthDate] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -199,6 +202,48 @@ const AccountSettings = () => {
 
   const isProfessional = accountType === "professional";
 
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    try {
+      setDeleteLoading(true);
+      
+      // First delete the profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", user.id);
+        
+      if (profileError) throw profileError;
+      
+      // Then delete the auth user (this will cascade delete all related data due to RLS)
+      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
+      
+      if (authError) throw authError;
+      
+      // Log the user out
+      await logout();
+      
+      toast({
+        title: "Akun Dihapus",
+        description: "Akun Anda telah berhasil dihapus.",
+      });
+      
+      // Redirect to homepage
+      navigate("/");
+      
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      toast({
+        title: "Gagal Menghapus Akun",
+        description: error.message || "Terjadi kesalahan saat menghapus akun Anda.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold mb-6">Pengaturan Akun</h1>
@@ -340,6 +385,46 @@ const AccountSettings = () => {
               {loading ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Account Termination Section */}
+      <Card className="border-destructive/20">
+        <CardHeader>
+          <CardTitle className="text-destructive">Terminasi Akun</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              Menghapus akun Anda akan menghapus semua data profil, hasil tes, dan informasi lainnya yang terkait dengan akun Anda secara permanen. Tindakan ini tidak dapat dibatalkan.
+            </p>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  Terminasi Akun Saya
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Konfirmasi Penghapusan Akun</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Apakah Anda yakin ingin menghapus akun Anda? Semua data Anda akan dihapus secara permanen dan tidak dapat dikembalikan.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAccount} 
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={deleteLoading}
+                  >
+                    {deleteLoading ? "Menghapus..." : "Ya, Hapus Akun Saya"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
     </div>

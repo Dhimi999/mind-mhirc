@@ -4,10 +4,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import ContentCategoryTab from "./ContentCategoryTab";
+import { Input } from "@/components/ui/input";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 type BlogPost = Tables<'blog_posts'>;
 
@@ -16,6 +18,9 @@ const ContentManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 10;
   const navigate = useNavigate();
 
   // Fetch all blog posts
@@ -28,6 +33,11 @@ const ContentManagement = () => {
         
         if (categoryFilter !== "all") {
           query = query.eq('category', categoryFilter);
+        }
+        
+        // Add search functionality
+        if (searchQuery) {
+          query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
         }
         
         const { data, error } = await query;
@@ -46,7 +56,7 @@ const ContentManagement = () => {
     };
     
     fetchPosts();
-  }, [categoryFilter]);
+  }, [categoryFilter, searchQuery]);
 
   // Handle post deletion
   const handleDeletePost = async (postId: string) => {
@@ -159,6 +169,14 @@ const ContentManagement = () => {
     navigate(`/dashboard/content/edit/${slug}`);
   };
 
+  // Calculate total pages
+  const totalPages = Math.ceil(posts.length / postsPerPage);
+  
+  // Get current posts (paginated)
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
+
   // Show loading state
   if (loading) {
     return (
@@ -201,6 +219,20 @@ const ContentManagement = () => {
         </Button>
       </div>
       
+      {/* Search box */}
+      <div className="w-full md:w-1/2 relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+        <Input 
+          placeholder="Cari konten berdasarkan judul atau isi..." 
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1); // Reset to page 1 when searching
+          }}
+          className="pl-10"
+        />
+      </div>
+      
       <Tabs defaultValue="all" value={categoryFilter} onValueChange={(value) => setCategoryFilter(value)}>
         <TabsList className="grid w-full grid-cols-4 lg:w-2/3">
           <TabsTrigger value="all">Semua Konten</TabsTrigger>
@@ -212,7 +244,7 @@ const ContentManagement = () => {
         <ContentCategoryTab
           value="all"
           title="Semua Konten Blog"
-          posts={posts}
+          posts={currentPosts}
           onDelete={handleDeletePost}
           onUpdateCategory={handleUpdateCategory}
           onUpdateCoverImage={handleUpdateCoverImage}
@@ -223,7 +255,7 @@ const ContentManagement = () => {
         <ContentCategoryTab
           value="Berita"
           title="Konten Berita"
-          posts={posts}
+          posts={currentPosts}
           onDelete={handleDeletePost}
           onUpdateCategory={handleUpdateCategory}
           onUpdateCoverImage={handleUpdateCoverImage}
@@ -234,7 +266,7 @@ const ContentManagement = () => {
         <ContentCategoryTab
           value="Edukasi"
           title="Konten Edukasi"
-          posts={posts}
+          posts={currentPosts}
           onDelete={handleDeletePost}
           onUpdateCategory={handleUpdateCategory}
           onUpdateCoverImage={handleUpdateCoverImage}
@@ -245,7 +277,7 @@ const ContentManagement = () => {
         <ContentCategoryTab
           value="Tips"
           title="Konten Tips"
-          posts={posts}
+          posts={currentPosts}
           onDelete={handleDeletePost}
           onUpdateCategory={handleUpdateCategory}
           onUpdateCoverImage={handleUpdateCoverImage}
@@ -253,6 +285,50 @@ const ContentManagement = () => {
           onEdit={handleEditPost}
         />
       </Tabs>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination className="mt-6">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage > 1) setCurrentPage(currentPage - 1);
+                }}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            
+            {[...Array(totalPages)].map((_, index) => (
+              <PaginationItem key={index}>
+                <PaginationLink 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(index + 1);
+                  }}
+                  isActive={currentPage === index + 1}
+                >
+                  {index + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                }}
+                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 };

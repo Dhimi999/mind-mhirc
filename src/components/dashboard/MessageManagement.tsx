@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -37,10 +37,15 @@ import {
   Plus,
   Megaphone,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Info,
+  AlertTriangle,
+  AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
+import { Json } from "@/integrations/supabase/types";
 
 // Define types
 interface Profile {
@@ -77,14 +82,14 @@ interface Broadcast {
   created_at: string;
   created_by: string;
   priority: string;
+  recipients: string[];
+  recepient_id: string[] | null;
+  recepient_read: string[] | null;
   is_read?: boolean;
-  read_at?: string | null;
-  broadcast_id?: string;
 }
 
 const MessageManagement: React.FC = () => {
   const { user, isLoading } = useAuth();
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("chat");
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -100,71 +105,63 @@ const MessageManagement: React.FC = () => {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch chat rooms for the current user
+  // Fetch chat rooms for the current user using a simpler approach to avoid RLS issues
   useEffect(() => {
     if (!user) return;
 
     const fetchChatRooms = async () => {
       setIsFetchingRooms(true);
       try {
-        // Use a more direct approach to avoid potential RLS issues
-        const { data: chatRoomsData, error: roomsError } = await supabase
+        // Simplified query to avoid RLS recursion
+        const { data: roomsData, error: roomsError } = await supabase
           .from("chat_rooms")
           .select("*")
           .order("updated_at", { ascending: false });
-        
+          
         if (roomsError) throw roomsError;
         
-        // Filter rooms where the user is a participant (client-side for now)
-        const roomIds = chatRoomsData.map(room => room.id);
-        
-        if (roomIds.length === 0) {
+        if (!roomsData || roomsData.length === 0) {
           setChatRooms([]);
           setIsFetchingRooms(false);
           return;
         }
         
-        // Get all participants for these rooms
-        const { data: participantsData, error: participantsError } = await supabase
-          .from("chat_participants")
-          .select("chat_room_id, user_id");
-          
-        if (participantsError) throw participantsError;
+        // Build room objects with participants fetched separately to avoid recursion
+        const roomsWithParticipants: ChatRoom[] = [];
         
-        // Get all profiles for users in these rooms
-        const userIds = [...new Set(participantsData.map(p => p.user_id))];
-        
-        const { data: profilesData, error: profilesError } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url, is_admin, account_type")
-          .in("id", userIds);
-          
-        if (profilesError) throw profilesError;
-        
-        // Filter down to rooms where current user is a participant
-        const userRoomIds = participantsData
-          .filter(p => p.user_id === user.id)
-          .map(p => p.chat_room_id);
-          
-        const userRooms = chatRoomsData.filter(room => 
-          userRoomIds.includes(room.id)
-        );
-        
-        // Build the full room objects with participants
-        const roomsWithParticipants = userRooms.map(room => {
-          const roomParticipantIds = participantsData
-            .filter(p => p.chat_room_id === room.id)
-            .map(p => p.user_id);
+        for (const room of roomsData) {
+          try {
+            // Get participants for this room
+            const { data: participants, error: participantsError } = await supabase
+              .from("chat_participants")
+              .select("user_id")
+              .eq("chat_room_id", room.id);
+              
+            if (participantsError) throw participantsError;
             
-          const roomParticipants = profilesData.filter(profile => 
-            roomParticipantIds.includes(profile.id)
-          );
-          
-          return {
-            ...room,
-            participants: roomParticipants
-          };
-        });
+            // Check if user is participant in this room
+            const isUserParticipant = participants?.some(p => p.user_id === user.id);
+            
+            if (isUserParticipant) {
+              // Get all user profiles for participants
+              const userIds = participants.map(p => p.user_id);
+              
+              const { data: profilesData, error: profilesError } = await supabase
+                .from("profiles")
+                .select("id, full_name, avatar_url, is_admin, account_type")
+                .in("id", userIds);
+                
+              if (profilesError) throw profilesError;
+              
+              roomsWithParticipants.push({
+                ...room,
+                participants: profilesData || []
+              });
+            }
+          } catch (error) {
+            console.error(`Error fetching participants for room ${room.id}:`, error);
+          }
+        }
         
         setChatRooms(roomsWithParticipants);
         
@@ -174,18 +171,14 @@ const MessageManagement: React.FC = () => {
         }
       } catch (error) {
         console.error("Error fetching chat rooms:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load chat rooms. Please try again.",
-          variant: "destructive"
-        });
+        toast("Failed to load chat rooms. Please try again.");
       } finally {
         setIsFetchingRooms(false);
       }
     };
 
     fetchChatRooms();
-  }, [user, toast, selectedRoomId]);
+  }, [user, selectedRoomId]);
 
   // Fetch available users for creating new chat rooms (admin only)
   useEffect(() => {
@@ -260,11 +253,7 @@ const MessageManagement: React.FC = () => {
         setMessages(messagesWithSenders);
       } catch (error) {
         console.error("Error fetching messages:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load messages. Please try again.",
-          variant: "destructive"
-        });
+        toast("Failed to load messages. Please try again.");
       } finally {
         setIsFetchingMessages(false);
       }
@@ -323,7 +312,7 @@ const MessageManagement: React.FC = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [selectedRoomId, toast]);
+  }, [selectedRoomId]);
 
   // Scroll to bottom of messages when new messages arrive
   useEffect(() => {
@@ -339,55 +328,87 @@ const MessageManagement: React.FC = () => {
     const fetchBroadcasts = async () => {
       setIsFetchingBroadcasts(true);
       try {
-        const { data, error } = await supabase
-          .from("broadcast_recipients")
-          .select(`
-            id, 
-            is_read, 
-            read_at, 
-            broadcast_id,
-            broadcasts:broadcast_id (
-              id, 
-              title, 
-              content, 
-              created_at, 
-              created_by, 
-              priority
-            )
-          `)
-          .eq("user_id", user.id)
-          .order("received_at", { ascending: false });
-
-        if (error) throw error;
-
-        // Flatten and shape the data
-        const formattedBroadcasts = data.map(item => ({
-          id: item.id,
-          broadcast_id: item.broadcast_id,
-          title: item.broadcasts.title,
-          content: item.broadcasts.content,
-          created_at: item.broadcasts.created_at,
-          created_by: item.broadcasts.created_by,
-          priority: item.broadcasts.priority,
-          is_read: item.is_read,
-          read_at: item.read_at
-        }));
-
-        setBroadcasts(formattedBroadcasts);
+        // Fetch all broadcasts
+        const { data: broadcastsData, error: broadcastError } = await supabase
+          .from("broadcasts")
+          .select("*")
+          .order("created_at", { ascending: false });
+          
+        if (broadcastError) throw broadcastError;
+        
+        // Filter broadcasts based on recepient_id containing user.id
+        let filteredBroadcasts: Broadcast[] = [];
+        
+        if (broadcastsData && broadcastsData.length > 0) {
+          // Process each broadcast to convert types and filter
+          filteredBroadcasts = broadcastsData
+            .filter(broadcast => {
+              // Safely check if the user ID is in the recipient_id array
+              if (broadcast.recepient_id) {
+                // Handle if recepient_id is a JSON string
+                let recipientIds: string[] = [];
+                if (typeof broadcast.recepient_id === 'string') {
+                  try {
+                    recipientIds = JSON.parse(broadcast.recepient_id as string);
+                  } catch (e) {
+                    recipientIds = [broadcast.recepient_id as string];
+                  }
+                } else if (Array.isArray(broadcast.recepient_id)) {
+                  recipientIds = broadcast.recepient_id as string[];
+                }
+                return recipientIds.includes(user.id);
+              }
+              return false;
+            })
+            .map(broadcast => {
+              // Process recepient_read to check if this user has read the broadcast
+              let recipientRead: string[] = [];
+              if (broadcast.recepient_read) {
+                if (typeof broadcast.recepient_read === 'string') {
+                  try {
+                    recipientRead = JSON.parse(broadcast.recepient_read as string);
+                  } catch (e) {
+                    recipientRead = [];
+                  }
+                } else if (Array.isArray(broadcast.recepient_read)) {
+                  recipientRead = broadcast.recepient_read as string[];
+                }
+              }
+              
+              // Process recipients array
+              let recipients: string[] = [];
+              if (broadcast.recipients) {
+                if (typeof broadcast.recipients === 'string') {
+                  try {
+                    recipients = JSON.parse(broadcast.recipients as string);
+                  } catch (e) {
+                    recipients = [broadcast.recipients as string];
+                  }
+                } else if (Array.isArray(broadcast.recipients)) {
+                  recipients = broadcast.recipients as string[];
+                }
+              }
+              
+              return {
+                ...broadcast,
+                recepient_read: recipientRead,
+                recipients: recipients,
+                is_read: recipientRead.includes(user.id)
+              } as Broadcast;
+            });
+        }
+        
+        setBroadcasts(filteredBroadcasts);
       } catch (error) {
         console.error("Error fetching broadcasts:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load broadcast messages. Please try again.",
-          variant: "destructive"
-        });
+        toast("Failed to load broadcast messages. Please try again.");
       } finally {
         setIsFetchingBroadcasts(false);
       }
     };
 
     fetchBroadcasts();
-  }, [user, toast]);
+  }, [user]);
 
   // Create a new chat room (admin only)
   const handleCreateChatRoom = async () => {
@@ -441,17 +462,10 @@ const MessageManagement: React.FC = () => {
       setSelectedRoomId(newRoom.id);
       setSelectedUserId(null);
 
-      toast({
-        title: "Success",
-        description: `Chat room with ${selectedUser.full_name} created successfully.`
-      });
+      toast("Chat room created successfully.");
     } catch (error) {
       console.error("Error creating chat room:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create chat room. Please try again.",
-        variant: "destructive"
-      });
+      toast("Failed to create chat room. Please try again.");
     } finally {
       setIsCreatingRoom(false);
     }
@@ -476,52 +490,66 @@ const MessageManagement: React.FC = () => {
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive"
-      });
+      toast("Failed to send message. Please try again.");
     } finally {
       setIsSendingMessage(false);
     }
   };
 
   // Mark a broadcast as read
-  const handleMarkBroadcastRead = async (broadcastRecipientId: string) => {
+  const handleMarkBroadcastRead = async (broadcastId: string) => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from("broadcast_recipients")
-        .update({
-          is_read: true,
-          read_at: new Date().toISOString()
-        })
-        .eq("id", broadcastRecipientId)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
+      // Update the broadcast in the database
+      const { data: broadcast, error: fetchError } = await supabase
+        .from("broadcasts")
+        .select("recepient_read")
+        .eq("id", broadcastId)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
+      // Make sure recepient_read is an array and add the user's ID if not already there
+      let updatedReadList: string[] = [];
+      
+      if (broadcast.recepient_read) {
+        if (typeof broadcast.recepient_read === 'string') {
+          try {
+            updatedReadList = JSON.parse(broadcast.recepient_read);
+          } catch (e) {
+            updatedReadList = [];
+          }
+        } else if (Array.isArray(broadcast.recepient_read)) {
+          updatedReadList = [...broadcast.recepient_read as string[]];
+        }
+      }
+      
+      if (!updatedReadList.includes(user.id)) {
+        updatedReadList.push(user.id);
+      }
+      
+      // Update the broadcast with the new read list
+      const { error: updateError } = await supabase
+        .from("broadcasts")
+        .update({ recepient_read: updatedReadList })
+        .eq("id", broadcastId);
+        
+      if (updateError) throw updateError;
 
       // Update local state
       setBroadcasts(prevBroadcasts =>
         prevBroadcasts.map(broadcast =>
-          broadcast.id === broadcastRecipientId
-            ? { ...broadcast, is_read: true, read_at: new Date().toISOString() }
+          broadcast.id === broadcastId
+            ? { ...broadcast, recepient_read: updatedReadList, is_read: true }
             : broadcast
         )
       );
 
-      toast({
-        title: "Success",
-        description: "Broadcast marked as read."
-      });
+      toast("Broadcast marked as read.");
     } catch (error) {
       console.error("Error marking broadcast as read:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update broadcast status. Please try again.",
-        variant: "destructive"
-      });
+      toast("Failed to update broadcast status. Please try again.");
     }
   };
 
@@ -541,15 +569,46 @@ const MessageManagement: React.FC = () => {
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
       case 'urgent':
-        return { label: 'Penting', color: 'bg-red-100 text-red-800' };
+        return { 
+          label: 'Mendesak', 
+          color: 'bg-red-100 text-red-800 border-red-300',
+          icon: <AlertCircle className="h-4 w-4 mr-1" />
+        };
+      case 'high':
+        return { 
+          label: 'Penting', 
+          color: 'bg-orange-100 text-orange-800 border-orange-300',
+          icon: <AlertTriangle className="h-4 w-4 mr-1" />
+        };
       case 'regular':
-        return { label: 'Umum', color: 'bg-blue-100 text-blue-800' };
+        return { 
+          label: 'Umum', 
+          color: 'bg-blue-100 text-blue-800 border-blue-300',
+          icon: <Info className="h-4 w-4 mr-1" />
+        };
       case 'info':
-        return { label: 'Info', color: 'bg-green-100 text-green-800' };
+        return { 
+          label: 'Info', 
+          color: 'bg-green-100 text-green-800 border-green-300',
+          icon: <Info className="h-4 w-4 mr-1" />
+        };
+      case 'recommendation':
+        return { 
+          label: 'Saran/Rekomendasi', 
+          color: 'bg-purple-100 text-purple-800 border-purple-300',
+          icon: <Info className="h-4 w-4 mr-1" />
+        };
       default:
-        return { label: 'Umum', color: 'bg-blue-100 text-blue-800' };
+        return { 
+          label: 'Umum', 
+          color: 'bg-blue-100 text-blue-800 border-blue-300',
+          icon: <Info className="h-4 w-4 mr-1" />
+        };
     }
   };
+
+  // Count unread broadcasts
+  const unreadBroadcastsCount = broadcasts.filter(b => !b.is_read).length;
 
   if (isLoading) {
     return (
@@ -575,6 +634,11 @@ const MessageManagement: React.FC = () => {
           <TabsTrigger value="broadcasts" className="flex items-center">
             <Megaphone className="w-4 h-4 mr-2" />
             Pesan Siaran
+            {unreadBroadcastsCount > 0 && (
+              <span className="ml-2 bg-primary text-white text-xs py-0.5 px-1.5 rounded-full">
+                {unreadBroadcastsCount}
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -648,7 +712,7 @@ const MessageManagement: React.FC = () => {
                   ) : chatRooms.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-4">
                       <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground mb-2">Belum ada obrolan</p>
+                      <p className="text-muted-foreground">Belum ada obrolan</p>
                       {user?.is_admin ? (
                         <p className="text-sm text-muted-foreground">
                           Klik tombol "Buat Obrolan" untuk memulai percakapan baru.
@@ -920,9 +984,10 @@ const MessageManagement: React.FC = () => {
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center">
                             <h3 className="font-semibold">{broadcast.title}</h3>
-                            <span className={`text-xs px-2 py-0.5 rounded ml-2 ${priorityInfo.color}`}>
+                            <Badge variant="outline" className={`ml-2 flex items-center ${priorityInfo.color}`}>
+                              {priorityInfo.icon}
                               {priorityInfo.label}
-                            </span>
+                            </Badge>
                           </div>
                         </div>
                         <div className="prose prose-sm max-w-none mb-4">

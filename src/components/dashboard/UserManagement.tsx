@@ -1,35 +1,34 @@
-
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
-import { toast } from "sonner";
-import { formatDate } from "@/lib/utils";
-import { 
-  CalendarDays, 
-  MapPin, 
-  Briefcase, 
-  UserCircle, 
-  Shield,
-  Trash2,
-  Edit2,
-  KeyRound,
-  CheckCircle,
-  XCircle
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
-  DialogTrigger
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,538 +39,639 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { Switch } from "@/components/ui/switch";
+  Eye,
+  Key,
+  Trash2,
+  MoreVertical,
+  Search,
+  BadgeCheck,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  UserCog,
+  Pencil
+} from "lucide-react";
 
-type Profile = Tables<'profiles'>;
-
-interface UserRole {
-  role: string;
-  user_id: string;
+interface UserProfile {
+  id: string;
+  full_name: string | null;
+  account_type: string | null;
+  is_admin: boolean | null;
+  avatar_url: string | null;
+  forwarding: string | null;
+  city: string | null;
+  profession: string | null;
+  birth_date: string | null;
+  created_at: string | null;
 }
 
-const UserManagement = () => {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [userRoles, setUserRoles] = useState<Record<string, string[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editForm, setEditForm] = useState({
-    full_name: '',
-    city: '',
-    profession: '',
-    birth_date: '',
-    account_type: ''
-  });
-  const [newPassword, setNewPassword] = useState('');
-  const [resetEmail, setResetEmail] = useState('');
+const USERS_PER_PAGE = 10;
 
+const UserManagement: React.FC = () => {
+  const { user } = useAuth();
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [showUserDetails, setShowUserDetails] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  const [editMode, setEditMode] = useState(false);
+  const [editedUser, setEditedUser] = useState<Partial<UserProfile>>({});
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  
   useEffect(() => {
-    const fetchProfilesAndRoles = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch profiles
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (profilesError) {
-          throw profilesError;
-        }
-        
-        setProfiles(profilesData || []);
-        
-        // Fetch roles
-        const { data: rolesData, error: rolesError } = await supabase
-          .from('user_roles')
-          .select('user_id, role');
-        
-        if (rolesError) {
-          console.error('Error fetching roles:', rolesError);
-          // Don't throw here, as we still want to display profiles even if roles fail
-        }
-        
-        // Organize roles by user_id
-        const rolesByUser: Record<string, string[]> = {};
-        if (rolesData) {
-          rolesData.forEach((roleData: UserRole) => {
-            if (!rolesByUser[roleData.user_id]) {
-              rolesByUser[roleData.user_id] = [];
-            }
-            rolesByUser[roleData.user_id].push(roleData.role);
-          });
-        }
-        
-        setUserRoles(rolesByUser);
-      } catch (err) {
-        console.error('Error fetching profiles:', err);
-        setError('Gagal memuat data pengguna. Silakan coba lagi nanti.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchProfilesAndRoles();
+    fetchUsers();
   }, []);
 
-  // Role badge color mapping
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'super':
-        return "bg-red-500";
-      case 'admin':
-        return "bg-blue-500";
-      default:
-        return "bg-green-500";
-    }
-  };
-
-  const handleEditUser = (user: Profile) => {
-    setSelectedUser(user);
-    setEditForm({
-      full_name: user.full_name || '',
-      city: user.city || '',
-      profession: user.profession || '',
-      birth_date: user.birth_date ? new Date(user.birth_date).toISOString().split('T')[0] : '',
-      account_type: user.account_type || 'general'
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const handleResetPassword = (user: Profile) => {
-    setSelectedUser(user);
-    setNewPassword('');
-    
-    // Fetch user's email
-    const fetchUserEmail = async () => {
-      try {
-        // Since we can't query auth.users directly with the JavaScript client,
-        // we'll try to use a workaround if possible
-        // This is where an admin API or server-side function would be ideal
-        setResetEmail(''); // Reset for now
-      } catch (error) {
-        console.error('Error fetching user email:', error);
-      }
-    };
-    
-    fetchUserEmail();
-    setIsResetPasswordDialogOpen(true);
-  };
-
-  const handleDeleteUser = (user: Profile) => {
-    setSelectedUser(user);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleToggleAdmin = async (user: Profile) => {
+  const fetchUsers = async () => {
     try {
-      setIsSubmitting(true);
+      setLoading(true);
       
-      const newAdminStatus = !(user.is_admin);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_admin: newAdminStatus })
-        .eq('id', user.id);
-      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (error) throw error;
       
-      // Update local state
-      setProfiles(profiles.map(profile => 
-        profile.id === user.id ? { ...profile, is_admin: newAdminStatus } : profile
-      ));
-      
-      toast.success(`Status Admin untuk ${user.full_name} telah ${newAdminStatus ? 'diaktifkan' : 'dinonaktifkan'}`);
-    } catch (err) {
-      console.error('Error toggling admin status:', err);
-      toast.error('Gagal mengubah status admin. Silakan coba lagi.');
+      setUsers(data || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Gagal mengambil data pengguna");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const submitEditForm = async () => {
+  const handleResetPassword = async () => {
+    if (!selectedUser || !newPassword) return;
+    
+    try {
+      // Implement edge function call for password reset
+      toast.success("Reset password akan diimplementasikan melalui Edge Function");
+      setShowResetPassword(false);
+      setNewPassword("");
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      toast.error("Gagal mereset password");
+    }
+  };
+
+  const handleDeleteUser = async () => {
     if (!selectedUser) return;
     
     try {
-      setIsSubmitting(true);
-      
-      // Prepare the form data
-      const formData: Partial<Profile> = {
-        full_name: editForm.full_name,
-        city: editForm.city,
-        profession: editForm.profession,
-        account_type: editForm.account_type
-      };
-      
-      // Add birth_date only if it's provided
-      if (editForm.birth_date) {
-        formData.birth_date = editForm.birth_date;
-      }
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update(formData)
-        .eq('id', selectedUser.id);
-      
-      if (error) throw error;
-      
-      // Update local state
-      setProfiles(profiles.map(profile => 
-        profile.id === selectedUser.id 
-          ? { ...profile, ...formData } 
-          : profile
-      ));
-      
-      setIsEditDialogOpen(false);
-      toast.success('Profil pengguna berhasil diperbarui');
-    } catch (err) {
-      console.error('Error updating user profile:', err);
-      toast.error('Gagal memperbarui profil. Silakan coba lagi.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const submitResetPassword = async () => {
-    if (!selectedUser) return;
-    
-    try {
-      setIsSubmitting(true);
-      
-      // In an actual implementation, we would use Supabase's admin functions
-      // to reset a user's password. Since this requires admin/service role credentials,
-      // we would typically implement this on the server side.
-      
-      // For a user-facing frontend, we can use passwordResetEmail instead:
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      
-      if (error) throw error;
-      
-      toast.success('Email reset password telah dikirim ke pengguna');
-      setIsResetPasswordDialogOpen(false);
-    } catch (err: any) {
-      console.error('Error resetting password:', err);
-      toast.error('Gagal mereset password. Silakan coba lagi.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const confirmDeleteUser = async () => {
-    if (!selectedUser) return;
-    
-    try {
-      setIsSubmitting(true);
-      
-      // In an actual implementation, we would use Supabase's admin functions
-      // to delete a user, which requires admin/service role credentials.
-      // This would typically be implemented on the server side.
-      
-      // For now, we'll just delete the user's profile record
-      const { error } = await supabase
-        .from('profiles')
+      // Delete the user from profiles table
+      const { error: profileError } = await supabase
+        .from("profiles")
         .delete()
-        .eq('id', selectedUser.id);
+        .eq("id", selectedUser.id);
+        
+      if (profileError) throw profileError;
       
-      if (error) throw error;
+      toast.success("Pengguna berhasil dihapus");
+      setShowDeleteConfirm(false);
       
-      // Remove from local state
-      setProfiles(profiles.filter(profile => profile.id !== selectedUser.id));
+      // Update local state
+      setUsers(users.filter(u => u.id !== selectedUser.id));
       
-      setIsDeleteDialogOpen(false);
-      toast.success('Profil pengguna berhasil dihapus');
-      
-      // Note: In a real application, you would also need to delete the user from auth.users
-      // using admin functions or an Edge Function with service role credentials
-    } catch (err: any) {
-      console.error('Error deleting user:', err);
-      toast.error('Gagal menghapus profil. Silakan coba lagi.');
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Gagal menghapus pengguna");
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="animate-pulse space-y-4">
-          <div className="h-10 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleToggleAdmin = async (userId: string, isCurrentlyAdmin: boolean | null) => {
+    if (!user?.is_admin) {
+      toast.error("Anda tidak memiliki izin untuk melakukan tindakan ini");
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_admin: !isCurrentlyAdmin })
+        .eq("id", userId);
 
-  if (error) {
-    return (
-      <div className="bg-card shadow-soft rounded-xl p-6 text-center">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button 
-          onClick={() => setLoading(true)}
-          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
-        >
-          Coba Lagi
-        </button>
-      </div>
-    );
-  }
+      if (error) throw error;
+      
+      // Update local state
+      setUsers(users.map(u => 
+        u.id === userId ? { ...u, is_admin: !isCurrentlyAdmin } : u
+      ));
+      
+      toast.success(
+        User ${isCurrentlyAdmin ? "bukan lagi admin" : "sekarang menjadi admin"}
+      );
+      
+      // Update selected user if it's the currently selected one
+      if (selectedUser && selectedUser.id === userId) {
+        setSelectedUser({ ...selectedUser, is_admin: !isCurrentlyAdmin });
+      }
+    } catch (error) {
+      console.error("Error toggling admin status:", error);
+      toast.error("Gagal mengubah status admin");
+    }
+  };
+
+  const handleSaveUserDetails = async () => {
+    if (!selectedUser || !editedUser) return;
+    
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update(editedUser)
+        .eq("id", selectedUser.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      const updatedUser = { ...selectedUser, ...editedUser };
+      setUsers(users.map(u => u.id === selectedUser.id ? updatedUser : u));
+      setSelectedUser(updatedUser);
+      
+      toast.success("Detail pengguna berhasil diperbarui");
+      setEditMode(false);
+    } catch (error) {
+      console.error("Error updating user details:", error);
+      toast.error("Gagal memperbarui detail pengguna");
+    }
+  };
+
+  // Filter users based on search query and active tab
+  const filteredUsers = users.filter(user => {
+    // Search filter
+    const matchesSearch = !searchQuery || 
+      (user.full_name && user.full_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.forwarding && user.forwarding.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+    // Tab filter
+    if (activeTab === "all") return matchesSearch;
+    if (activeTab === "general") return matchesSearch && user.account_type === "general";
+    if (activeTab === "professional") return matchesSearch && user.account_type === "professional";
+    if (activeTab === "admin") return matchesSearch && user.is_admin === true;
+    
+    return matchesSearch;
+  });
+  
+  // Pagination logic
+  const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * USERS_PER_PAGE, 
+    currentPage * USERS_PER_PAGE
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Manajemen Pengguna</h1>
-        <div className="text-sm text-muted-foreground">
-          Total Pengguna: {profiles.length}
-        </div>
-      </div>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-semibold mb-6">Manajemen Pengguna</h1>
       
-      <Card className="bg-card shadow-soft">
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Daftar Pengguna</h2>
+      <Card>
+        <CardHeader>
+          <CardTitle>Daftar Pengguna</CardTitle>
+          <CardDescription>
+            Kelola profil pengguna, reset password, dan atur hak akses
+          </CardDescription>
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-4">
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari berdasarkan nama atau email..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1); // Reset to first page on new search
+                }}
+              />
+            </div>
             
-            {profiles.length === 0 ? (
-              <p className="text-muted-foreground">Belum ada pengguna terdaftar.</p>
-            ) : (
-              <div className="space-y-4 mt-4">
-                {profiles.map((profile) => (
-                  <div key={profile.id} className="border rounded-lg p-4 hover:border-primary transition-colors">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-lg">{profile.full_name || 'Nama tidak tersedia'}</h3>
-                          {userRoles[profile.id]?.map((role, index) => (
-                            <Badge key={index} className={`text-white ${getRoleBadgeColor(role)}`}>
-                              {role}
-                            </Badge>
-                          ))}
-                          {profile.is_admin && 
-                            <Badge className="bg-purple-500 text-white">Admin</Badge>
-                          }
-                        </div>
-                        <div className="mt-2 space-y-1">
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <UserCircle size={16} className="mr-2" />
-                            <span>{profile.account_type || 'Tipe akun tidak tersedia'}</span>
+            <Tabs 
+              value={activeTab} 
+              onValueChange={(v) => {
+                setActiveTab(v);
+                setCurrentPage(1); // Reset to first page on tab change
+              }}
+              className="w-full md:w-auto"
+            >
+              <TabsList className="grid grid-cols-4 w-full">
+                <TabsTrigger value="all">Semua</TabsTrigger>
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="professional">Professional</TabsTrigger>
+                <TabsTrigger value="admin">Admin</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : paginatedUsers.length === 0 ? (
+            <div className="text-center py-8">
+              <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                {searchQuery
+                  ? "Tidak ada pengguna yang sesuai dengan pencarian"
+                  : "Tidak ada pengguna yang terdaftar"}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Informasi Pengguna</TableHead>
+                      <TableHead className="w-24 text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedUsers.map((userItem) => (
+                      <TableRow key={userItem.id}>
+                        <TableCell>
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0">
+                              {userItem.avatar_url ? (
+                                <img
+                                  src={userItem.avatar_url}
+                                  alt={userItem.full_name || "User"}
+                                  className="h-10 w-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                  <User className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">{userItem.full_name || "Tanpa Nama"}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {userItem.forwarding || "No email"}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={text-xs px-2 py-0.5 rounded-full ${
+                                  userItem.account_type === "professional" 
+                                    ? "bg-blue-100 text-blue-700" 
+                                    : "bg-green-100 text-green-700"
+                                }}>
+                                  {userItem.account_type === "professional" ? "Professional" : "General"}
+                                </span>
+                                {userItem.is_admin && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                                    Admin
+                                  </span>
+                                )}
+                                <span className="text-xs text-muted-foreground">
+                                  ID: {userItem.id.slice(0, 8)}...
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          {profile.birth_date && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <CalendarDays size={16} className="mr-2" />
-                              <span>{formatDate(profile.birth_date)}</span>
-                            </div>
-                          )}
-                          {profile.city && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <MapPin size={16} className="mr-2" />
-                              <span>{profile.city}</span>
-                            </div>
-                          )}
-                          {profile.profession && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <Briefcase size={16} className="mr-2" />
-                              <span>{profile.profession}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="text-sm text-muted-foreground">
-                          <div>Bergabung: {formatDate(profile.created_at || '')}</div>
-                          <div>ID: {profile.id.substring(0, 8)}...</div>
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm mr-1">Admin:</span>
-                            <Switch 
-                              checked={!!profile.is_admin} 
-                              onCheckedChange={() => handleToggleAdmin(profile)}
-                              disabled={isSubmitting}
-                            />
-                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" disabled={isSubmitting}>
-                                Aksi
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditUser(profile)}>
-                                <Edit2 size={16} className="mr-2" />
-                                Edit Detail
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleResetPassword(profile)}>
-                                <KeyRound size={16} className="mr-2" />
-                                Reset Password
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteUser(profile)}
-                                className="text-red-500 focus:text-red-500"
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUser(userItem);
+                                  setShowUserDetails(true);
+                                  setEditMode(false);
+                                  setEditedUser({});
+                                }}
                               >
-                                <Trash2 size={16} className="mr-2" />
-                                Hapus Akun
+                                <Eye className="mr-2 h-4 w-4" />
+                                <span>Detail Pengguna</span>
                               </DropdownMenuItem>
+                              {user?.is_admin && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedUser(userItem);
+                                      setEditMode(true);
+                                      setEditedUser({
+                                        full_name: userItem.full_name,
+                                        forwarding: userItem.forwarding,
+                                        city: userItem.city,
+                                        profession: userItem.profession
+                                      });
+                                      setShowUserDetails(true);
+                                    }}
+                                  >
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    <span>Edit Profil</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedUser(userItem);
+                                      setShowResetPassword(true);
+                                    }}
+                                  >
+                                    <Key className="mr-2 h-4 w-4" />
+                                    <span>Reset Password</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedUser(userItem);
+                                      setShowDeleteConfirm(true);
+                                    }}
+                                    className="text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Hapus Pengguna</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleToggleAdmin(userItem.id, userItem.is_admin)}
+                                  >
+                                    {userItem.is_admin ? (
+                                      <>
+                                        <User className="mr-2 h-4 w-4" />
+                                        <span>Batalkan Admin</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <BadgeCheck className="mr-2 h-4 w-4" />
+                                        <span>Jadikan Admin</span>
+                                      </>
+                                    )}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            )}
-          </div>
+              
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center space-x-2 mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm">
+                    Halaman {currentPage} dari {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      {/* User Details Dialog */}
+      <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Profil Pengguna</DialogTitle>
+            <DialogTitle>{editMode ? "Edit Profil Pengguna" : "Detail Pengguna"}</DialogTitle>
             <DialogDescription>
-              Perbarui detail profil untuk {selectedUser?.full_name || 'pengguna'}.
+              {editMode ? "Ubah informasi profil pengguna" : "Informasi lengkap tentang pengguna ini"}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="full_name" className="text-right">
-                Nama Lengkap
-              </Label>
-              <Input
-                id="full_name"
-                value={editForm.full_name}
-                onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
-                className="col-span-3"
-              />
+          
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                {selectedUser.avatar_url ? (
+                  <img
+                    src={selectedUser.avatar_url}
+                    alt={selectedUser.full_name || "User"}
+                    className="h-16 w-16 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                    <User className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div>
+                  {editMode ? (
+                    <Input 
+                      value={editedUser.full_name || ''} 
+                      onChange={(e) => setEditedUser({...editedUser, full_name: e.target.value})}
+                      placeholder="Nama Lengkap"
+                      className="mb-1"
+                    />
+                  ) : (
+                    <h3 className="font-medium">{selectedUser.full_name || "Tanpa Nama"}</h3>
+                  )}
+                  
+                  {editMode ? (
+                    <Input 
+                      value={editedUser.forwarding || ''} 
+                      onChange={(e) => setEditedUser({...editedUser, forwarding: e.target.value})}
+                      placeholder="Email"
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {selectedUser.forwarding || "No email"}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">ID Pengguna</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Jenis Akun</p>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {selectedUser.account_type || "Tidak diketahui"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Status Admin</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.is_admin ? "Ya" : "Tidak"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Tanggal Lahir</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.birth_date || "Tidak diisi"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Kota</p>
+                  {editMode ? (
+                    <Input 
+                      value={editedUser.city || ''} 
+                      onChange={(e) => setEditedUser({...editedUser, city: e.target.value})}
+                      placeholder="Kota"
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {selectedUser.city || "Tidak diisi"}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Profesi</p>
+                  {editMode ? (
+                    <Input 
+                      value={editedUser.profession || ''} 
+                      onChange={(e) => setEditedUser({...editedUser, profession: e.target.value})}
+                      placeholder="Profesi"
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {selectedUser.profession || "Tidak diisi"}
+                    </p>
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm font-medium">Tanggal Bergabung</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.created_at
+                      ? new Date(selectedUser.created_at).toLocaleString("id-ID")
+                      : "Tidak diketahui"}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="city" className="text-right">
-                Kota
-              </Label>
-              <Input
-                id="city"
-                value={editForm.city}
-                onChange={(e) => setEditForm({...editForm, city: e.target.value})}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="profession" className="text-right">
-                Profesi
-              </Label>
-              <Input
-                id="profession"
-                value={editForm.profession}
-                onChange={(e) => setEditForm({...editForm, profession: e.target.value})}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="birth_date" className="text-right">
-                Tanggal Lahir
-              </Label>
-              <Input
-                id="birth_date"
-                type="date"
-                value={editForm.birth_date}
-                onChange={(e) => setEditForm({...editForm, birth_date: e.target.value})}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="account_type" className="text-right">
-                Tipe Akun
-              </Label>
-              <select
-                id="account_type"
-                value={editForm.account_type}
-                onChange={(e) => setEditForm({...editForm, account_type: e.target.value})}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="general">General</option>
-                <option value="professional">Professional</option>
-              </select>
-            </div>
-          </div>
+          )}
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSubmitting}>Batal</Button>
-            <Button onClick={submitEditForm} disabled={isSubmitting}>
-              {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
-            </Button>
+            {editMode ? (
+              <>
+                <Button variant="outline" onClick={() => {
+                  setEditMode(false);
+                  setEditedUser({});
+                }}>
+                  Batal
+                </Button>
+                <Button onClick={handleSaveUserDetails}>
+                  Simpan Perubahan
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setShowUserDetails(false)}>
+                  Tutup
+                </Button>
+                {user?.is_admin && selectedUser && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setEditMode(true);
+                        setEditedUser({
+                          full_name: selectedUser.full_name,
+                          forwarding: selectedUser.forwarding,
+                          city: selectedUser.city,
+                          profession: selectedUser.profession
+                        });
+                      }}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit Profil
+                    </Button>
+                    <Button onClick={() => handleToggleAdmin(selectedUser.id, selectedUser.is_admin)}>
+                      {selectedUser.is_admin ? "Batalkan Admin" : "Jadikan Admin"}
+                    </Button>
+                  </>
+                )}
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Reset Password Dialog */}
-      <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={showResetPassword} onOpenChange={setShowResetPassword}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>
-              Kirim instruksi reset password ke email pengguna.
+              Reset password untuk pengguna {selectedUser?.full_name || "ini"}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <div className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="reset_email" className="text-right">
-                  Email
-                </Label>
-                <Input
-                  id="reset_email"
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  placeholder="Email pengguna"
-                  className="col-span-3"
-                />
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Link reset password akan dikirim ke email pengguna. Password baru hanya akan aktif setelah pengguna mengklik link tersebut.
-              </p>
-            </div>
+          
+          <div className="space-y-4">
+            <p className="text-sm">
+              Masukkan password baru untuk pengguna ini.
+            </p>
+            
+            <Input
+              placeholder="Password baru"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
           </div>
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsResetPasswordDialogOpen(false)} disabled={isSubmitting}>Batal</Button>
-            <Button onClick={submitResetPassword} disabled={isSubmitting || !resetEmail}>
-              {isSubmitting ? "Mengirim..." : "Kirim Link Reset"}
+            <Button variant="outline" onClick={() => setShowResetPassword(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleResetPassword} disabled={!newPassword}>
+              Reset Password
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete User Confirmation */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Akun Pengguna</AlertDialogTitle>
+            <AlertDialogTitle>Konfirmasi Hapus Pengguna</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus akun pengguna {selectedUser?.full_name}? Tindakan ini tidak dapat dibatalkan dan semua data pengguna akan dihapus secara permanen.
+              Apakah Anda yakin ingin menghapus pengguna {selectedUser?.full_name || "ini"}?
+              Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteUser} className="bg-red-500 hover:bg-red-600" disabled={isSubmitting}>
-              {isSubmitting ? "Menghapus..." : "Hapus Akun"}
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600">
+              Hapus Pengguna
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

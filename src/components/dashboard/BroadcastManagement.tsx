@@ -38,7 +38,27 @@ const BroadcastManagement = () => {
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [allUsers, setAllUsers] = useState<{ id: string, account_type: string }[]>([]);
   const { user } = useAuth();
+
+  // Fetch users to populate recipient_id
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, account_type');
+        
+        if (error) throw error;
+        
+        setAllUsers(data || []);
+      } catch (err) {
+        console.error('Error fetching users:', err);
+      }
+    };
+    
+    fetchUsers();
+  }, []);
 
   // Fetch broadcasts from Supabase
   useEffect(() => {
@@ -76,6 +96,30 @@ const BroadcastManagement = () => {
     setIsSending(true);
     
     try {
+      // Convert recipient to appropriate array format for database
+      let recipientsArray: string[];
+      let recipientIds: string[] = [];
+      
+      switch (recipient) {
+        case 'users':
+          recipientsArray = ['general'];
+          recipientIds = allUsers
+            .filter(u => u.account_type === 'general')
+            .map(u => u.id);
+          break;
+        case 'professionals':
+          recipientsArray = ['professional'];
+          recipientIds = allUsers
+            .filter(u => u.account_type === 'professional')
+            .map(u => u.id);
+          break;
+        case 'all':
+        default:
+          recipientsArray = ['general', 'professional'];
+          recipientIds = allUsers.map(u => u.id);
+          break;
+      }
+      
       // Save to Supabase
       const { data, error } = await supabase
         .from('broadcasts')
@@ -83,7 +127,9 @@ const BroadcastManagement = () => {
           { 
             title, 
             content: message, 
-            recipients: [recipient], 
+            recipients: recipientsArray, 
+            recepient_id: recipientIds,
+            recepient_read: [],
             priority, 
             created_by: user?.id || null 
           }
@@ -128,24 +174,43 @@ const BroadcastManagement = () => {
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
+      case 'urgent':
+        return <Badge variant="outline" className="bg-red-50 text-red-500 border-red-200">Mendesak</Badge>;
       case 'high':
-        return <Badge variant="outline" className="bg-red-50 text-red-500 border-red-200">Penting</Badge>;
+        return <Badge variant="outline" className="bg-orange-50 text-orange-500 border-orange-200">Penting</Badge>;
       case 'regular':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-500 border-blue-200">Reguler</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-500 border-blue-200">Umum</Badge>;
+      case 'info':
+        return <Badge variant="outline" className="bg-green-50 text-green-500 border-green-200">Info</Badge>;
+      case 'recommendation':
+        return <Badge variant="outline" className="bg-purple-50 text-purple-500 border-purple-200">Saran/Rekomendasi</Badge>;
       default:
-        return <Badge variant="outline">Reguler</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-500 border-blue-200">Umum</Badge>;
     }
   };
 
   const getRecipientBadge = (recipients: string[]) => {
-    if (recipients.includes('all')) {
+    if (recipients && recipients.includes('general') && recipients.includes('professional')) {
       return <Badge variant="outline" className="bg-purple-50 text-purple-500 border-purple-200">Semua Pengguna</Badge>;
-    } else if (recipients.includes('users')) {
+    } else if (recipients && recipients.includes('general')) {
       return <Badge variant="outline" className="bg-green-50 text-green-500 border-green-200">Pengguna Reguler</Badge>;
-    } else if (recipients.includes('professionals')) {
+    } else if (recipients && recipients.includes('professional')) {
       return <Badge variant="outline" className="bg-yellow-50 text-yellow-500 border-yellow-200">Profesional</Badge>;
     } else {
       return <Badge variant="outline">Kustom</Badge>;
+    }
+  };
+
+  // Helper function to display recipient text in history
+  const getRecipientText = (recipients: string[]) => {
+    if (recipients && recipients.includes('general') && recipients.includes('professional')) {
+      return 'Dikirim ke semua pengguna';
+    } else if (recipients && recipients.includes('general')) {
+      return 'Dikirim ke pengguna reguler';
+    } else if (recipients && recipients.includes('professional')) {
+      return 'Dikirim ke profesional';
+    } else {
+      return 'Dikirim ke pengguna kustom';
     }
   };
 
@@ -228,8 +293,11 @@ const BroadcastManagement = () => {
                         <SelectValue placeholder="Pilih prioritas" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="regular">Reguler</SelectItem>
+                        <SelectItem value="urgent">Mendesak</SelectItem>
                         <SelectItem value="high">Penting</SelectItem>
+                        <SelectItem value="regular">Umum</SelectItem>
+                        <SelectItem value="info">Info</SelectItem>
+                        <SelectItem value="recommendation">Saran/Rekomendasi</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -313,13 +381,7 @@ const BroadcastManagement = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Users className="h-4 w-4" />
-                          <span>
-                            {broadcast.recipients?.includes('all') 
-                              ? 'Dikirim ke semua pengguna' 
-                              : broadcast.recipients?.includes('users')
-                                ? 'Dikirim ke pengguna reguler'
-                                : 'Dikirim ke profesional'}
-                          </span>
+                          <span>{getRecipientText(broadcast.recipients || [])}</span>
                         </div>
                         
                         <div className="flex items-center gap-2">
