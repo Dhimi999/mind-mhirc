@@ -26,7 +26,9 @@ import {
   Users,
   X,
   Megaphone,
-  AlertCircle
+  AlertCircle,
+  // Import Settings dengan alias
+  Settings as SettingsIcon
 } from "lucide-react";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
@@ -42,8 +44,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// Import Settings icon dengan alias untuk menghindari konflik nama
-import { Settings as SettingsIcon } from "lucide-react";
 import ContentManagement from "@/components/dashboard/ContentManagement";
 import BlogEditor from "@/components/dashboard/BlogEditor";
 import UserManagement from "@/components/dashboard/UserManagement";
@@ -55,10 +55,8 @@ import ReportsManagement from "@/components/dashboard/ReportsManagement";
 import MessageManagement from "@/components/dashboard/MessageManagement";
 import TestListResults from "@/components/dashboard/TestListResults";
 import TestResultsTable from "@/components/dashboard/TestResultsTable";
-import DashboardAppointments from "@/components/dashboard/AppointmentsDashboard";
-import DashboardStudents from "@/components/dashboard/StudentsDashboard"; // misalnya, jika ada
 
-// Variabel global untuk dashboard results
+// Variabel global untuk menentukan role user
 let id = "";
 let isProfessional = false;
 let isAdmin = false;
@@ -68,15 +66,17 @@ const Dashboard = () => {
   const [userName, setUserName] = useState("Pengguna");
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [unreadBroadcastsCount, setUnreadBroadcastsCount] = useState(0);
+  const [chatRooms, setChatRooms] = useState<any[]>([]);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { user, logout } = useAuth();
 
-  // Fetch profil user dan set variabel global (id, isProfessional, isAdmin)
+  // Ambil profile user
   useEffect(() => {
     const fetchUserProfile = async () => {
-      id = user?.id || "";
+      id = user?.id;
       isProfessional = user?.account_type === "professional";
       isAdmin = user?.is_admin === true;
       if (user?.id) {
@@ -102,15 +102,17 @@ const Dashboard = () => {
     fetchUserProfile();
   }, [user]);
 
-  // Fetch unread broadcasts count dengan real‑time subscription
+  // Ambil unread broadcasts count (logika dari Dashboard (1))
   useEffect(() => {
     if (!user) return;
     const fetchUnreadBroadcastsCount = async () => {
       try {
-        let accountTypeFilter: string[] = user.account_type === "professional"
-          ? ["professional", "all"]
-          : ["general", "all"];
-
+        let accountTypeFilter: string[] = [];
+        if (user.account_type === "professional") {
+          accountTypeFilter = ["professional", "all"];
+        } else {
+          accountTypeFilter = ["general", "all"];
+        }
         const { data: broadcasts, error: broadcastError } = await supabase
           .from("broadcasts")
           .select("id, recipients")
@@ -136,23 +138,86 @@ const Dashboard = () => {
       }
     };
     fetchUnreadBroadcastsCount();
+
     const broadcastsSubscription = supabase
       .channel("broadcasts_changes")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "broadcasts" }, () => {
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "broadcasts"
+      }, () => {
         fetchUnreadBroadcastsCount();
       })
       .subscribe();
+
     const recipientsSubscription = supabase
       .channel("broadcast_recipients_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "broadcast_recipients", filter: `user_id=eq.${user.id}` }, () => {
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "broadcast_recipients",
+        filter: `user_id=eq.${user.id}`
+      }, () => {
         fetchUnreadBroadcastsCount();
       })
       .subscribe();
+
     return () => {
       supabase.removeChannel(broadcastsSubscription);
       supabase.removeChannel(recipientsSubscription);
     };
   }, [user]);
+
+  // Menggunakan logika pengambilan ruang obrolan dari Dashboard (2)
+  useEffect(() => {
+    if (!user) return;
+    const fetchChatRooms = async () => {
+      setIsSidebarOpen(false); // opsional, jika ingin menutup sidebar setelah navigasi
+      try {
+        const { data: roomsData, error: roomsError } = await supabase
+          .from("chat_rooms")
+          .select("*")
+          .order("updated_at", { ascending: false });
+        if (roomsError) throw roomsError;
+        if (!roomsData || roomsData.length === 0) {
+          setChatRooms([]);
+          return;
+        }
+        const roomsWithParticipants: any[] = [];
+        for (const room of roomsData) {
+          try {
+            const { data: participants, error: participantsError } = await supabase
+              .from("chat_participants")
+              .select("user_id")
+              .eq("chat_room_id", room.id);
+            if (participantsError) throw participantsError;
+            const isUserParticipant = participants?.some(p => p.user_id === user.id);
+            if (isUserParticipant) {
+              const userIds = participants.map(p => p.user_id);
+              const { data: profilesData, error: profilesError } = await supabase
+                .from("profiles")
+                .select("id, full_name, avatar_url, is_admin, account_type")
+                .in("id", userIds);
+              if (profilesError) throw profilesError;
+              roomsWithParticipants.push({
+                ...room,
+                participants: profilesData || []
+              });
+            }
+          } catch (error) {
+            console.error(`Error fetching participants for room ${room.id}:`, error);
+          }
+        }
+        setChatRooms(roomsWithParticipants);
+        if (roomsWithParticipants.length > 0 && !selectedRoomId) {
+          setSelectedRoomId(roomsWithParticipants[0].id);
+        }
+      } catch (error) {
+        console.error("Error fetching chat rooms:", error);
+      }
+    };
+    fetchChatRooms();
+  }, [user, selectedRoomId]);
 
   const handleLogout = async () => {
     try {
@@ -171,15 +236,17 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
   const mockUser = {
     name: userName,
     email: user?.email || "pengguna@example.com",
     role: "Admin",
     isProfessional: true,
-    avatarUrl: userAvatar || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQegOUQhLi-BzZMVWRISTFzDIO47cEfvnhd9g&s"
+    avatarUrl:
+      userAvatar ||
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQegOUQhLi-BzZMVWRISTFzDIO47cEfvnhd9g&s"
   };
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -192,12 +259,16 @@ const Dashboard = () => {
             ></div>
           )}
           <aside
-            className={`fixed top-0 left-0 z-40 h-screen w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+            className={`fixed top-0 left-0 z-40 h-screen w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 ${
+              isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
           >
-            <div className="p-4 h-full flex flex-col max-h-screen h-auto">
+            <div className="p-4 h-full flex flex-col max-h-screen">
               <div className="flex items-center space-x-2 mb-6 mt-4">
                 <Brain className="h-8 w-8 text-primary" />
-                <span className="font-bold text-xl tracking-tight">Mind MHIRC</span>
+                <span className="font-bold text-xl tracking-tight">
+                  Mind MHIRC
+                </span>
               </div>
               <div className="flex items-center justify-between lg:hidden">
                 <span className="font-semibold">Menu</span>
@@ -354,13 +425,13 @@ const Dashboard = () => {
                     <Route path="content" element={<DashboardContent user={mockUser} />} />
                     <Route path="content/new" element={<DashboardContentNew user={mockUser} />} />
                     <Route path="content/edit/:slug" element={<DashboardContentEdit user={mockUser} />} />
-                    <Route path="broadcast/*" element={<BroadcastManagement user={mockUser} />} />
-                    <Route path="reports/*" element={<ReportsManagement user={mockUser} />} />
-                    <Route path="analytics/*" element={<Analytics user={mockUser} />} />
+                    <Route path="broadcast/*" element={<DashboardBroadcast user={mockUser} />} />
+                    <Route path="reports/*" element={<DashboardReports user={mockUser} />} />
+                    <Route path="analytics/*" element={<DashboardAnalytics user={mockUser} />} />
                   </>
                 )}
-                <Route path="settings/*" element={<AccountSettings user={mockUser} />} />
-                <Route path="help/*" element={<HelpSection user={mockUser} />} />
+                <Route path="settings/*" element={<DashboardSettings user={mockUser} />} />
+                <Route path="help/*" element={<DashboardHelp user={mockUser} />} />
                 <Route path="*" element={<DashboardNotFound />} />
               </Routes>
             </div>
@@ -372,6 +443,7 @@ const Dashboard = () => {
   );
 };
 
+// DashboardOverview dan komponen terkait diambil dari Dashboard (1)
 const DashboardOverview = ({ user }: { user: any }) => {
   const [stats, setStats] = useState({
     totalTests: 0,
@@ -396,10 +468,11 @@ const DashboardOverview = ({ user }: { user: any }) => {
         const { count: totalBlogs, error: blogError } = await supabase
           .from("blog_posts")
           .select("id", { count: "exact", head: true });
-        const { count: blogsLast7Days, error: blogsLast7DaysError } = await supabase
-          .from("blog_posts")
-          .select("id", { count: "exact", head: true })
-          .gte("published_date", sevenDaysAgoISO);
+        const { count: blogsLast7Days, error: blogsLast7DaysError } =
+          await supabase
+            .from("blog_posts")
+            .select("id", { count: "exact", head: true })
+            .gte("published_date", sevenDaysAgoISO);
         if (totalError || last7DaysError || blogError || blogsLast7DaysError) {
           console.error("Error fetching statistics");
           return {
@@ -425,10 +498,8 @@ const DashboardOverview = ({ user }: { user: any }) => {
       const data = await fetchTestStats();
       setStats(data);
     };
-
     fetchData();
   }, []);
-
   return (
     <div className="mt-1">
       <div className="mb-6 md:mb-8">
@@ -444,7 +515,9 @@ const DashboardOverview = ({ user }: { user: any }) => {
             </div>
           </div>
           <p className="text-2xl font-bold">{stats.totalTests}</p>
-          <p className="text-xs text-muted-foreground">{stats.testsLast7Days} tes dalam 7 hari terakhir</p>
+          <p className="text-xs text-muted-foreground">
+            {stats.testsLast7Days} tes dalam 7 hari terakhir
+          </p>
         </div>
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
@@ -474,7 +547,9 @@ const DashboardOverview = ({ user }: { user: any }) => {
             </div>
           </div>
           <p className="text-2xl font-bold">{stats.totalBlogs}</p>
-          <p className="text-xs text-muted-foreground">{stats.blogsLast7Days} artikel edukasi baru minggu ini</p>
+          <p className="text-xs text-muted-foreground">
+            {stats.blogsLast7Days} artikel edukasi baru minggu ini
+          </p>
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -499,9 +574,7 @@ const DashboardOverview = ({ user }: { user: any }) => {
             ))}
           </div>
           <div className="mt-4 pt-4 border-t">
-            <Button variant="outline" size="sm" className="w-full">
-              Lihat Semua Aktivitas
-            </Button>
+            <Button variant="outline" size="sm" className="w-full">Lihat Semua Aktivitas</Button>
           </div>
         </div>
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
@@ -539,13 +612,23 @@ const DashboardOverview = ({ user }: { user: any }) => {
   );
 };
 
-const DashboardResults = ({ user }: { user: any }) => {
-  return (
-    <div>
-      <TestListResults isProfessional={isProfessional} userId={id} />
+const DashboardResults = ({ user }: { user: any }) => (
+  <div>
+    <TestListResults isProfessional={isProfessional} userId={id} />
+  </div>
+);
+
+// Untuk appointment, gunakan komponen dari Dashboard (1)
+const DashboardAppointments = ({ user }: { user: any }) => (
+  <div>
+    <h1 className="text-2xl font-semibold mb-6">Janji Konsultasi</h1>
+    <div className="bg-card shadow-soft rounded-xl p-6">
+      <p>
+        Halaman ini akan memungkinkan Anda menjadwalkan, melihat, atau membatalkan janji konsultasi dengan psikolog atau konselor.
+      </p>
     </div>
-  );
-};
+  </div>
+);
 
 const DashboardTests = ({ user }: { user: any }) => (
   <div>
@@ -558,15 +641,14 @@ const DashboardTests = ({ user }: { user: any }) => (
   </div>
 );
 
-const DashboardAppointments = ({ user }: { user: any }) => (
-  <div>
-    <DashboardAppointments />
-  </div>
-);
-
 const DashboardMessages = ({ user }: { user: any }) => (
   <div>
-    <MessageManagement />
+    <h1 className="text-2xl font-semibold mb-6">Pesan</h1>
+    <div className="bg-card shadow-soft rounded-xl p-6">
+      <p>
+        Halaman ini akan menampilkan sistem pesan untuk berkomunikasi dengan profesional kesehatan mental atau staf Mind MHIRC.
+      </p>
+    </div>
   </div>
 );
 
@@ -592,29 +674,23 @@ const DashboardUsers = ({ user }: { user: any }) => (
   </div>
 );
 
-const DashboardContent = ({ user }: { user: any }) => {
-  return (
-    <div>
-      <ContentManagement />
-    </div>
-  );
-};
+const DashboardContent = ({ user }: { user: any }) => (
+  <div>
+    <ContentManagement />
+  </div>
+);
 
-const DashboardContentNew = ({ user }: { user: any }) => {
-  return (
-    <div>
-      <BlogEditor />
-    </div>
-  );
-};
+const DashboardContentNew = ({ user }: { user: any }) => (
+  <div>
+    <BlogEditor />
+  </div>
+);
 
-const DashboardContentEdit = ({ user }: { user: any }) => {
-  return (
-    <div>
-      <BlogEditor />
-    </div>
-  );
-};
+const DashboardContentEdit = ({ user }: { user: any }) => (
+  <div>
+    <BlogEditor />
+  </div>
+);
 
 const DashboardAnalytics = ({ user }: { user: any }) => (
   <div>
@@ -649,7 +725,9 @@ const DashboardHelp = ({ user }: { user: any }) => (
 const DashboardNotFound = () => (
   <div className="text-center py-12">
     <h1 className="text-2xl font-semibold mb-4">Halaman Tidak Ditemukan</h1>
-    <p className="text-muted-foreground mb-8">Maaf, halaman yang Anda cari tidak tersedia.</p>
+    <p className="text-muted-foreground mb-8">
+      Maaf, halaman yang Anda cari tidak tersedia.
+    </p>
     <Link to="/dashboard">
       <Button>
         <ArrowLeft className="mr-2 h-4 w-4" />
