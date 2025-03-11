@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Button from "@/components/Button";
 import TestResultsTable from "@/components/dashboard/TestResultsTable";
+import TestResultsDetail from "@/components/dashboard/TestResultsDetail";
 
 const TestListResults = ({
   isProfessional,
@@ -13,17 +14,26 @@ const TestListResults = ({
   const [category, setCategory] = useState("self"); // 'self' atau 'others'
   const [selectedTest, setSelectedTest] = useState<string | null>(null);
   const [isTableView, setIsTableView] = useState(false);
+  const [selectedTestId, setSelectedTestId] = useState<string | null>(null); // Tambahkan state untuk menyimpan ID hasil tes
 
-  // ✅ Fungsi untuk melihat hasil tes
-  const handleViewResults = (testName: string) => {
-    setSelectedTest(testName);
+  // ✅ Fungsi untuk melihat hasil tes dalam tabel
+  const handleViewTable = (test_name: string) => {
+    setSelectedTest(test_name);
     setIsTableView(true);
+    setSelectedTestId(null); // Reset testId saat beralih ke tabel
+  };
+
+  // ✅ Fungsi untuk melihat detail hasil tes
+  const handleViewDetail = (testId: string) => {
+    setSelectedTestId(testId);
+    setIsTableView(false);
   };
 
   // ✅ Fungsi untuk kembali ke daftar tes
   const handleBack = () => {
     setIsTableView(false);
     setSelectedTest(null);
+    setSelectedTestId(null);
   };
 
   const testAliases: Record<string, string> = {
@@ -42,32 +52,38 @@ const TestListResults = ({
         onValueChange={setCategory}
         className="mb-6"
       >
-        {/* ✅ Gunakan flex agar sejajar */}
-        <div className="flex justify-between items-center mb-6">
-          {isProfessional && (
-            <TabsList className="w-full max-w-md">
-              <TabsTrigger value="self" className="flex-1">
-                Hasil Tes Diri
-              </TabsTrigger>
-              <TabsTrigger value="others" className="flex-1">
-                Hasil Tes Orang Lain
-              </TabsTrigger>
-            </TabsList>
-          )}
+        {/* ✅ Sembunyikan TabsList jika tabel atau detail sedang ditampilkan */}
+        {!isTableView && !selectedTestId && (
+          <div className="flex justify-between items-center mb-6">
+            {isProfessional && (
+              <TabsList className="w-full max-w-md">
+                <TabsTrigger value="self" className="flex-1">
+                  Hasil Tes Diri
+                </TabsTrigger>
+                <TabsTrigger value="others" className="flex-1">
+                  Hasil Tes Orang Lain
+                </TabsTrigger>
+              </TabsList>
+            )}
+          </div>
+        )}
 
-          {/* ✅ Pindahkan Tombol Kembali ke dalam flex ini */}
-          {isTableView && selectedTest && (
-            <Button variant="outline" size="sm" onClick={handleBack}>
-              ⬅ Kembali
-            </Button>
-          )}
-        </div>
+        {/* ✅ Tombol kembali hanya muncul jika sedang melihat tabel/detail */}
+        {(isTableView || selectedTestId) && (
+          <Button variant="outline" size="sm" onClick={handleBack}>
+            ⬅ Kembali
+          </Button>
+        )}
 
-        {isTableView && selectedTest ? (
+        {/* ✅ Tampilkan halaman detail jika ada test yang dipilih */}
+        {selectedTestId ? (
+          <TestResultsDetail testId={selectedTestId} />
+        ) : isTableView && selectedTest ? (
           <TestResultsTable
             category={category}
-            testName={selectedTest}
             userId={userId}
+            test_name={selectedTest}
+            onViewDetail={handleViewDetail} // Kirim fungsi ke tabel
           />
         ) : (
           <TabsContent value={category} className="mt-6">
@@ -88,7 +104,7 @@ const TestListResults = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleViewResults(test)}
+                        onClick={() => handleViewTable(test)}
                       >
                         Lihat Detail
                       </Button>

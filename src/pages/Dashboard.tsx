@@ -143,7 +143,7 @@ const Dashboard = () => {
         }
 
         // Ambil semua ID broadcast
-        const broadcastIds = broadcasts.map(b => b.id);
+        const broadcastIds = broadcasts.map((b) => b.id);
 
         // Cek broadcast yang telah dibaca user
         const { data: recipientsData, error: recipientsError } = await supabase
@@ -156,8 +156,11 @@ const Dashboard = () => {
         if (recipientsError) throw recipientsError;
 
         // Hitung jumlah broadcast yang belum dibaca
-        const readBroadcastIds = recipientsData?.map(r => r.broadcast_id) || [];
-        const unreadCount = broadcasts.filter(b => !readBroadcastIds.includes(b.id)).length;
+        const readBroadcastIds =
+          recipientsData?.map((r) => r.broadcast_id) || [];
+        const unreadCount = broadcasts.filter(
+          (b) => !readBroadcastIds.includes(b.id)
+        ).length;
 
         setUnreadBroadcastsCount(unreadCount);
       } catch (error) {
@@ -229,7 +232,9 @@ const Dashboard = () => {
     role: "Admin",
     isProfessional: true,
     // Gunakan foto profil baru
-    avatarUrl: userAvatar || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQegOUQhLi-BzZMVWRISTFzDIO47cEfvnhd9g&s"
+    avatarUrl:
+      userAvatar ||
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQegOUQhLi-BzZMVWRISTFzDIO47cEfvnhd9g&s"
   };
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -497,20 +502,17 @@ const Dashboard = () => {
                   path="results/*"
                   element={<DashboardResults user={mockUser} />}
                 />
-                <Route
+                {/* <Route
                   path="results/:testName"
                   element={
                     <TestResultsTable category="" testName="" userId={id} />
                   }
-                />
+                /> */}
                 <Route
                   path="appointments/*"
                   element={<DashboardAppointments user={mockUser} />}
                 />
-                <Route
-                  path="messages/*"
-                  element={<MessageManagement />}
-                />
+                <Route path="messages/*" element={<MessageManagement />} />
 
                 {mockUser.role === "Teacher" && (
                   <Route
