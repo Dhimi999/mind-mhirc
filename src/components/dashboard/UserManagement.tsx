@@ -332,13 +332,14 @@ const UserManagement: React.FC = () => {
                                 {userItem.forwarding || "No email"}
                               </p>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className={text-xs px-2 py-0.5 rounded-full ${
-                                  userItem.account_type === "professional" 
-                                    ? "bg-blue-100 text-blue-700" 
-                                    : "bg-green-100 text-green-700"
-                                }}>
-                                  {userItem.account_type === "professional" ? "Professional" : "General"}
-                                </span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+  userItem.account_type === "professional" 
+    ? "bg-blue-100 text-blue-700" 
+    : "bg-green-100 text-green-700"
+}`}>
+  {userItem.account_type === "professional" ? "Professional" : "General"}
+</span>
+
                                 {userItem.is_admin && (
                                   <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
                                     Admin
