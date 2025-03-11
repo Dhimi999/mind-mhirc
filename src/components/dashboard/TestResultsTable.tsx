@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import Button from "@/components/Button";
 
 const TestResultsTable = ({
   category,
@@ -87,10 +90,32 @@ const TestResultsTable = ({
     }
     return <span className="text-gray-400">N/A</span>;
   };
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text(`Hasil Tes: ${test_name}`, 10, 10);
 
+    autoTable(doc, {
+      startY: 20,
+      head: [["No", "Nama", "Hasil", "Tanggal"]],
+      body: testResults.map((row, index) => [
+        index + 1,
+        row.anonymous_name || row.other_person_name || "N/A",
+        row.result_summary || "N/A",
+        row.created_at?.slice(0, 10) || "N/A"
+      ])
+    });
+
+    doc.save(`Hasil_Tes_${test_name}.pdf`);
+  };
   return (
     <div className="p-6 bg-card shadow-soft rounded-xl">
-      <h2 className="text-lg font-medium mb-4">Hasil Tes: {test_name}</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-medium">Hasil Tes: {test_name}</h2>
+        <Button variant="outline" size="sm" onClick={handleDownloadPDF}>
+          Download PDF
+        </Button>
+      </div>
+
       {loading ? (
         <p>Loading...</p>
       ) : testResults.length > 0 ? (
