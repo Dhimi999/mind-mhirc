@@ -18,9 +18,7 @@ const SetNewPassword = () => {
 
   useEffect(() => {
     const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.email) {
         setEmail(session.user.email);
       }
@@ -30,7 +28,6 @@ const SetNewPassword = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (password !== confirmPassword) {
       toast({
         title: "Password Tidak Cocok",
@@ -44,7 +41,7 @@ const SetNewPassword = () => {
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: password,
+        password: password
       });
 
       if (error) throw error;
@@ -84,7 +81,12 @@ const SetNewPassword = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} disabled />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    disabled
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -115,19 +117,6 @@ const SetNewPassword = () => {
                   {isLoading ? "Memperbarui..." : "Perbarui Password"}
                 </Button>
               </form>
-
-              {/* Teks tambahan yang selalu muncul */}
-              <div className="mt-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Apakah Anda merasa email belum terdaftar?{" "}
-                  <button
-                    onClick={() => navigate("/login")}
-                    className="text-primary font-medium hover:underline ml-1"
-                  >
-                    Mari buat akun baru
-                  </button>
-                </p>
-              </div>
             </div>
           </div>
         </div>
