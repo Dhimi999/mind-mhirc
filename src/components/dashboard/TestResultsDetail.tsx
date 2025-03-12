@@ -75,9 +75,9 @@ const TestResultsDetail = ({ testId }: { testId: string }) => {
               <strong>Nama Anonim:</strong> {testResult.anonymous_name}
             </li>
           )}
-          {testResult.anonymous_age && (
+          {testResult.anonymous_birthdate && (
             <li>
-              <strong>Usia Anonim:</strong> {testResult.anonymous_age}
+              <strong>Usia Anonim:</strong> {testResult.anonymous_birthdate}
             </li>
           )}
           {testResult.anonymous_email && (

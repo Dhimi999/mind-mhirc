@@ -1,14 +1,22 @@
-
 import { useState } from "react";
 import { Calendar, User, Users } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Button from "@/components/Button";
 
 interface TestPersonSelectorProps {
-  onSelectOption: (option: "self" | "other", otherPersonData?: OtherPersonData) => void;
+  onSelectOption: (
+    option: "self" | "other",
+    otherPersonData?: OtherPersonData
+  ) => void;
   isProfessional: boolean;
 }
 
@@ -18,7 +26,10 @@ export interface OtherPersonData {
   notes: string;
 }
 
-const TestPersonSelector = ({ onSelectOption, isProfessional }: TestPersonSelectorProps) => {
+const TestPersonSelector = ({
+  onSelectOption,
+  isProfessional
+}: TestPersonSelectorProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<OtherPersonData>>({
     name: "",
@@ -32,9 +43,11 @@ const TestPersonSelector = ({ onSelectOption, isProfessional }: TestPersonSelect
     return null;
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmitOtherPerson = (e: React.FormEvent) => {
@@ -47,9 +60,11 @@ const TestPersonSelector = ({ onSelectOption, isProfessional }: TestPersonSelect
 
   return (
     <div className="bg-card shadow-soft p-6 rounded-xl mb-6">
-      <h2 className="text-xl font-semibold mb-4">Siapa yang akan melakukan tes?</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Siapa yang akan melakukan tes?
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div 
+        <div
           className="border rounded-lg p-5 hover:border-primary cursor-pointer transition-colors"
           onClick={() => onSelectOption("self")}
         >
@@ -66,9 +81,7 @@ const TestPersonSelector = ({ onSelectOption, isProfessional }: TestPersonSelect
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <div 
-              className="border rounded-lg p-5 hover:border-primary cursor-pointer transition-colors"
-            >
+            <div className="border rounded-lg p-5 hover:border-primary cursor-pointer transition-colors">
               <div className="flex items-center mb-3">
                 <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary mr-4">
                   <Users size={24} />
@@ -96,7 +109,7 @@ const TestPersonSelector = ({ onSelectOption, isProfessional }: TestPersonSelect
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="birthdate">Tanggal Lahir</Label>
                 <div className="flex">
@@ -111,7 +124,7 @@ const TestPersonSelector = ({ onSelectOption, isProfessional }: TestPersonSelect
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="notes">Catatan (opsional)</Label>
                 <Textarea
@@ -123,7 +136,7 @@ const TestPersonSelector = ({ onSelectOption, isProfessional }: TestPersonSelect
                   rows={3}
                 />
               </div>
-              
+
               <div className="flex justify-end pt-2">
                 <Button type="submit">Lanjutkan</Button>
               </div>

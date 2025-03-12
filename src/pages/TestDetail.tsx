@@ -73,9 +73,10 @@ interface TestResultData {
   user_id: string | null;
   anonymous_name?: string | null;
   anonymous_email?: string | null;
-  anonymous_age?: string | null;
+  anonymous_birthdate?: string | null;
   for_other: boolean;
   other_person_name?: string | null;
+  notes?: string | null;
   bfi_results?: BFIResults;
   sdq_results?: {
     difficultyScore: number;
@@ -557,9 +558,11 @@ const TestDetail = () => {
         user_id: isAuthenticated ? user?.id : null,
         anonymous_name: anonymousData?.name,
         anonymous_email: anonymousData?.email,
-        anonymous_age: anonymousData?.age,
+        anonymous_birthdate:
+          otherPersonData?.birthdate || anonymousData?.birthdate,
         for_other: testPerson === "other",
-        other_person_name: otherPersonData?.name
+        other_person_name: otherPersonData?.name,
+        notes: otherPersonData?.notes
       };
       if (test?.id === "bfi") {
         const bfiResults = calculateBFIResults(userAnswers);
