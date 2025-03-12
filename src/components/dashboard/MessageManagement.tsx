@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -79,12 +79,12 @@ const MessageManagement: React.FC = () => {
 
   // Filter available users based on search term
   useEffect(() => {
-    if (userSearch.trim() === '') {
+    if (userSearch.trim() === "") {
       setFilteredUsers(availableUsers);
     } else {
       const lowercaseSearch = userSearch.toLowerCase();
       setFilteredUsers(
-        availableUsers.filter(user =>
+        availableUsers.filter((user) =>
           user.full_name?.toLowerCase().includes(lowercaseSearch) ||
           user.account_type?.toLowerCase().includes(lowercaseSearch)
         )
@@ -95,7 +95,6 @@ const MessageManagement: React.FC = () => {
   // Fetch chat rooms
   useEffect(() => {
     if (!user) return;
-
     const fetchChatRooms = async () => {
       setIsFetchingRooms(true);
       try {
@@ -103,43 +102,38 @@ const MessageManagement: React.FC = () => {
           .from("chat_participants")
           .select("chat_room_id")
           .eq("user_id", user.id);
-
         if (participantsError) throw participantsError;
         if (!participantsData || participantsData.length === 0) {
           setChatRooms([]);
           setIsFetchingRooms(false);
           return;
         }
-
-        const roomIds = participantsData.map(p => p.chat_room_id);
+        const roomIds = participantsData.map((p) => p.chat_room_id);
         const { data: roomsData, error: roomsError } = await supabase
           .from("chat_rooms")
           .select("*")
           .in("id", roomIds)
           .order("updated_at", { ascending: false });
-
         if (roomsError) throw roomsError;
-
-        const roomsWithParticipants = await Promise.all(roomsData.map(async room => {
-          const { data: roomParticipants, error: roomParticipantsError } = await supabase
-            .from("chat_participants")
-            .select("user_id")
-            .eq("chat_room_id", room.id);
-
-          if (roomParticipantsError) throw roomParticipantsError;
-          const userIds = roomParticipants.map(p => p.user_id);
-          const { data: profilesData, error: profilesError } = await supabase
-            .from("profiles")
-            .select("id, full_name, avatar_url, is_admin, account_type")
-            .in("id", userIds);
-
-          if (profilesError) throw profilesError;
-          return {
-            ...room,
-            participants: profilesData || []
-          };
-        }));
-
+        const roomsWithParticipants = await Promise.all(
+          roomsData.map(async (room) => {
+            const { data: roomParticipants, error: roomParticipantsError } = await supabase
+              .from("chat_participants")
+              .select("user_id")
+              .eq("chat_room_id", room.id);
+            if (roomParticipantsError) throw roomParticipantsError;
+            const userIds = roomParticipants.map((p) => p.user_id);
+            const { data: profilesData, error: profilesError } = await supabase
+              .from("profiles")
+              .select("id, full_name, avatar_url, is_admin, account_type")
+              .in("id", userIds);
+            if (profilesError) throw profilesError;
+            return {
+              ...room,
+              participants: profilesData || [],
+            };
+          })
+        );
         setChatRooms(roomsWithParticipants);
         if (roomsWithParticipants.length > 0 && !selectedRoomId) {
           setSelectedRoomId(roomsWithParticipants[0].id);
@@ -151,18 +145,15 @@ const MessageManagement: React.FC = () => {
         setIsFetchingRooms(false);
       }
     };
-
     fetchChatRooms();
-
-    // Real-time subscription for chat room updates
     const roomsSubscription = supabase
       .channel("chat_rooms_changes")
-      .on("postgres_changes",
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "chat_rooms" },
         () => fetchChatRooms()
       )
       .subscribe();
-
     return () => {
       supabase.removeChannel(roomsSubscription);
     };
@@ -171,16 +162,14 @@ const MessageManagement: React.FC = () => {
   // Fetch available users for creating new chat rooms
   useEffect(() => {
     if (!user) return;
-
     const fetchAvailableUsers = async () => {
       try {
         const { data, error } = await supabase
           .from("profiles")
           .select("id, full_name, avatar_url, is_admin, account_type")
           .order("full_name");
-
         if (error) throw error;
-        const filteredData = data?.filter(profile => profile.id !== user.id) || [];
+        const filteredData = data?.filter((profile) => profile.id !== user.id) || [];
         setAvailableUsers(filteredData);
         setFilteredUsers(filteredData);
       } catch (error) {
@@ -188,14 +177,12 @@ const MessageManagement: React.FC = () => {
         toast("Gagal memuat daftar pengguna. Silakan coba lagi.");
       }
     };
-
     fetchAvailableUsers();
   }, [user]);
 
   // Fungsi untuk refresh pesan secara manual
   const refreshMessages = async () => {
     if (!selectedRoomId || !user) return;
-
     setIsFetchingMessages(true);
     try {
       const { data, error } = await supabase
@@ -203,24 +190,20 @@ const MessageManagement: React.FC = () => {
         .select("*")
         .eq("chat_room_id", selectedRoomId)
         .order("created_at");
-
       if (error) throw error;
-
       const messagesWithSenders = await Promise.all(
-        data.map(async message => {
+        data.map(async (message) => {
           const { data: senderData, error: senderError } = await supabase
             .from("profiles")
             .select("id, full_name, avatar_url, is_admin, account_type")
             .eq("id", message.sender_id)
             .single();
-
           if (senderError) throw senderError;
-
           let convertedReadBy: string[] = [];
           if (message.read_by) {
             if (Array.isArray(message.read_by)) {
               convertedReadBy = message.read_by;
-            } else if (typeof message.read_by === 'string') {
+            } else if (typeof message.read_by === "string") {
               try {
                 convertedReadBy = JSON.parse(message.read_by);
               } catch (e) {
@@ -228,22 +211,17 @@ const MessageManagement: React.FC = () => {
               }
             }
           }
-
           return {
             ...message,
             read_by: convertedReadBy,
-            sender: senderData
+            sender: senderData,
           } as ChatMessage;
         })
       );
-
       setMessages(messagesWithSenders);
-
-      // Tandai pesan yang belum terbaca sebagai sudah dibaca
       const unreadMessages = messagesWithSenders.filter(
-        msg => msg.sender_id !== user.id && !msg.read_by.includes(user.id)
+        (msg) => msg.sender_id !== user.id && !msg.read_by.includes(user.id)
       );
-
       for (const msg of unreadMessages) {
         const updatedReadBy = [...msg.read_by, user.id];
         await supabase
@@ -259,33 +237,32 @@ const MessageManagement: React.FC = () => {
     }
   };
 
-  // Fetch messages dan atur langganan real-time untuk pesan
+  // Fetch messages dan real-time subscription
   useEffect(() => {
     refreshMessages();
-
     const messagesSubscription = supabase
       .channel("chat_messages_changes")
-      .on("postgres_changes",
+      .on(
+        "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "chat_messages",
-          filter: `chat_room_id=eq.${selectedRoomId}`
+          filter: `chat_room_id=eq.${selectedRoomId}`,
         },
-        async payload => {
+        async (payload) => {
           const newMessage = payload.new as any;
           const { data: senderData, error: senderError } = await supabase
             .from("profiles")
             .select("id, full_name, avatar_url, is_admin, account_type")
             .eq("id", newMessage.sender_id)
             .single();
-
           if (!senderError && senderData) {
             let convertedReadBy: string[] = [];
             if (newMessage.read_by) {
               if (Array.isArray(newMessage.read_by)) {
                 convertedReadBy = newMessage.read_by;
-              } else if (typeof newMessage.read_by === 'string') {
+              } else if (typeof newMessage.read_by === "string") {
                 try {
                   convertedReadBy = JSON.parse(newMessage.read_by);
                 } catch (e) {
@@ -293,15 +270,12 @@ const MessageManagement: React.FC = () => {
                 }
               }
             }
-
             const typedMessage: ChatMessage = {
               ...newMessage,
               read_by: convertedReadBy,
-              sender: senderData
+              sender: senderData,
             };
-
-            setMessages(prevMessages => [...prevMessages, typedMessage]);
-
+            setMessages((prevMessages) => [...prevMessages, typedMessage]);
             if (newMessage.sender_id !== user.id) {
               const updatedReadBy = [...convertedReadBy, user.id];
               await supabase
@@ -313,16 +287,14 @@ const MessageManagement: React.FC = () => {
         }
       )
       .subscribe();
-
     return () => {
       supabase.removeChannel(messagesSubscription);
     };
   }, [selectedRoomId, user]);
 
-  // Fetch broadcast messages untuk pengguna saat ini
+  // Fetch broadcast messages
   useEffect(() => {
     if (!user) return;
-
     const fetchBroadcasts = async () => {
       setIsFetchingBroadcasts(true);
       try {
@@ -330,55 +302,56 @@ const MessageManagement: React.FC = () => {
           .from("broadcasts")
           .select("*")
           .order("created_at", { ascending: false });
-
         if (broadcastError) throw broadcastError;
-
         let filteredBroadcasts: Broadcast[] = [];
         if (broadcastsData && broadcastsData.length > 0) {
-          filteredBroadcasts = broadcastsData.filter(broadcast => {
-            const userAccountType = user.account_type || 'general';
-            const broadcastRecipients = Array.isArray(broadcast.recipients)
-              ? broadcast.recipients
-              : typeof broadcast.recipients === 'string'
+          filteredBroadcasts = broadcastsData
+            .filter((broadcast) => {
+              const userAccountType = user.account_type || "general";
+              const broadcastRecipients = Array.isArray(broadcast.recipients)
+                ? broadcast.recipients
+                : typeof broadcast.recipients === "string"
                 ? [broadcast.recipients]
                 : [];
-            return broadcastRecipients.includes('all') ||
-                   broadcastRecipients.includes(userAccountType) ||
-                   (user.is_admin && broadcastRecipients.includes('professional'));
-          }).map(broadcast => {
-            let recipientRead: string[] = [];
-            if (broadcast.recepient_read) {
-              if (typeof broadcast.recepient_read === 'string') {
-                try {
-                  recipientRead = JSON.parse(broadcast.recepient_read);
-                } catch (e) {
-                  recipientRead = [];
+              return (
+                broadcastRecipients.includes("all") ||
+                broadcastRecipients.includes(userAccountType) ||
+                (user.is_admin && broadcastRecipients.includes("professional"))
+              );
+            })
+            .map((broadcast) => {
+              let recipientRead: string[] = [];
+              if (broadcast.recepient_read) {
+                if (typeof broadcast.recepient_read === "string") {
+                  try {
+                    recipientRead = JSON.parse(broadcast.recepient_read);
+                  } catch (e) {
+                    recipientRead = [];
+                  }
+                } else if (Array.isArray(broadcast.recepient_read)) {
+                  recipientRead = broadcast.recepient_read as string[];
                 }
-              } else if (Array.isArray(broadcast.recepient_read)) {
-                recipientRead = broadcast.recepient_read as string[];
               }
-            }
-            let recipients: string[] = [];
-            if (broadcast.recipients) {
-              if (typeof broadcast.recipients === 'string') {
-                try {
-                  recipients = JSON.parse(broadcast.recipients as string);
-                } catch (e) {
-                  recipients = [broadcast.recipients as string];
+              let recipients: string[] = [];
+              if (broadcast.recipients) {
+                if (typeof broadcast.recipients === "string") {
+                  try {
+                    recipients = JSON.parse(broadcast.recipients as string);
+                  } catch (e) {
+                    recipients = [broadcast.recipients as string];
+                  }
+                } else if (Array.isArray(broadcast.recipients)) {
+                  recipients = broadcast.recipients as string[];
                 }
-              } else if (Array.isArray(broadcast.recipients)) {
-                recipients = broadcast.recipients as string[];
               }
-            }
-            return {
-              ...broadcast,
-              recepient_read: recipientRead,
-              recipients: recipients,
-              is_read: recipientRead.includes(user.id)
-            } as Broadcast;
-          });
+              return {
+                ...broadcast,
+                recepient_read: recipientRead,
+                recipients: recipients,
+                is_read: recipientRead.includes(user.id),
+              } as Broadcast;
+            });
         }
-
         setBroadcasts(filteredBroadcasts);
       } catch (error) {
         console.error("Error fetching broadcasts:", error);
@@ -387,25 +360,28 @@ const MessageManagement: React.FC = () => {
         setIsFetchingBroadcasts(false);
       }
     };
-
     fetchBroadcasts();
-
     const broadcastsSubscription = supabase
       .channel("broadcasts_changes")
-      .on("postgres_changes",
+      .on(
+        "postgres_changes",
         { event: "INSERT", schema: "public", table: "broadcasts" },
         () => fetchBroadcasts()
       )
       .subscribe();
-
     const recipientsSubscription = supabase
       .channel("broadcast_recipients_changes")
-      .on("postgres_changes",
-        { event: "*", schema: "public", table: "broadcast_recipients", filter: `user_id=eq.${user.id}` },
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "broadcast_recipients",
+          filter: `user_id=eq.${user.id}`,
+        },
         () => fetchBroadcasts()
       )
       .subscribe();
-
     return () => {
       supabase.removeChannel(broadcastsSubscription);
       supabase.removeChannel(recipientsSubscription);
@@ -415,7 +391,6 @@ const MessageManagement: React.FC = () => {
   // Buat ruang obrolan baru
   const handleCreateChatRoom = async () => {
     if (!user || !selectedUserId) return;
-
     setIsCreatingRoom(true);
     try {
       const { data: roomData, error: roomError } = await supabase
@@ -423,36 +398,28 @@ const MessageManagement: React.FC = () => {
         .insert({ created_by: user.id })
         .select()
         .single();
-
       if (roomError) throw roomError;
-
       const { error: participantsError } = await supabase
         .from("chat_participants")
         .insert([
           { chat_room_id: roomData.id, user_id: user.id },
-          { chat_room_id: roomData.id, user_id: selectedUserId }
+          { chat_room_id: roomData.id, user_id: selectedUserId },
         ]);
-
       if (participantsError) throw participantsError;
-
       const { data: selectedUser, error: userError } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url, is_admin, account_type")
         .eq("id", selectedUserId)
         .single();
-
       if (userError) throw userError;
-
       const { data: currentUser, error: currentUserError } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url, is_admin, account_type")
         .eq("id", user.id)
         .single();
-
       if (currentUserError) throw currentUserError;
-
       const newRoom = { ...roomData, participants: [selectedUser, currentUser] };
-      setChatRooms(prevRooms => [newRoom, ...prevRooms]);
+      setChatRooms((prevRooms) => [newRoom, ...prevRooms]);
       setSelectedRoomId(newRoom.id);
       setSelectedUserId(null);
       setUserSearch("");
@@ -468,34 +435,29 @@ const MessageManagement: React.FC = () => {
   // Hapus ruang obrolan
   const handleDeleteChatRoom = async () => {
     if (!user || !selectedRoomId) return;
-
     setIsDeletingRoom(true);
     try {
-      const selectedRoom = chatRooms.find(room => room.id === selectedRoomId);
+      const selectedRoom = chatRooms.find((room) => room.id === selectedRoomId);
       if (selectedRoom?.created_by !== user.id) {
         toast("Anda tidak memiliki izin untuk menghapus ruang obrolan ini.");
         return;
       }
-
       const { error: messagesError } = await supabase
         .from("chat_messages")
         .delete()
         .eq("chat_room_id", selectedRoomId);
       if (messagesError) throw messagesError;
-
       const { error: participantsError } = await supabase
         .from("chat_participants")
         .delete()
         .eq("chat_room_id", selectedRoomId);
       if (participantsError) throw participantsError;
-
       const { error: roomError } = await supabase
         .from("chat_rooms")
         .delete()
         .eq("id", selectedRoomId);
       if (roomError) throw roomError;
-
-      setChatRooms(prevRooms => prevRooms.filter(room => room.id !== selectedRoomId));
+      setChatRooms((prevRooms) => prevRooms.filter((room) => room.id !== selectedRoomId));
       setSelectedRoomId(null);
       setMessages([]);
       toast("Ruang obrolan berhasil dihapus.");
@@ -508,15 +470,14 @@ const MessageManagement: React.FC = () => {
     }
   };
 
-  // Kirim pesan baru pada ruang obrolan yang dipilih
+  // Kirim pesan baru
   const handleSendMessage = async () => {
     if (!user || !selectedRoomId || !newMessage.trim()) return;
-
     setIsSendingMessage(true);
     try {
       const trimmedMessage = newMessage.trim();
       const tempMessage: ChatMessage = {
-        id: 'temp-' + Date.now(),
+        id: "temp-" + Date.now(),
         chat_room_id: selectedRoomId,
         sender_id: user.id,
         content: trimmedMessage,
@@ -527,43 +488,41 @@ const MessageManagement: React.FC = () => {
           full_name: user.full_name,
           avatar_url: user.avatar_url,
           is_admin: user.is_admin,
-          account_type: user.account_type
-        }
+          account_type: user.account_type,
+        },
       };
-
-      setMessages(prev => [...prev, tempMessage]);
+      setMessages((prev) => [...prev, tempMessage]);
       setNewMessage("");
-
       const { error } = await supabase
         .from("chat_messages")
         .insert({
           chat_room_id: selectedRoomId,
           sender_id: user.id,
           content: trimmedMessage,
-          read_by: [user.id]
+          read_by: [user.id],
         });
       if (error) throw error;
     } catch (error) {
       console.error("Error sending message:", error);
       toast("Gagal mengirim pesan. Silakan coba lagi.");
-      setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
+      setMessages((prev) => prev.filter((msg) => !msg.id.startsWith("temp-")));
     } finally {
       setIsSendingMessage(false);
     }
   };
 
-  // Get the other participant in a chat room
+  // Dapatkan peserta lain
   const getOtherParticipant = (room: ChatRoom) => {
     if (!user) return null;
-    return room.participants.find(p => p.id !== user.id);
+    return room.participants.find((p) => p.id !== user.id);
   };
 
-  // Check if the user is the creator of the room
+  // Cek apakah user adalah pembuat ruang
   const isRoomCreator = (room: ChatRoom) => {
     return user?.id === room.created_by;
   };
 
-  // Helper untuk format tanggal dan waktu
+  // Format tanggal dan waktu
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, "dd MMMM yyyy, HH:mm", { locale: idLocale });
@@ -574,50 +533,49 @@ const MessageManagement: React.FC = () => {
     return format(date, "HH:mm", { locale: idLocale });
   };
 
-  // Get priority label dan color untuk pesan siaran
+  // Prioritas pesan siaran
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
-      case 'urgent':
+      case "urgent":
         return {
-          label: 'Mendesak',
-          color: 'bg-red-100 text-red-800 border-red-300',
-          icon: <AlertCircle className="h-4 w-4 mr-1" />
+          label: "Mendesak",
+          color: "bg-red-100 text-red-800 border-red-300",
+          icon: <AlertCircle className="h-4 w-4 mr-1" />,
         };
-      case 'high':
+      case "high":
         return {
-          label: 'Penting',
-          color: 'bg-orange-100 text-orange-800 border-orange-300',
-          icon: <AlertTriangle className="h-4 w-4 mr-1" />
+          label: "Penting",
+          color: "bg-orange-100 text-orange-800 border-orange-300",
+          icon: <AlertTriangle className="h-4 w-4 mr-1" />,
         };
-      case 'regular':
+      case "regular":
         return {
-          label: 'Umum',
-          color: 'bg-blue-100 text-blue-800 border-blue-300',
-          icon: <Info className="h-4 w-4 mr-1" />
+          label: "Umum",
+          color: "bg-blue-100 text-blue-800 border-blue-300",
+          icon: <Info className="h-4 w-4 mr-1" />,
         };
-      case 'info':
+      case "info":
         return {
-          label: 'Info',
-          color: 'bg-green-100 text-green-800 border-green-300',
-          icon: <Info className="h-4 w-4 mr-1" />
+          label: "Info",
+          color: "bg-green-100 text-green-800 border-green-300",
+          icon: <Info className="h-4 w-4 mr-1" />,
         };
-      case 'recommendation':
+      case "recommendation":
         return {
-          label: 'Saran/Rekomendasi',
-          color: 'bg-purple-100 text-purple-800 border-purple-300',
-          icon: <Info className="h-4 w-4 mr-1" />
+          label: "Saran/Rekomendasi",
+          color: "bg-purple-100 text-purple-800 border-purple-300",
+          icon: <Info className="h-4 w-4 mr-1" />,
         };
       default:
         return {
-          label: 'Umum',
-          color: 'bg-blue-100 text-blue-800 border-blue-300',
-          icon: <Info className="h-4 w-4 mr-1" />
+          label: "Umum",
+          color: "bg-blue-100 text-blue-800 border-blue-300",
+          icon: <Info className="h-4 w-4 mr-1" />,
         };
     }
   };
 
-  // Hitung pesan siaran yang belum terbaca
-  const unreadBroadcastsCount = broadcasts.filter(b => !b.is_read).length;
+  const unreadBroadcastsCount = broadcasts.filter((b) => !b.is_read).length;
 
   if (isLoading) {
     return (
@@ -633,7 +591,6 @@ const MessageManagement: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-semibold mb-6">Manajemen Pesan</h1>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="chat" className="flex items-center">
@@ -660,7 +617,7 @@ const MessageManagement: React.FC = () => {
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap justify-between items-center">
                     <CardTitle>Ruang Obrolan</CardTitle>
-                    {user?.is_admin && (
+                    {user?.is_admin === true && (
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button size="sm" variant="outline" className="flex items-center">
@@ -678,9 +635,9 @@ const MessageManagement: React.FC = () => {
                           <div className="py-4 space-y-4">
                             <div className="flex items-center space-x-2">
                               <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                              <Input 
-                                placeholder="Cari pengguna..." 
-                                value={userSearch} 
+                              <Input
+                                placeholder="Cari pengguna..."
+                                value={userSearch}
                                 onChange={(e) => setUserSearch(e.target.value)}
                                 className="flex-1"
                               />
@@ -696,10 +653,12 @@ const MessageManagement: React.FC = () => {
                                   {userSearch ? "Tidak ada pengguna yang ditemukan" : "Tidak ada pengguna yang tersedia"}
                                 </div>
                               ) : (
-                                filteredUsers.map(user => (
-                                  <div 
-                                    key={user.id} 
-                                    className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${selectedUserId === user.id ? 'bg-muted' : 'hover:bg-muted/50'}`}
+                                filteredUsers.map((user) => (
+                                  <div
+                                    key={user.id}
+                                    className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${
+                                      selectedUserId === user.id ? "bg-muted" : "hover:bg-muted/50"
+                                    }`}
                                     onClick={() => setSelectedUserId(user.id)}
                                   >
                                     {user.avatar_url ? (
@@ -735,7 +694,7 @@ const MessageManagement: React.FC = () => {
                     )}
                   </div>
                 </CardHeader>
-                {/* Menggunakan style dari kode lama: h-[500px] */}
+                {/* Daftar ruang obrolan dengan style tetap */}
                 <CardContent className="h-[500px] overflow-y-auto">
                   {isFetchingRooms ? (
                     <div className="text-center py-8">
@@ -752,13 +711,15 @@ const MessageManagement: React.FC = () => {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {chatRooms.map(room => {
+                      {chatRooms.map((room) => {
                         const otherParticipant = getOtherParticipant(room);
                         const canDelete = isRoomCreator(room);
                         return (
-                          <div 
-                            key={room.id} 
-                            className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors relative ${selectedRoomId === room.id ? "bg-muted border border-primary/20" : "bg-card"}`} 
+                          <div
+                            key={room.id}
+                            className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors relative ${
+                              selectedRoomId === room.id ? "bg-muted border border-primary/20" : "bg-card"
+                            }`}
                             onClick={() => setSelectedRoomId(room.id)}
                           >
                             <div className="flex items-center">
@@ -787,9 +748,9 @@ const MessageManagement: React.FC = () => {
                               {canDelete && selectedRoomId === room.id && (
                                 <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
                                   <AlertDialogTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
                                       className="absolute top-2 right-2 h-6 w-6 p-0 text-muted-foreground hover:text-destructive hover:bg-transparent"
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -810,7 +771,7 @@ const MessageManagement: React.FC = () => {
                                       <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
                                         Batal
                                       </AlertDialogCancel>
-                                      <AlertDialogAction 
+                                      <AlertDialogAction
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleDeleteChatRoom();
@@ -843,7 +804,7 @@ const MessageManagement: React.FC = () => {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 mr-3">
                             {(() => {
-                              const selectedRoom = chatRooms.find(r => r.id === selectedRoomId);
+                              const selectedRoom = chatRooms.find((r) => r.id === selectedRoomId);
                               const otherParticipant = selectedRoom ? getOtherParticipant(selectedRoom) : null;
                               return otherParticipant?.avatar_url ? (
                                 <img src={otherParticipant.avatar_url} alt={otherParticipant.full_name || "User"} className="h-10 w-10 rounded-full object-cover" />
@@ -856,14 +817,14 @@ const MessageManagement: React.FC = () => {
                           </div>
                           <div>
                             <CardTitle>
-                              {chatRooms.find(r => r.id === selectedRoomId)?.participants.find(p => p.id !== user?.id)?.full_name || "Pengguna"}
+                              {chatRooms.find((r) => r.id === selectedRoomId)?.participants.find((p) => p.id !== user?.id)?.full_name || "Pengguna"}
                             </CardTitle>
                             <CardDescription>
-                              {chatRooms.find(r => r.id === selectedRoomId)?.participants.find(p => p.id !== user?.id)?.account_type === "professional"
+                              {chatRooms.find((r) => r.id === selectedRoomId)?.participants.find((p) => p.id !== user?.id)?.account_type === "professional"
                                 ? "Profesional"
-                                : chatRooms.find(r => r.id === selectedRoomId)?.participants.find(p => p.id !== user?.id)?.is_admin
-                                  ? "Admin"
-                                  : "Pengguna Umum"}
+                                : chatRooms.find((r) => r.id === selectedRoomId)?.participants.find((p) => p.id !== user?.id)?.is_admin
+                                ? "Admin"
+                                : "Pengguna Umum"}
                             </CardDescription>
                           </div>
                         </div>
@@ -872,10 +833,14 @@ const MessageManagement: React.FC = () => {
                           <Button variant="ghost" size="icon" onClick={refreshMessages}>
                             <RefreshCw className="h-5 w-5" />
                           </Button>
-                          {isRoomCreator(chatRooms.find(r => r.id === selectedRoomId)!) && (
+                          {isRoomCreator(chatRooms.find((r) => r.id === selectedRoomId)!) && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-transparent">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground hover:text-destructive hover:bg-transparent"
+                                >
                                   <Trash className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -901,8 +866,8 @@ const MessageManagement: React.FC = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    {/* Menggunakan style dari kode lama: h-[380px] */}
-                    <CardContent className="flex-1 overflow-y-auto h-[380px] p-4">
+                    {/* Perbaikan style: tinggi tetap untuk area pesan */}
+                    <CardContent className="h-[380px] overflow-y-auto p-4">
                       {isFetchingMessages ? (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
@@ -918,7 +883,7 @@ const MessageManagement: React.FC = () => {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          {messages.map(message => {
+                          {messages.map((message) => {
                             const isCurrentUser = user?.id === message.sender_id;
                             return (
                               <div key={message.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
@@ -941,7 +906,7 @@ const MessageManagement: React.FC = () => {
                         </div>
                       )}
                     </CardContent>
-                    <CardFooter className="border-t p-3 flex-shrink-0">
+                    <CardFooter className="border-t p-3">
                       <form
                         className="flex w-full items-center space-x-2"
                         onSubmit={(e) => {
@@ -951,10 +916,10 @@ const MessageManagement: React.FC = () => {
                       >
                         <Textarea
                           value={newMessage}
-                          onChange={e => setNewMessage(e.target.value)}
+                          onChange={(e) => setNewMessage(e.target.value)}
                           placeholder="Ketik pesan..."
                           className="min-h-[60px] flex-1 resize-none"
-                          onKeyDown={e => {
+                          onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
                               handleSendMessage();
@@ -972,79 +937,85 @@ const MessageManagement: React.FC = () => {
                     <MessageSquare className="h-16 w-16 text-muted-foreground mb-6" />
                     <h3 className="text-lg font-medium mb-2">Tidak Ada Obrolan Dipilih</h3>
                     <p className="text-muted-foreground max-w-md">
-                      {chatRooms.length > 0 ? "Pilih ruang obrolan dari daftar untuk mulai berkomunikasi." : "Anda belum memiliki obrolan. Buat obrolan baru untuk mulai berkomunikasi."}
+                      {chatRooms.length > 0
+                        ? "Pilih ruang obrolan dari daftar untuk mulai berkomunikasi."
+                        : "Anda belum memiliki obrolan. Buat obrolan baru untuk mulai berkomunikasi."}
                     </p>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button className="mt-4">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Buat Obrolan Baru
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Buat Ruang Obrolan Baru</DialogTitle>
-                          <DialogDescription>
-                            Pilih pengguna untuk memulai obrolan baru.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="py-4 space-y-4">
-                          <div className="flex items-center space-x-2">
-                            <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            <Input
-                              placeholder="Cari pengguna..."
-                              value={userSearch}
-                              onChange={(e) => setUserSearch(e.target.value)}
-                              className="flex-1"
-                            />
-                            {userSearch && (
-                              <Button variant="ghost" size="icon" onClick={() => setUserSearch("")}>
-                                <X className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                          <div className="max-h-60 overflow-y-auto border rounded-md p-1">
-                            {filteredUsers.length === 0 ? (
-                              <div className="text-center py-4 text-muted-foreground">
-                                {userSearch ? "Tidak ada pengguna yang ditemukan" : "Tidak ada pengguna yang tersedia"}
-                              </div>
-                            ) : (
-                              filteredUsers.map(user => (
-                                <div
-                                  key={user.id}
-                                  className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${selectedUserId === user.id ? 'bg-muted' : 'hover:bg-muted/50'}`}
-                                  onClick={() => setSelectedUserId(user.id)}
-                                >
-                                  {user.avatar_url ? (
-                                    <img src={user.avatar_url} alt={user.full_name || "User"} className="h-10 w-10 rounded-full object-cover" />
-                                  ) : (
-                                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                                      <User className="h-6 w-6 text-muted-foreground" />
-                                    </div>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">
-                                      {user.full_name || "Pengguna tanpa nama"}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {user.account_type === "professional" ? "Profesional" : user.is_admin ? "Admin" : "Pengguna Umum"}
-                                    </p>
-                                  </div>
+                    {user?.is_admin === true && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button className="mt-4">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Buat Obrolan Baru
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Buat Ruang Obrolan Baru</DialogTitle>
+                            <DialogDescription>
+                              Pilih pengguna untuk memulai obrolan baru.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="py-4 space-y-4">
+                            <div className="flex items-center space-x-2">
+                              <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <Input
+                                placeholder="Cari pengguna..."
+                                value={userSearch}
+                                onChange={(e) => setUserSearch(e.target.value)}
+                                className="flex-1"
+                              />
+                              {userSearch && (
+                                <Button variant="ghost" size="icon" onClick={() => setUserSearch("")}>
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                            <div className="max-h-60 overflow-y-auto border rounded-md p-1">
+                              {filteredUsers.length === 0 ? (
+                                <div className="text-center py-4 text-muted-foreground">
+                                  {userSearch ? "Tidak ada pengguna yang ditemukan" : "Tidak ada pengguna yang tersedia"}
                                 </div>
-                              ))
-                            )}
+                              ) : (
+                                filteredUsers.map((user) => (
+                                  <div
+                                    key={user.id}
+                                    className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${
+                                      selectedUserId === user.id ? "bg-muted" : "hover:bg-muted/50"
+                                    }`}
+                                    onClick={() => setSelectedUserId(user.id)}
+                                  >
+                                    {user.avatar_url ? (
+                                      <img src={user.avatar_url} alt={user.full_name || "User"} className="h-10 w-10 rounded-full object-cover" />
+                                    ) : (
+                                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                        <User className="h-6 w-6 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium truncate">
+                                        {user.full_name || "Pengguna tanpa nama"}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {user.account_type === "professional" ? "Profesional" : user.is_admin ? "Admin" : "Pengguna Umum"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <DialogFooter>
-                          <Button variant="outline" onClick={() => { setSelectedUserId(null); setUserSearch(""); }}>
-                            Batal
-                          </Button>
-                          <Button onClick={handleCreateChatRoom} disabled={!selectedUserId || isCreatingRoom}>
-                            {isCreatingRoom ? "Membuat..." : "Buat Obrolan"}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => { setSelectedUserId(null); setUserSearch(""); }}>
+                              Batal
+                            </Button>
+                            <Button onClick={handleCreateChatRoom} disabled={!selectedUserId || isCreatingRoom}>
+                              {isCreatingRoom ? "Membuat..." : "Buat Obrolan"}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
                 )}
               </Card>
@@ -1074,12 +1045,14 @@ const MessageManagement: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {broadcasts.map(broadcast => {
+                  {broadcasts.map((broadcast) => {
                     const priorityInfo = getPriorityLabel(broadcast.priority);
                     return (
                       <div
                         key={broadcast.id}
-                        className={`border rounded-lg p-4 ${broadcast.is_read ? "bg-card" : "bg-muted border-primary/20"} ${broadcast.priority === "urgent" ? "border-red-500" : ""}`}
+                        className={`border rounded-lg p-4 ${broadcast.is_read ? "bg-card" : "bg-muted border-primary/20"} ${
+                          broadcast.priority === "urgent" ? "border-red-500" : ""
+                        }`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center">
