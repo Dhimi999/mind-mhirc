@@ -9,6 +9,7 @@ export interface SignUpData {
   city?: string;
   profession?: string;
   account_type: "general" | "professional";
+  forwarding?: string;
 }
 
 export interface SignInData {
@@ -69,11 +70,12 @@ export const signUp = async (
           birth_date: userData.birth_date,
           city: userData.city,
           profession: userData.profession,
-          account_type: userData.account_type
+          account_type: userData.account_type,
+          forwarding: userData.forwarding
         }
       }
     });
-
+    console.log("Auth:" + userData);
     if (error) throw error;
 
     return { success: true };

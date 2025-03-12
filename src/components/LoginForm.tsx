@@ -5,7 +5,13 @@ import Button from "./Button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { signIn, signUp } from "@/services/authService";
 import type { SignUpData, SignInData } from "@/services/authService";
@@ -30,7 +36,9 @@ const professions = [
 const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [accountType, setAccountType] = useState<"general" | "professional">("general");
+  const [accountType, setAccountType] = useState<"general" | "professional">(
+    "general"
+  );
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -42,22 +50,24 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const toggleShowPassword = () => setShowPassword(!showPassword);
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
+    setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleSelectChange = (value: string) => {
-    setFormData(prev => ({ ...prev, profession: value }));
+    setFormData((prev) => ({ ...prev, profession: value }));
   };
-  
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       if (isRegister) {
         // Validate passwords match
@@ -76,16 +86,18 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           full_name: formData.name,
           birth_date: formData.birthdate,
           city: formData.city,
-          profession: accountType === "professional" ? formData.profession : undefined,
-          account_type: accountType
+          profession:
+            accountType === "professional" ? formData.profession : undefined,
+          account_type: accountType,
+          forwarding: formData.email // Mengambil username sebelum '@'
         };
-
+        console.log(userData);
         const { success, error } = await signUp(userData);
-        
+
         if (success) {
           toast({
             title: "Pendaftaran Berhasil",
-            description: "Silakan login dengan akun yang telah Anda buat",
+            description: "Silakan login dengan akun yang telah Anda buat"
           });
           // Changed: Instead of going to dashboard, toggle to login mode
           if (onToggleMode) {
@@ -111,11 +123,11 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
         };
 
         const { success, error } = await signIn(loginData);
-        
+
         if (success) {
           toast({
             title: "Login Berhasil",
-            description: "Selamat datang kembali di Mind MHIRC",
+            description: "Selamat datang kembali di Mind MHIRC"
           });
           navigate("/dashboard");
         } else {
@@ -137,7 +149,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
       setIsLoading(false);
     }
   };
-  
+
   const toggleForm = () => {
     if (onToggleMode) {
       onToggleMode();
@@ -151,7 +163,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
       navigate({ pathname: "/login", search: searchParams.toString() });
     }
   };
-  
+
   return (
     <div className="max-w-md w-full mx-auto p-6 md:p-8 rounded-xl shadow-medium bg-card fade-in">
       <div className="text-center mb-6">
@@ -164,9 +176,15 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
             : "Masukkan kredensial Anda untuk mengakses akun Anda"}
         </p>
       </div>
-      
+
       {isRegister && (
-        <Tabs defaultValue="general" className="mb-6" onValueChange={(value) => setAccountType(value as "general" | "professional")}>
+        <Tabs
+          defaultValue="general"
+          className="mb-6"
+          onValueChange={(value) =>
+            setAccountType(value as "general" | "professional")
+          }
+        >
           <TabsList className="grid grid-cols-2 w-full">
             <TabsTrigger value="general" className="flex items-center">
               <User className="mr-2 h-4 w-4" />
@@ -179,7 +197,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           </TabsList>
         </Tabs>
       )}
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
         {isRegister && (
           <>
@@ -237,7 +255,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
             )}
           </>
         )}
-        
+
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -249,7 +267,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
             onChange={handleChange}
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <div className="relative">
@@ -271,7 +289,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
             </button>
           </div>
         </div>
-        
+
         {isRegister && (
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
@@ -295,7 +313,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
             </div>
           </div>
         )}
-        
+
         {!isRegister && (
           <div className="flex justify-end">
             <a href="#" className="text-sm text-primary hover:underline">
@@ -303,7 +321,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
             </a>
           </div>
         )}
-        
+
         <Button
           type="submit"
           size="lg"
@@ -321,7 +339,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           )}
         </Button>
       </form>
-      
+
       <div className="mt-6 text-center">
         <p className="text-muted-foreground text-sm">
           {isRegister ? "Sudah memiliki akun?" : "Belum memiliki akun?"}
@@ -334,7 +352,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           </button>
         </p>
       </div>
-      
+
       <div className="mt-8 pt-6 border-t">
         <p className="text-center text-sm text-muted-foreground mb-4">
           Atau lanjutkan dengan
