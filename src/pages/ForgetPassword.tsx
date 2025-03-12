@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 const ForgetPassword = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,6 +37,7 @@ const ForgetPassword = () => {
       });
     } finally {
       setIsLoading(false);
+      setShowAdditionalInfo(true);
     }
   };
 
@@ -77,6 +79,17 @@ const ForgetPassword = () => {
                   Jika email Anda terdaftar, Anda akan menerima email berisi instruksi untuk reset password.
                 </p>
               </div>
+
+              {showAdditionalInfo && (
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Apakah Anda merasa akun belum terdaftar?{" "}
+                    <Link to="/login" className="text-primary hover:underline">
+                      Buat akun
+                    </Link>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
