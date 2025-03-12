@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn, UserPlus, Briefcase, User } from "lucide-react";
 import Button from "./Button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,7 +13,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { signIn, signUp } from "@/services/authService";
+import { signUp, signIn } from "@/services/authService";
 import type { SignUpData, SignInData } from "@/services/authService";
 
 interface LoginFormProps {
@@ -36,9 +36,7 @@ const professions = [
 const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [accountType, setAccountType] = useState<"general" | "professional">(
-    "general"
-  );
+  const [accountType, setAccountType] = useState<"general" | "professional">("general");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -70,13 +68,14 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
 
     try {
       if (isRegister) {
-        // Validate passwords match
+        // Validasi password dan konfirmasi password
         if (formData.password !== formData.confirmPassword) {
           toast({
             title: "Pendaftaran Gagal",
             description: "Password dan konfirmasi password tidak cocok",
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
 
@@ -86,37 +85,43 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           full_name: formData.name,
           birth_date: formData.birthdate,
           city: formData.city,
-          profession:
-            accountType === "professional" ? formData.profession : undefined,
+          profession: accountType === "professional" ? formData.profession : undefined,
           account_type: accountType,
-          forwarding: formData.email // Mengambil username sebelum '@'
+          forwarding: formData.email
         };
-        console.log(userData);
+
         const { success, error } = await signUp(userData);
 
-        if (success) {
-          toast({
-            title: "Pendaftaran Berhasil",
-            description: "Silakan login dengan akun yang telah Anda buat"
-          });
-          // Changed: Instead of going to dashboard, toggle to login mode
-          if (onToggleMode) {
-            onToggleMode();
+        if (error) {
+          if (error.message.toLowerCase().includes("already registered")) {
+            toast({
+              title: "Pendaftaran Gagal",
+              description: "Email sudah terdaftar",
+              variant: "destructive"
+            });
           } else {
-            // If no toggle function provided, manually set URL parameter
-            const searchParams = new URLSearchParams(location.search);
-            searchParams.delete("register");
-            navigate({ pathname: "/login", search: searchParams.toString() });
+            toast({
+              title: "Pendaftaran Gagal",
+              description: error.message || "Terjadi kesalahan, silahkan coba lagi",
+              variant: "destructive"
+            });
           }
+          setIsLoading(false);
+          return;
+        }
+
+        toast({
+          title: "Pendaftaran Berhasil",
+          description: "Silakan periksa email Anda untuk konfirmasi akun"
+        });
+        if (onToggleMode) {
+          onToggleMode();
         } else {
-          toast({
-            title: "Pendaftaran Gagal",
-            description: error || "Terjadi kesalahan, silahkan coba lagi",
-            variant: "destructive"
-          });
+          const searchParams = new URLSearchParams(location.search);
+          searchParams.delete("register");
+          navigate({ pathname: "/login", search: searchParams.toString() });
         }
       } else {
-        // Login
         const loginData: SignInData = {
           email: formData.email,
           password: formData.password
@@ -316,9 +321,12 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
 
         {!isRegister && (
           <div className="flex justify-end">
-            <a href="#" className="text-sm text-primary hover:underline">
+            <Link
+              to="/forget-password-by-email"
+              className="text-sm text-primary hover:underline"
+            >
               Lupa password?
-            </a>
+            </Link>
           </div>
         )}
 
