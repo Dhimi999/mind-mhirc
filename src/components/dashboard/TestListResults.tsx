@@ -36,11 +36,27 @@ const TestListResults = ({
     setSelectedTestId(null);
   };
 
-  const testAliases: Record<string, string> = {
-    srq: "Self-Reporting Questionnaire",
-    sdq: "Strengths and Difficulties Questionnaire",
-    bfi: "Big Five Inventory",
-    "sas-sv": "Social Anxiety Scale - Short Version"
+  const testAliases: Record<string, { name: string; description: string }> = {
+    srq: {
+      name: "Self-Reporting Questionnaire",
+      description:
+        "Kuesioner SRQ-20 adalah alat skrining untuk mendeteksi gejala gangguan mental umum yang dikembangkan oleh World Health Organization (WHO)."
+    },
+    sdq: {
+      name: "Strengths and Difficulties Questionnaire",
+      description:
+        "Tes Kekuatan dan Kelemahan (SDQ) adalah instrumen skrining untuk menilai kesejahteraan emosional dan perilaku anak dan remaja."
+    },
+    bfi: {
+      name: "Big Five Inventory",
+      description:
+        "Big Five Inventory (BFI) adalah alat ukur yang dirancang untuk menilai kepribadian individu berusia 18 tahun ke atas. BFI-10 merupakan versi singkat dari versi aslinya yang terdiri dari 44 item."
+    },
+    "sas-sv": {
+      name: "Social Anxiety Scale - Short Version",
+      description:
+        "Tes Kecanduan Smartphone adalah alat ukur untuk mengukur tingkat ketergantungan seseorang terhadap penggunaan smartphone dalam kehidupan sehari-hari."
+    }
   };
 
   return (
@@ -99,7 +115,13 @@ const TestListResults = ({
                     key={index}
                     className="border rounded-lg p-4 hover:border-primary transition-colors"
                   >
-                    <h3 className="font-medium">{testAliases[test] || test}</h3>
+                    <h3 className="font-medium">
+                      {testAliases[test]?.name || test}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {testAliases[test]?.description ||
+                        "Deskripsi tidak tersedia."}
+                    </p>
                     <div className="flex justify-end mt-3 space-x-2">
                       <Button
                         variant="outline"
@@ -107,9 +129,6 @@ const TestListResults = ({
                         onClick={() => handleViewTable(test)}
                       >
                         Lihat Detail
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Unduh PDF
                       </Button>
                     </div>
                   </div>

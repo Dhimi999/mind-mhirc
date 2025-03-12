@@ -60,6 +60,7 @@ import TestResultsTable from "@/components/dashboard/TestResultsTable";
 let id = "";
 let isProfessional = false;
 let isAdmin = false;
+let globalUnreadBroadcastsCount = 0;
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -120,9 +121,10 @@ const Dashboard = () => {
         if (broadcastError) throw broadcastError;
         if (!broadcasts || broadcasts.length === 0) {
           setUnreadBroadcastsCount(0);
+          globalUnreadBroadcastsCount = unreadBroadcastsCount;
           return;
         }
-        const broadcastIds = broadcasts.map(b => b.id);
+        const broadcastIds = broadcasts.map((b) => b.id);
         const { data: recipientsData, error: recipientsError } = await supabase
           .from("broadcast_recipients")
           .select("broadcast_id, is_read")
@@ -130,9 +132,13 @@ const Dashboard = () => {
           .in("broadcast_id", broadcastIds)
           .eq("is_read", true);
         if (recipientsError) throw recipientsError;
-        const readBroadcastIds = recipientsData?.map(r => r.broadcast_id) || [];
-        const unreadCount = broadcasts.filter(b => !readBroadcastIds.includes(b.id)).length;
+        const readBroadcastIds =
+          recipientsData?.map((r) => r.broadcast_id) || [];
+        const unreadCount = broadcasts.filter(
+          (b) => !readBroadcastIds.includes(b.id)
+        ).length;
         setUnreadBroadcastsCount(unreadCount);
+        globalUnreadBroadcastsCount = unreadBroadcastsCount;
       } catch (error) {
         console.error("Error fetching unread broadcasts count:", error);
       }
@@ -141,25 +147,33 @@ const Dashboard = () => {
 
     const broadcastsSubscription = supabase
       .channel("broadcasts_changes")
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "broadcasts"
-      }, () => {
-        fetchUnreadBroadcastsCount();
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "broadcasts"
+        },
+        () => {
+          fetchUnreadBroadcastsCount();
+        }
+      )
       .subscribe();
 
     const recipientsSubscription = supabase
       .channel("broadcast_recipients_changes")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "broadcast_recipients",
-        filter: `user_id=eq.${user.id}`
-      }, () => {
-        fetchUnreadBroadcastsCount();
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "broadcast_recipients",
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadBroadcastsCount();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -186,18 +200,22 @@ const Dashboard = () => {
         const roomsWithParticipants: any[] = [];
         for (const room of roomsData) {
           try {
-            const { data: participants, error: participantsError } = await supabase
-              .from("chat_participants")
-              .select("user_id")
-              .eq("chat_room_id", room.id);
+            const { data: participants, error: participantsError } =
+              await supabase
+                .from("chat_participants")
+                .select("user_id")
+                .eq("chat_room_id", room.id);
             if (participantsError) throw participantsError;
-            const isUserParticipant = participants?.some(p => p.user_id === user.id);
+            const isUserParticipant = participants?.some(
+              (p) => p.user_id === user.id
+            );
             if (isUserParticipant) {
-              const userIds = participants.map(p => p.user_id);
-              const { data: profilesData, error: profilesError } = await supabase
-                .from("profiles")
-                .select("id, full_name, avatar_url, is_admin, account_type")
-                .in("id", userIds);
+              const userIds = participants.map((p) => p.user_id);
+              const { data: profilesData, error: profilesError } =
+                await supabase
+                  .from("profiles")
+                  .select("id, full_name, avatar_url, is_admin, account_type")
+                  .in("id", userIds);
               if (profilesError) throw profilesError;
               roomsWithParticipants.push({
                 ...room,
@@ -205,7 +223,10 @@ const Dashboard = () => {
               });
             }
           } catch (error) {
-            console.error(`Error fetching participants for room ${room.id}:`, error);
+            console.error(
+              `Error fetching participants for room ${room.id}:`,
+              error
+            );
           }
         }
         setChatRooms(roomsWithParticipants);
@@ -272,17 +293,26 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center justify-between lg:hidden">
                 <span className="font-semibold">Menu</span>
-                <button onClick={toggleSidebar} className="p-1 rounded-full hover:bg-muted">
+                <button
+                  onClick={toggleSidebar}
+                  className="p-1 rounded-full hover:bg-muted"
+                >
                   <X size={20} />
                 </button>
               </div>
               <div className="mt-5 flex-1 overflow-y-auto max-h-screen">
                 <nav className="space-y-1">
-                  <Link to="/dashboard" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                  >
                     <Home className="mr-3 h-5 w-5" />
                     Beranda
                   </Link>
-                  <button onClick={handleExitDashboard} className="w-full flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                  <button
+                    onClick={handleExitDashboard}
+                    className="w-full flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                  >
                     <ArrowLeft className="mr-3 h-5 w-5" />
                     Kembali ke Beranda
                   </button>
@@ -290,19 +320,31 @@ const Dashboard = () => {
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
                       Menu Utama
                     </div>
-                    <Link to="/dashboard/tests" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                    <Link
+                      to="/dashboard/tests"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <ClipboardList className="mr-3 h-5 w-5" />
                       Tes Mental
                     </Link>
-                    <Link to="/dashboard/results" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                    <Link
+                      to="/dashboard/results"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <PieChart className="mr-3 h-5 w-5" />
                       Hasil Tes
                     </Link>
-                    <Link to="/dashboard/appointments" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                    <Link
+                      to="/dashboard/appointments"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <Calendar className="mr-3 h-5 w-5" />
                       Janji Konsultasi
                     </Link>
-                    <Link to="/dashboard/messages" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                    <Link
+                      to="/dashboard/messages"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <MessageSquare className="mr-3 h-5 w-5" />
                       Pesan
                       {unreadBroadcastsCount > 0 && (
@@ -318,30 +360,48 @@ const Dashboard = () => {
                         {isAdmin ? "Admin" : "Guru"}
                       </div>
                       {mockUser.role === "Teacher" && (
-                        <Link to="/dashboard/students" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                        <Link
+                          to="/dashboard/students"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
                           <Users className="mr-3 h-5 w-5" />
                           Daftar Murid
                         </Link>
                       )}
                       {isAdmin && (
                         <>
-                          <Link to="/dashboard/users" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                          <Link
+                            to="/dashboard/users"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <Users className="mr-3 h-5 w-5" />
                             Manajemen Pengguna
                           </Link>
-                          <Link to="/dashboard/content" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                          <Link
+                            to="/dashboard/content"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <FileText className="mr-3 h-5 w-5" />
                             Manajemen Konten
                           </Link>
-                          <Link to="/dashboard/broadcast" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                          <Link
+                            to="/dashboard/broadcast"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <Megaphone className="mr-3 h-5 w-5" />
                             Siaran
                           </Link>
-                          <Link to="/dashboard/reports" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                          <Link
+                            to="/dashboard/reports"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <AlertCircle className="mr-3 h-5 w-5" />
                             Laporan
                           </Link>
-                          <Link to="/dashboard/analytics" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                          <Link
+                            to="/dashboard/analytics"
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          >
                             <LineChart className="mr-3 h-5 w-5" />
                             Statistik & Analitik
                           </Link>
@@ -353,11 +413,17 @@ const Dashboard = () => {
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
                       Pengaturan
                     </div>
-                    <Link to="/dashboard/settings" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                    <Link
+                      to="/dashboard/settings"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <SettingsIcon className="mr-3 h-5 w-5" />
                       Pengaturan Akun
                     </Link>
-                    <Link to="/dashboard/help" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary">
+                    <Link
+                      to="/dashboard/help"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
                       <BookOpen className="mr-3 h-5 w-5" />
                       Bantuan
                     </Link>
@@ -370,13 +436,21 @@ const Dashboard = () => {
             <div className="bg-card border-b sticky top-0 z-30">
               <div className="flex items-center justify-between h-16 px-4">
                 <div className="flex items-center">
-                  <button onClick={toggleSidebar} className="p-2 mr-2 rounded-md lg:hidden hover:bg-muted">
+                  <button
+                    onClick={toggleSidebar}
+                    className="p-2 mr-2 rounded-md lg:hidden hover:bg-muted"
+                  >
                     <Menu size={20} />
                   </button>
-                  <div className="flex items-center text-lg font-semibold">Dashboard</div>
+                  <div className="flex items-center text-lg font-semibold">
+                    Dashboard
+                  </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Link to="/dashboard/messages" className="p-2 rounded-md hover:bg-muted relative">
+                  <Link
+                    to="/dashboard/messages"
+                    className="p-2 rounded-md hover:bg-muted relative"
+                  >
                     <Mail size={20} />
                     {unreadBroadcastsCount > 0 && (
                       <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
@@ -385,12 +459,23 @@ const Dashboard = () => {
                   <div className="relative">
                     <DropdownMenu>
                       <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none">
-                        <img src={mockUser.avatarUrl} alt={mockUser.name} className="w-8 h-8 rounded-full object-cover" />
-                        <ChevronDown size={16} className="text-muted-foreground" />
+                        <img
+                          src={mockUser.avatarUrl}
+                          alt={mockUser.name}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                        <ChevronDown
+                          size={16}
+                          className="text-muted-foreground"
+                        />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <div className="px-2 py-1.5 text-sm font-medium">{mockUser.name}</div>
-                        <div className="px-2 py-1.5 text-xs text-muted-foreground">{mockUser.email}</div>
+                        <div className="px-2 py-1.5 text-sm font-medium">
+                          {mockUser.name}
+                        </div>
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          {mockUser.email}
+                        </div>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link to="/dashboard/settings">Pengaturan Akun</Link>
@@ -399,7 +484,10 @@ const Dashboard = () => {
                           <ArrowLeft className="mr-2 h-4 w-4" />
                           <span>Keluar Dashboard</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={handleLogout}
+                        >
                           <LogOut className="mr-2 h-4 w-4" />
                           <span>Log Out</span>
                         </DropdownMenuItem>
@@ -412,26 +500,62 @@ const Dashboard = () => {
             <div className="p-4 sm:p-6">
               <Routes>
                 <Route index element={<DashboardOverview user={mockUser} />} />
-                <Route path="tests/*" element={<DashboardTests user={mockUser} />} />
-                <Route path="results/*" element={<DashboardResults user={mockUser} />} />
-                <Route path="appointments/*" element={<DashboardAppointments user={mockUser} />} />
+                <Route
+                  path="tests/*"
+                  element={<DashboardTests user={mockUser} />}
+                />
+                <Route
+                  path="results/*"
+                  element={<DashboardResults user={mockUser} />}
+                />
+                <Route
+                  path="appointments/*"
+                  element={<DashboardAppointments user={mockUser} />}
+                />
                 <Route path="messages/*" element={<MessageManagement />} />
                 {mockUser.role === "Teacher" && (
-                  <Route path="students/*" element={<DashboardStudents user={mockUser} />} />
+                  <Route
+                    path="students/*"
+                    element={<DashboardStudents user={mockUser} />}
+                  />
                 )}
                 {isAdmin && (
                   <>
                     <Route path="users/*" element={<UserManagement />} />
-                    <Route path="content" element={<DashboardContent user={mockUser} />} />
-                    <Route path="content/new" element={<DashboardContentNew user={mockUser} />} />
-                    <Route path="content/edit/:slug" element={<DashboardContentEdit user={mockUser} />} />
-                    <Route path="broadcast/*" element={<DashboardBroadcast user={mockUser} />} />
-                    <Route path="reports/*" element={<DashboardReports user={mockUser} />} />
-                    <Route path="analytics/*" element={<DashboardAnalytics user={mockUser} />} />
+                    <Route
+                      path="content"
+                      element={<DashboardContent user={mockUser} />}
+                    />
+                    <Route
+                      path="content/new"
+                      element={<DashboardContentNew user={mockUser} />}
+                    />
+                    <Route
+                      path="content/edit/:slug"
+                      element={<DashboardContentEdit user={mockUser} />}
+                    />
+                    <Route
+                      path="broadcast/*"
+                      element={<DashboardBroadcast user={mockUser} />}
+                    />
+                    <Route
+                      path="reports/*"
+                      element={<DashboardReports user={mockUser} />}
+                    />
+                    <Route
+                      path="analytics/*"
+                      element={<DashboardAnalytics user={mockUser} />}
+                    />
                   </>
                 )}
-                <Route path="settings/*" element={<DashboardSettings user={mockUser} />} />
-                <Route path="help/*" element={<DashboardHelp user={mockUser} />} />
+                <Route
+                  path="settings/*"
+                  element={<DashboardSettings user={mockUser} />}
+                />
+                <Route
+                  path="help/*"
+                  element={<DashboardHelp user={mockUser} />}
+                />
                 <Route path="*" element={<DashboardNotFound />} />
               </Routes>
             </div>
@@ -451,60 +575,106 @@ const DashboardOverview = ({ user }: { user: any }) => {
     totalBlogs: 0,
     blogsLast7Days: 0
   });
+  const [testResults, setTestResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchTestStats = async () => {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const sevenDaysAgoISO = sevenDaysAgo.toISOString();
-      try {
-        const { count: totalTests, error: totalError } = await supabase
+  const fetchAllData = async () => {
+    setLoading(true);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+    try {
+      console.log("Fetching data...");
+
+      // Fetch data dari Supabase
+      const [
+        { data: testData, error: testError },
+        { count: totalTests, error: totalError },
+        { count: testsLast7Days, error: last7DaysError },
+        { count: totalBlogs, error: blogError },
+        { count: blogsLast7Days, error: blogsLast7DaysError }
+      ] = await Promise.all([
+        supabase
           .from("test_results")
-          .select("id", { count: "exact", head: true });
-        const { count: testsLast7Days, error: last7DaysError } = await supabase
+          .select("id, test_title, created_at, user_id") // Ambil hanya kolom yang diperlukan
+          .order("created_at", { ascending: false })
+          .limit(4), // Batasi hasil hanya 4 data
+        supabase
+          .from("test_results")
+          .select("id", { count: "exact", head: true }),
+        supabase
           .from("test_results")
           .select("id", { count: "exact", head: true })
-          .gte("created_at", sevenDaysAgoISO);
-        const { count: totalBlogs, error: blogError } = await supabase
+          .gte("created_at", sevenDaysAgoISO),
+        supabase
           .from("blog_posts")
-          .select("id", { count: "exact", head: true });
-        const { count: blogsLast7Days, error: blogsLast7DaysError } =
-          await supabase
-            .from("blog_posts")
-            .select("id", { count: "exact", head: true })
-            .gte("published_date", sevenDaysAgoISO);
-        if (totalError || last7DaysError || blogError || blogsLast7DaysError) {
-          console.error("Error fetching statistics");
-          return {
-            totalTests: 0,
-            testsLast7Days: 0,
-            totalBlogs: 0,
-            blogsLast7Days: 0
-          };
-        }
-        return { totalTests, testsLast7Days, totalBlogs, blogsLast7Days };
-      } catch (error) {
-        console.error("Unexpected error fetching statistics:", error);
-        return {
-          totalTests: 0,
-          testsLast7Days: 0,
-          totalBlogs: 0,
-          blogsLast7Days: 0
-        };
-      }
-    };
+          .select("id", { count: "exact", head: true }),
+        supabase
+          .from("blog_posts")
+          .select("id", { count: "exact", head: true })
+          .gte("published_date", sevenDaysAgoISO)
+      ]);
 
-    const fetchData = async () => {
-      const data = await fetchTestStats();
-      setStats(data);
-    };
-    fetchData();
+      // Debug response dari Supabase
+      console.log("Test Data:", testData);
+      console.log("Stats: ", {
+        totalTests,
+        testsLast7Days,
+        totalBlogs,
+        blogsLast7Days
+      });
+
+      // Tangani error eksplisit
+      if (testError) console.error("Error fetching test results:", testError);
+      if (totalError) console.error("Error fetching total tests:", totalError);
+      if (last7DaysError)
+        console.error("Error fetching last 7 days tests:", last7DaysError);
+      if (blogError) console.error("Error fetching total blogs:", blogError);
+      if (blogsLast7DaysError)
+        console.error("Error fetching blogs last 7 days:", blogsLast7DaysError);
+
+      if (
+        testError ||
+        totalError ||
+        last7DaysError ||
+        blogError ||
+        blogsLast7DaysError
+      )
+        return;
+
+      // Set semua state dalam satu tahap
+      setTestResults(testData || []);
+      setStats({
+        totalTests: totalTests || 0,
+        testsLast7Days: testsLast7Days || 0,
+        totalBlogs: totalBlogs || 0,
+        blogsLast7Days: blogsLast7Days || 0
+      });
+    } catch (error) {
+      console.error("Unexpected error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
   }, []);
+
+  useEffect(() => {
+    console.log("Updated testResults:", stats);
+  }, [testResults]);
+
   return (
     <div className="mt-1">
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl font-semibold mb-1">Selamat Datang, {user.name}!</h1>
-        <p className="text-muted-foreground">Berikut adalah ringkasan aktivitas Anda.</p>
+        <h1 className="text-2xl font-semibold mb-1">
+          Selamat Datang, {user.name}!
+        </h1>
+        <p className="text-muted-foreground">
+          Berikut adalah ringkasan aktivitas Anda.
+        </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
@@ -526,8 +696,8 @@ const DashboardOverview = ({ user }: { user: any }) => {
               <Calendar size={20} />
             </div>
           </div>
-          <p className="text-2xl font-bold">2</p>
-          <p className="text-xs text-muted-foreground">Janji berikutnya: Kamis, 10:00</p>
+          <p className="text-2xl font-bold">-</p>
+          <p className="text-xs text-muted-foreground">Akan Segera Datang</p>
         </div>
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
@@ -536,8 +706,16 @@ const DashboardOverview = ({ user }: { user: any }) => {
               <MessageSquare size={20} />
             </div>
           </div>
-          <p className="text-2xl font-bold">3</p>
-          <p className="text-xs text-muted-foreground">1 belum dibaca dari Dr. Anita</p>
+
+          <p className="text-2xl font-bold">
+            {globalUnreadBroadcastsCount && globalUnreadBroadcastsCount > 0
+              ? globalUnreadBroadcastsCount
+              : 0}
+          </p>
+
+          <p className="text-xs text-muted-foreground">
+            Terdapat pesan yang belum dibaca
+          </p>
         </div>
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
@@ -554,48 +732,84 @@ const DashboardOverview = ({ user }: { user: any }) => {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
-          <h3 className="font-semibold mb-4">Aktivitas Terbaru</h3>
-          <div className="space-y-4">
-            {[
-              { title: "Menyelesaikan Tes SRQ", date: "Hari ini, 14:30", icon: ClipboardList },
-              { title: "Menjadwalkan Konsultasi", date: "Kemarin, 09:15", icon: Calendar },
-              { title: "Membaca Artikel: Mengelola Stres", date: "3 hari lalu", icon: BookOpen },
-              { title: "Menyelesaikan Tes Big Five", date: "1 minggu lalu", icon: BoxSelect }
-            ].map((activity, index) => (
-              <div key={index} className="flex items-start">
-                <div className="mr-3 p-2 bg-muted rounded-lg">
-                  <activity.icon size={18} />
+          <h3 className="font-semibold mb-4">Aktivitas Tes Terbaru</h3>
+
+          {testResults.length > 0 ? (
+            <div className="space-y-4">
+              {testResults.map((test) => (
+                <div key={test.id} className="flex items-start">
+                  <div className="mr-3 p-2 bg-muted rounded-lg">
+                    <ClipboardList size={18} />
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      Menyelesaikan Tes {test.test_title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(test.created_at).toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">{activity.title}</p>
-                  <p className="text-xs text-muted-foreground">{activity.date}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-6">
+              <p className="text-sm">Belum ada aktivitas tes terbaru.</p>
+            </div>
+          )}
+
           <div className="mt-4 pt-4 border-t">
-            <Button variant="outline" size="sm" className="w-full">Lihat Semua Aktivitas</Button>
+            <Button variant="outline" size="sm" className="w-full">
+              <Link to="/dashboard/results">Lihat Semua Aktivitas</Link>
+            </Button>
           </div>
         </div>
+
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
           <h3 className="font-semibold mb-4">Tes yang Direkomendasikan</h3>
           <div className="space-y-4">
             {[
-              { title: "Tes Kecemasan GAD-7", desc: "Evaluasi tingkat kecemasan Anda saat ini", duration: "5-7 menit" },
-              { title: "Tes Kesehatan Mental Harian", desc: "Lacak kondisi kesehatan mental Anda sehari-hari", duration: "3-5 menit" },
-              { title: "Tes Manajemen Stres", desc: "Evaluasi kemampuan Anda mengelola stres", duration: "8-10 menit" }
+              {
+                title: "Tes Kecemasan GAD-7",
+                desc: "Evaluasi tingkat kecemasan Anda saat ini",
+                duration: "5-7 menit"
+              },
+              {
+                title: "Tes Kesehatan Mental Harian",
+                desc: "Lacak kondisi kesehatan mental Anda sehari-hari",
+                duration: "3-5 menit"
+              },
+              {
+                title: "Tes Manajemen Stres",
+                desc: "Evaluasi kemampuan Anda mengelola stres",
+                duration: "8-10 menit"
+              }
             ].map((test, index) => (
-              <div key={index} className="p-4 border rounded-lg hover:border-primary transition-colors">
+              <div
+                key={index}
+                className="p-4 border rounded-lg hover:border-primary transition-colors"
+              >
                 <div className="flex justify-between items-start">
                   <div>
                     <h4 className="font-medium">{test.title}</h4>
                     <p className="text-sm text-muted-foreground">{test.desc}</p>
                   </div>
-                  <div className="text-xs bg-muted px-2 py-1 rounded">{test.duration}</div>
+                  <div className="text-xs bg-muted px-2 py-1 rounded">
+                    {test.duration}
+                  </div>
                 </div>
                 <div className="mt-3">
-                  <Link to={`/dashboard/tests`}>
-                    <Button variant="outline" size="sm">Mulai Tes</Button>
+                  <Link to={`/tests`}>
+                    <Button variant="outline" size="sm">
+                      Mulai Tes
+                    </Button>
                   </Link>
                 </div>
               </div>
@@ -603,7 +817,9 @@ const DashboardOverview = ({ user }: { user: any }) => {
           </div>
           <div className="mt-4 pt-4 border-t">
             <Link to="/tests">
-              <Button variant="outline" size="sm" className="w-full">Jelajahi Semua Tes</Button>
+              <Button variant="outline" size="sm" className="w-full">
+                Jelajahi Semua Tes
+              </Button>
             </Link>
           </div>
         </div>
@@ -624,7 +840,8 @@ const DashboardAppointments = ({ user }: { user: any }) => (
     <h1 className="text-2xl font-semibold mb-6">Janji Konsultasi</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
       <p>
-        Halaman ini akan memungkinkan Anda menjadwalkan, melihat, atau membatalkan janji konsultasi dengan psikolog atau konselor.
+        Halaman ini akan memungkinkan Anda menjadwalkan, melihat, atau
+        membatalkan janji konsultasi dengan psikolog atau konselor.
       </p>
     </div>
   </div>
@@ -635,7 +852,8 @@ const DashboardTests = ({ user }: { user: any }) => (
     <h1 className="text-2xl font-semibold mb-6">Tes Mental</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
       <p>
-        Halaman ini akan berisi daftar tes mental yang tersedia, baik yang gratis maupun berbayar, beserta informasi tentang masing-masing tes.
+        Halaman ini akan berisi daftar tes mental yang tersedia, baik yang
+        gratis maupun berbayar, beserta informasi tentang masing-masing tes.
       </p>
     </div>
   </div>
@@ -646,7 +864,8 @@ const DashboardMessages = ({ user }: { user: any }) => (
     <h1 className="text-2xl font-semibold mb-6">Pesan</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
       <p>
-        Halaman ini akan menampilkan sistem pesan untuk berkomunikasi dengan profesional kesehatan mental atau staf Mind MHIRC.
+        Halaman ini akan menampilkan sistem pesan untuk berkomunikasi dengan
+        profesional kesehatan mental atau staf Mind MHIRC.
       </p>
     </div>
   </div>
@@ -657,7 +876,8 @@ const DashboardStudents = ({ user }: { user: any }) => (
     <h1 className="text-2xl font-semibold mb-6">Daftar Murid</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
       <p>
-        Halaman ini akan menampilkan daftar murid Anda, dengan opsi untuk melihat hasil tes, mengirim tes baru, atau mengelola data murid.
+        Halaman ini akan menampilkan daftar murid Anda, dengan opsi untuk
+        melihat hasil tes, mengirim tes baru, atau mengelola data murid.
       </p>
     </div>
   </div>
@@ -668,7 +888,8 @@ const DashboardUsers = ({ user }: { user: any }) => (
     <h1 className="text-2xl font-semibold mb-6">Manajemen Pengguna</h1>
     <div className="bg-card shadow-soft rounded-xl p-6">
       <p>
-        Halaman ini akan memungkinkan Anda mengelola semua pengguna sistem, termasuk menambah, mengedit, atau menghapus akun pengguna.
+        Halaman ini akan memungkinkan Anda mengelola semua pengguna sistem,
+        termasuk menambah, mengedit, atau menghapus akun pengguna.
       </p>
     </div>
   </div>

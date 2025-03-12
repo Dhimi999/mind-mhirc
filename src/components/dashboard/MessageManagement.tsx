@@ -1,16 +1,62 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, User, Send, Plus, Megaphone, Clock, CheckCircle, Info, AlertTriangle, AlertCircle, Trash, Search, X, RefreshCw } from "lucide-react";
+import {
+  MessageSquare,
+  User,
+  Send,
+  Plus,
+  Megaphone,
+  Clock,
+  CheckCircle,
+  Info,
+  AlertTriangle,
+  AlertCircle,
+  Trash,
+  Search,
+  X,
+  RefreshCw
+} from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -84,9 +130,10 @@ const MessageManagement: React.FC = () => {
     } else {
       const lowercaseSearch = userSearch.toLowerCase();
       setFilteredUsers(
-        availableUsers.filter((user) =>
-          user.full_name?.toLowerCase().includes(lowercaseSearch) ||
-          user.account_type?.toLowerCase().includes(lowercaseSearch)
+        availableUsers.filter(
+          (user) =>
+            user.full_name?.toLowerCase().includes(lowercaseSearch) ||
+            user.account_type?.toLowerCase().includes(lowercaseSearch)
         )
       );
     }
@@ -98,10 +145,11 @@ const MessageManagement: React.FC = () => {
     const fetchChatRooms = async () => {
       setIsFetchingRooms(true);
       try {
-        const { data: participantsData, error: participantsError } = await supabase
-          .from("chat_participants")
-          .select("chat_room_id")
-          .eq("user_id", user.id);
+        const { data: participantsData, error: participantsError } =
+          await supabase
+            .from("chat_participants")
+            .select("chat_room_id")
+            .eq("user_id", user.id);
         if (participantsError) throw participantsError;
         if (!participantsData || participantsData.length === 0) {
           setChatRooms([]);
@@ -117,10 +165,11 @@ const MessageManagement: React.FC = () => {
         if (roomsError) throw roomsError;
         const roomsWithParticipants = await Promise.all(
           roomsData.map(async (room) => {
-            const { data: roomParticipants, error: roomParticipantsError } = await supabase
-              .from("chat_participants")
-              .select("user_id")
-              .eq("chat_room_id", room.id);
+            const { data: roomParticipants, error: roomParticipantsError } =
+              await supabase
+                .from("chat_participants")
+                .select("user_id")
+                .eq("chat_room_id", room.id);
             if (roomParticipantsError) throw roomParticipantsError;
             const userIds = roomParticipants.map((p) => p.user_id);
             const { data: profilesData, error: profilesError } = await supabase
@@ -130,7 +179,7 @@ const MessageManagement: React.FC = () => {
             if (profilesError) throw profilesError;
             return {
               ...room,
-              participants: profilesData || [],
+              participants: profilesData || []
             };
           })
         );
@@ -169,7 +218,8 @@ const MessageManagement: React.FC = () => {
           .select("id, full_name, avatar_url, is_admin, account_type")
           .order("full_name");
         if (error) throw error;
-        const filteredData = data?.filter((profile) => profile.id !== user.id) || [];
+        const filteredData =
+          data?.filter((profile) => profile.id !== user.id) || [];
         setAvailableUsers(filteredData);
         setFilteredUsers(filteredData);
       } catch (error) {
@@ -214,7 +264,7 @@ const MessageManagement: React.FC = () => {
           return {
             ...message,
             read_by: convertedReadBy,
-            sender: senderData,
+            sender: senderData
           } as ChatMessage;
         })
       );
@@ -248,7 +298,7 @@ const MessageManagement: React.FC = () => {
           event: "INSERT",
           schema: "public",
           table: "chat_messages",
-          filter: `chat_room_id=eq.${selectedRoomId}`,
+          filter: `chat_room_id=eq.${selectedRoomId}`
         },
         async (payload) => {
           const newMessage = payload.new as any;
@@ -273,7 +323,7 @@ const MessageManagement: React.FC = () => {
             const typedMessage: ChatMessage = {
               ...newMessage,
               read_by: convertedReadBy,
-              sender: senderData,
+              sender: senderData
             };
             setMessages((prevMessages) => [...prevMessages, typedMessage]);
             if (newMessage.sender_id !== user.id) {
@@ -348,7 +398,7 @@ const MessageManagement: React.FC = () => {
                 ...broadcast,
                 recepient_read: recipientRead,
                 recipients: recipients,
-                is_read: recipientRead.includes(user.id),
+                is_read: recipientRead.includes(user.id)
               } as Broadcast;
             });
         }
@@ -377,7 +427,7 @@ const MessageManagement: React.FC = () => {
           event: "*",
           schema: "public",
           table: "broadcast_recipients",
-          filter: `user_id=eq.${user.id}`,
+          filter: `user_id=eq.${user.id}`
         },
         () => fetchBroadcasts()
       )
@@ -403,7 +453,7 @@ const MessageManagement: React.FC = () => {
         .from("chat_participants")
         .insert([
           { chat_room_id: roomData.id, user_id: user.id },
-          { chat_room_id: roomData.id, user_id: selectedUserId },
+          { chat_room_id: roomData.id, user_id: selectedUserId }
         ]);
       if (participantsError) throw participantsError;
       const { data: selectedUser, error: userError } = await supabase
@@ -418,7 +468,10 @@ const MessageManagement: React.FC = () => {
         .eq("id", user.id)
         .single();
       if (currentUserError) throw currentUserError;
-      const newRoom = { ...roomData, participants: [selectedUser, currentUser] };
+      const newRoom = {
+        ...roomData,
+        participants: [selectedUser, currentUser]
+      };
       setChatRooms((prevRooms) => [newRoom, ...prevRooms]);
       setSelectedRoomId(newRoom.id);
       setSelectedUserId(null);
@@ -457,7 +510,9 @@ const MessageManagement: React.FC = () => {
         .delete()
         .eq("id", selectedRoomId);
       if (roomError) throw roomError;
-      setChatRooms((prevRooms) => prevRooms.filter((room) => room.id !== selectedRoomId));
+      setChatRooms((prevRooms) =>
+        prevRooms.filter((room) => room.id !== selectedRoomId)
+      );
       setSelectedRoomId(null);
       setMessages([]);
       toast("Ruang obrolan berhasil dihapus.");
@@ -470,42 +525,64 @@ const MessageManagement: React.FC = () => {
     }
   };
 
-  // Kirim pesan baru
+  // Kirim pesan baru (lama)
+  // const handleSendMessage = async () => {
+  //   if (!user || !selectedRoomId || !newMessage.trim()) return;
+  //   setIsSendingMessage(true);
+  //   try {
+  //     const trimmedMessage = newMessage.trim();
+  //     const tempMessage: ChatMessage = {
+  //       id: "temp-" + Date.now(),
+  //       chat_room_id: selectedRoomId,
+  //       sender_id: user.id,
+  //       content: trimmedMessage,
+  //       created_at: new Date().toISOString(),
+  //       read_by: [user.id],
+  //       sender: {
+  //         id: user.id,
+  //         full_name: user.full_name,
+  //         avatar_url: user.avatar_url,
+  //         is_admin: user.is_admin,
+  //         account_type: user.account_type
+  //       }
+  //     };
+  //     setMessages((prev) => [...prev, tempMessage]);
+  //     setNewMessage("");
+  //     const { error } = await supabase.from("chat_messages").insert({
+  //       chat_room_id: selectedRoomId,
+  //       sender_id: user.id,
+  //       content: trimmedMessage,
+  //       read_by: [user.id]
+  //     });
+  //     if (error) throw error;
+  //   } catch (error) {
+  //     console.error("Error sending message:", error);
+  //     toast("Gagal mengirim pesan. Silakan coba lagi.");
+  //     setMessages((prev) => prev.filter((msg) => !msg.id.startsWith("temp-")));
+  //   } finally {
+  //     setIsSendingMessage(false);
+  //   }
+  // };
+
+  // Kirim pesan baru (update)
   const handleSendMessage = async () => {
     if (!user || !selectedRoomId || !newMessage.trim()) return;
     setIsSendingMessage(true);
     try {
       const trimmedMessage = newMessage.trim();
-      const tempMessage: ChatMessage = {
-        id: "temp-" + Date.now(),
+      setNewMessage("");
+
+      const { error } = await supabase.from("chat_messages").insert({
         chat_room_id: selectedRoomId,
         sender_id: user.id,
         content: trimmedMessage,
-        created_at: new Date().toISOString(),
-        read_by: [user.id],
-        sender: {
-          id: user.id,
-          full_name: user.full_name,
-          avatar_url: user.avatar_url,
-          is_admin: user.is_admin,
-          account_type: user.account_type,
-        },
-      };
-      setMessages((prev) => [...prev, tempMessage]);
-      setNewMessage("");
-      const { error } = await supabase
-        .from("chat_messages")
-        .insert({
-          chat_room_id: selectedRoomId,
-          sender_id: user.id,
-          content: trimmedMessage,
-          read_by: [user.id],
-        });
+        read_by: [user.id]
+      });
+
       if (error) throw error;
     } catch (error) {
       console.error("Error sending message:", error);
       toast("Gagal mengirim pesan. Silakan coba lagi.");
-      setMessages((prev) => prev.filter((msg) => !msg.id.startsWith("temp-")));
     } finally {
       setIsSendingMessage(false);
     }
@@ -540,37 +617,37 @@ const MessageManagement: React.FC = () => {
         return {
           label: "Mendesak",
           color: "bg-red-100 text-red-800 border-red-300",
-          icon: <AlertCircle className="h-4 w-4 mr-1" />,
+          icon: <AlertCircle className="h-4 w-4 mr-1" />
         };
       case "high":
         return {
           label: "Penting",
           color: "bg-orange-100 text-orange-800 border-orange-300",
-          icon: <AlertTriangle className="h-4 w-4 mr-1" />,
+          icon: <AlertTriangle className="h-4 w-4 mr-1" />
         };
       case "regular":
         return {
           label: "Umum",
           color: "bg-blue-100 text-blue-800 border-blue-300",
-          icon: <Info className="h-4 w-4 mr-1" />,
+          icon: <Info className="h-4 w-4 mr-1" />
         };
       case "info":
         return {
           label: "Info",
           color: "bg-green-100 text-green-800 border-green-300",
-          icon: <Info className="h-4 w-4 mr-1" />,
+          icon: <Info className="h-4 w-4 mr-1" />
         };
       case "recommendation":
         return {
           label: "Saran/Rekomendasi",
           color: "bg-purple-100 text-purple-800 border-purple-300",
-          icon: <Info className="h-4 w-4 mr-1" />,
+          icon: <Info className="h-4 w-4 mr-1" />
         };
       default:
         return {
           label: "Umum",
           color: "bg-blue-100 text-blue-800 border-blue-300",
-          icon: <Info className="h-4 w-4 mr-1" />,
+          icon: <Info className="h-4 w-4 mr-1" />
         };
     }
   };
@@ -620,7 +697,11 @@ const MessageManagement: React.FC = () => {
                     {user?.is_admin === true && (
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button size="sm" variant="outline" className="flex items-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center"
+                          >
                             <Plus className="h-4 w-4 mr-1" />
                             Buat Obrolan
                           </Button>
@@ -642,7 +723,11 @@ const MessageManagement: React.FC = () => {
                                 className="flex-1"
                               />
                               {userSearch && (
-                                <Button variant="ghost" size="icon" onClick={() => setUserSearch("")}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setUserSearch("")}
+                                >
                                   <X className="h-4 w-4" />
                                 </Button>
                               )}
@@ -650,19 +735,27 @@ const MessageManagement: React.FC = () => {
                             <div className="max-h-60 overflow-y-auto border rounded-md p-1">
                               {filteredUsers.length === 0 ? (
                                 <div className="text-center py-4 text-muted-foreground">
-                                  {userSearch ? "Tidak ada pengguna yang ditemukan" : "Tidak ada pengguna yang tersedia"}
+                                  {userSearch
+                                    ? "Tidak ada pengguna yang ditemukan"
+                                    : "Tidak ada pengguna yang tersedia"}
                                 </div>
                               ) : (
                                 filteredUsers.map((user) => (
                                   <div
                                     key={user.id}
                                     className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${
-                                      selectedUserId === user.id ? "bg-muted" : "hover:bg-muted/50"
+                                      selectedUserId === user.id
+                                        ? "bg-muted"
+                                        : "hover:bg-muted/50"
                                     }`}
                                     onClick={() => setSelectedUserId(user.id)}
                                   >
                                     {user.avatar_url ? (
-                                      <img src={user.avatar_url} alt={user.full_name || "User"} className="h-10 w-10 rounded-full object-cover" />
+                                      <img
+                                        src={user.avatar_url}
+                                        alt={user.full_name || "User"}
+                                        className="h-10 w-10 rounded-full object-cover"
+                                      />
                                     ) : (
                                       <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                                         <User className="h-6 w-6 text-muted-foreground" />
@@ -670,10 +763,15 @@ const MessageManagement: React.FC = () => {
                                     )}
                                     <div className="flex-1 min-w-0">
                                       <p className="font-medium truncate">
-                                        {user.full_name || "Pengguna tanpa nama"}
+                                        {user.full_name ||
+                                          "Pengguna tanpa nama"}
                                       </p>
                                       <p className="text-xs text-muted-foreground">
-                                        {user.account_type === "professional" ? "Profesional" : user.is_admin ? "Admin" : "Pengguna Umum"}
+                                        {user.account_type === "professional"
+                                          ? "Profesional"
+                                          : user.is_admin
+                                          ? "Admin"
+                                          : "Pengguna Umum"}
                                       </p>
                                     </div>
                                   </div>
@@ -682,10 +780,19 @@ const MessageManagement: React.FC = () => {
                             </div>
                           </div>
                           <DialogFooter>
-                            <Button variant="outline" onClick={() => { setSelectedUserId(null); setUserSearch(""); }}>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedUserId(null);
+                                setUserSearch("");
+                              }}
+                            >
                               Batal
                             </Button>
-                            <Button onClick={handleCreateChatRoom} disabled={!selectedUserId || isCreatingRoom}>
+                            <Button
+                              onClick={handleCreateChatRoom}
+                              disabled={!selectedUserId || isCreatingRoom}
+                            >
                               {isCreatingRoom ? "Membuat..." : "Buat Obrolan"}
                             </Button>
                           </DialogFooter>
@@ -699,14 +806,19 @@ const MessageManagement: React.FC = () => {
                   {isFetchingRooms ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                      <p className="text-sm text-muted-foreground">Memuat ruang obrolan...</p>
+                      <p className="text-sm text-muted-foreground">
+                        Memuat ruang obrolan...
+                      </p>
                     </div>
                   ) : chatRooms.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-4">
                       <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground mb-2">Belum ada obrolan</p>
+                      <p className="text-muted-foreground mb-2">
+                        Belum ada obrolan
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        Klik tombol "Buat Obrolan" untuk memulai percakapan baru.
+                        Klik tombol "Buat Obrolan" untuk memulai percakapan
+                        baru.
                       </p>
                     </div>
                   ) : (
@@ -718,14 +830,20 @@ const MessageManagement: React.FC = () => {
                           <div
                             key={room.id}
                             className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors relative ${
-                              selectedRoomId === room.id ? "bg-muted border border-primary/20" : "bg-card"
+                              selectedRoomId === room.id
+                                ? "bg-muted border border-primary/20"
+                                : "bg-card"
                             }`}
                             onClick={() => setSelectedRoomId(room.id)}
                           >
                             <div className="flex items-center">
                               <div className="flex-shrink-0 mr-3">
                                 {otherParticipant?.avatar_url ? (
-                                  <img src={otherParticipant.avatar_url} alt={otherParticipant.full_name || "User"} className="h-10 w-10 rounded-full object-cover" />
+                                  <img
+                                    src={otherParticipant.avatar_url}
+                                    alt={otherParticipant.full_name || "User"}
+                                    className="h-10 w-10 rounded-full object-cover"
+                                  />
                                 ) : (
                                   <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                                     <User className="h-6 w-6 text-muted-foreground" />
@@ -742,11 +860,17 @@ const MessageManagement: React.FC = () => {
                               </div>
                               {room.last_message_at && (
                                 <div className="text-xs text-muted-foreground ml-2">
-                                  {format(new Date(room.last_message_at), "HH:mm")}
+                                  {format(
+                                    new Date(room.last_message_at),
+                                    "HH:mm"
+                                  )}
                                 </div>
                               )}
                               {canDelete && selectedRoomId === room.id && (
-                                <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
+                                <AlertDialog
+                                  open={showConfirmDelete}
+                                  onOpenChange={setShowConfirmDelete}
+                                >
                                   <AlertDialogTrigger asChild>
                                     <Button
                                       variant="ghost"
@@ -762,13 +886,20 @@ const MessageManagement: React.FC = () => {
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Hapus Ruang Obrolan</AlertDialogTitle>
+                                      <AlertDialogTitle>
+                                        Hapus Ruang Obrolan
+                                      </AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Apakah Anda yakin ingin menghapus ruang obrolan ini? Semua pesan akan terhapus secara permanen dan tidak dapat dipulihkan.
+                                        Apakah Anda yakin ingin menghapus ruang
+                                        obrolan ini? Semua pesan akan terhapus
+                                        secara permanen dan tidak dapat
+                                        dipulihkan.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+                                      <AlertDialogCancel
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
                                         Batal
                                       </AlertDialogCancel>
                                       <AlertDialogAction
@@ -778,7 +909,9 @@ const MessageManagement: React.FC = () => {
                                         }}
                                         className="bg-destructive hover:bg-destructive/90"
                                       >
-                                        {isDeletingRoom ? "Menghapus..." : "Hapus"}
+                                        {isDeletingRoom
+                                          ? "Menghapus..."
+                                          : "Hapus"}
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -804,10 +937,18 @@ const MessageManagement: React.FC = () => {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 mr-3">
                             {(() => {
-                              const selectedRoom = chatRooms.find((r) => r.id === selectedRoomId);
-                              const otherParticipant = selectedRoom ? getOtherParticipant(selectedRoom) : null;
+                              const selectedRoom = chatRooms.find(
+                                (r) => r.id === selectedRoomId
+                              );
+                              const otherParticipant = selectedRoom
+                                ? getOtherParticipant(selectedRoom)
+                                : null;
                               return otherParticipant?.avatar_url ? (
-                                <img src={otherParticipant.avatar_url} alt={otherParticipant.full_name || "User"} className="h-10 w-10 rounded-full object-cover" />
+                                <img
+                                  src={otherParticipant.avatar_url}
+                                  alt={otherParticipant.full_name || "User"}
+                                  className="h-10 w-10 rounded-full object-cover"
+                                />
                               ) : (
                                 <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                                   <User className="h-6 w-6 text-muted-foreground" />
@@ -817,12 +958,22 @@ const MessageManagement: React.FC = () => {
                           </div>
                           <div>
                             <CardTitle>
-                              {chatRooms.find((r) => r.id === selectedRoomId)?.participants.find((p) => p.id !== user?.id)?.full_name || "Pengguna"}
+                              {chatRooms
+                                .find((r) => r.id === selectedRoomId)
+                                ?.participants.find((p) => p.id !== user?.id)
+                                ?.full_name || "Pengguna"}
                             </CardTitle>
                             <CardDescription>
-                              {chatRooms.find((r) => r.id === selectedRoomId)?.participants.find((p) => p.id !== user?.id)?.account_type === "professional"
+                              {chatRooms
+                                .find((r) => r.id === selectedRoomId)
+                                ?.participants.find((p) => p.id !== user?.id)
+                                ?.account_type === "professional"
                                 ? "Profesional"
-                                : chatRooms.find((r) => r.id === selectedRoomId)?.participants.find((p) => p.id !== user?.id)?.is_admin
+                                : chatRooms
+                                    .find((r) => r.id === selectedRoomId)
+                                    ?.participants.find(
+                                      (p) => p.id !== user?.id
+                                    )?.is_admin
                                 ? "Admin"
                                 : "Pengguna Umum"}
                             </CardDescription>
@@ -830,10 +981,16 @@ const MessageManagement: React.FC = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                           {/* Tombol Refresh Manual */}
-                          <Button variant="ghost" size="icon" onClick={refreshMessages}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={refreshMessages}
+                          >
                             <RefreshCw className="h-5 w-5" />
                           </Button>
-                          {isRoomCreator(chatRooms.find((r) => r.id === selectedRoomId)!) && (
+                          {isRoomCreator(
+                            chatRooms.find((r) => r.id === selectedRoomId)!
+                          ) && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
@@ -846,9 +1003,13 @@ const MessageManagement: React.FC = () => {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Hapus Ruang Obrolan</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    Hapus Ruang Obrolan
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Apakah Anda yakin ingin menghapus ruang obrolan ini? Semua pesan akan terhapus secara permanen dan tidak dapat dipulihkan.
+                                    Apakah Anda yakin ingin menghapus ruang
+                                    obrolan ini? Semua pesan akan terhapus
+                                    secara permanen dan tidak dapat dipulihkan.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -871,12 +1032,16 @@ const MessageManagement: React.FC = () => {
                       {isFetchingMessages ? (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                          <p className="text-sm text-muted-foreground">Memuat pesan...</p>
+                          <p className="text-sm text-muted-foreground">
+                            Memuat pesan...
+                          </p>
                         </div>
                       ) : messages.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-center p-4">
                           <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
-                          <p className="text-muted-foreground">Belum ada pesan</p>
+                          <p className="text-muted-foreground">
+                            Belum ada pesan
+                          </p>
                           <p className="text-sm text-muted-foreground mt-2">
                             Mulai percakapan dengan mengirim pesan pertama.
                           </p>
@@ -884,21 +1049,44 @@ const MessageManagement: React.FC = () => {
                       ) : (
                         <div className="space-y-4">
                           {messages.map((message) => {
-                            const isCurrentUser = user?.id === message.sender_id;
+                            const isCurrentUser =
+                              user?.id === message.sender_id;
                             return (
-                              <div key={message.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
-                                <div className={`max-w-[80%] ${isCurrentUser ? "bg-primary text-white" : "bg-muted"} px-4 py-2 rounded-lg`}>
+                              <div
+                                key={message.id}
+                                className={`flex ${
+                                  isCurrentUser
+                                    ? "justify-end"
+                                    : "justify-start"
+                                }`}
+                              >
+                                <div
+                                  className={`max-w-[80%] ${
+                                    isCurrentUser
+                                      ? "bg-primary text-white"
+                                      : "bg-muted"
+                                  } px-4 py-2 rounded-lg`}
+                                >
                                   <div className="text-sm mb-1 flex justify-between items-center">
                                     {!isCurrentUser && (
                                       <span className="font-medium mr-2">
-                                        {message.sender?.full_name || "Pengguna"}
+                                        {message.sender?.full_name ||
+                                          "Pengguna"}
                                       </span>
                                     )}
-                                    <span className={`text-xs ${isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                                    <span
+                                      className={`text-xs ${
+                                        isCurrentUser
+                                          ? "text-primary-foreground/80"
+                                          : "text-muted-foreground"
+                                      }`}
+                                    >
                                       {formatTime(message.created_at)}
                                     </span>
                                   </div>
-                                  <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                                  <p className="break-words whitespace-pre-wrap">
+                                    {message.content}
+                                  </p>
                                 </div>
                               </div>
                             );
@@ -926,7 +1114,11 @@ const MessageManagement: React.FC = () => {
                             }
                           }}
                         />
-                        <Button type="submit" size="icon" disabled={!newMessage.trim() || isSendingMessage}>
+                        <Button
+                          type="submit"
+                          size="icon"
+                          disabled={!newMessage.trim() || isSendingMessage}
+                        >
                           <Send className="h-4 w-4" />
                         </Button>
                       </form>
@@ -935,7 +1127,9 @@ const MessageManagement: React.FC = () => {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center p-8">
                     <MessageSquare className="h-16 w-16 text-muted-foreground mb-6" />
-                    <h3 className="text-lg font-medium mb-2">Tidak Ada Obrolan Dipilih</h3>
+                    <h3 className="text-lg font-medium mb-2">
+                      Tidak Ada Obrolan Dipilih
+                    </h3>
                     <p className="text-muted-foreground max-w-md">
                       {chatRooms.length > 0
                         ? "Pilih ruang obrolan dari daftar untuk mulai berkomunikasi."
@@ -966,7 +1160,11 @@ const MessageManagement: React.FC = () => {
                                 className="flex-1"
                               />
                               {userSearch && (
-                                <Button variant="ghost" size="icon" onClick={() => setUserSearch("")}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setUserSearch("")}
+                                >
                                   <X className="h-4 w-4" />
                                 </Button>
                               )}
@@ -974,19 +1172,27 @@ const MessageManagement: React.FC = () => {
                             <div className="max-h-60 overflow-y-auto border rounded-md p-1">
                               {filteredUsers.length === 0 ? (
                                 <div className="text-center py-4 text-muted-foreground">
-                                  {userSearch ? "Tidak ada pengguna yang ditemukan" : "Tidak ada pengguna yang tersedia"}
+                                  {userSearch
+                                    ? "Tidak ada pengguna yang ditemukan"
+                                    : "Tidak ada pengguna yang tersedia"}
                                 </div>
                               ) : (
                                 filteredUsers.map((user) => (
                                   <div
                                     key={user.id}
                                     className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${
-                                      selectedUserId === user.id ? "bg-muted" : "hover:bg-muted/50"
+                                      selectedUserId === user.id
+                                        ? "bg-muted"
+                                        : "hover:bg-muted/50"
                                     }`}
                                     onClick={() => setSelectedUserId(user.id)}
                                   >
                                     {user.avatar_url ? (
-                                      <img src={user.avatar_url} alt={user.full_name || "User"} className="h-10 w-10 rounded-full object-cover" />
+                                      <img
+                                        src={user.avatar_url}
+                                        alt={user.full_name || "User"}
+                                        className="h-10 w-10 rounded-full object-cover"
+                                      />
                                     ) : (
                                       <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                                         <User className="h-6 w-6 text-muted-foreground" />
@@ -994,10 +1200,15 @@ const MessageManagement: React.FC = () => {
                                     )}
                                     <div className="flex-1 min-w-0">
                                       <p className="font-medium truncate">
-                                        {user.full_name || "Pengguna tanpa nama"}
+                                        {user.full_name ||
+                                          "Pengguna tanpa nama"}
                                       </p>
                                       <p className="text-xs text-muted-foreground">
-                                        {user.account_type === "professional" ? "Profesional" : user.is_admin ? "Admin" : "Pengguna Umum"}
+                                        {user.account_type === "professional"
+                                          ? "Profesional"
+                                          : user.is_admin
+                                          ? "Admin"
+                                          : "Pengguna Umum"}
                                       </p>
                                     </div>
                                   </div>
@@ -1006,10 +1217,19 @@ const MessageManagement: React.FC = () => {
                             </div>
                           </div>
                           <DialogFooter>
-                            <Button variant="outline" onClick={() => { setSelectedUserId(null); setUserSearch(""); }}>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedUserId(null);
+                                setUserSearch("");
+                              }}
+                            >
                               Batal
                             </Button>
-                            <Button onClick={handleCreateChatRoom} disabled={!selectedUserId || isCreatingRoom}>
+                            <Button
+                              onClick={handleCreateChatRoom}
+                              disabled={!selectedUserId || isCreatingRoom}
+                            >
                               {isCreatingRoom ? "Membuat..." : "Buat Obrolan"}
                             </Button>
                           </DialogFooter>
@@ -1036,12 +1256,16 @@ const MessageManagement: React.FC = () => {
               {isFetchingBroadcasts ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p className="text-sm text-muted-foreground">Memuat pesan siaran...</p>
+                  <p className="text-sm text-muted-foreground">
+                    Memuat pesan siaran...
+                  </p>
                 </div>
               ) : broadcasts.length === 0 ? (
                 <div className="text-center py-8">
                   <Megaphone className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Belum ada pesan siaran.</p>
+                  <p className="text-muted-foreground">
+                    Belum ada pesan siaran.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1050,14 +1274,23 @@ const MessageManagement: React.FC = () => {
                     return (
                       <div
                         key={broadcast.id}
-                        className={`border rounded-lg p-4 ${broadcast.is_read ? "bg-card" : "bg-muted border-primary/20"} ${
-                          broadcast.priority === "urgent" ? "border-red-500" : ""
+                        className={`border rounded-lg p-4 ${
+                          broadcast.is_read
+                            ? "bg-card"
+                            : "bg-muted border-primary/20"
+                        } ${
+                          broadcast.priority === "urgent"
+                            ? "border-red-500"
+                            : ""
                         }`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center">
                             <h3 className="font-semibold">{broadcast.title}</h3>
-                            <Badge variant="outline" className={`ml-2 flex items-center ${priorityInfo.color}`}>
+                            <Badge
+                              variant="outline"
+                              className={`ml-2 flex items-center ${priorityInfo.color}`}
+                            >
                               {priorityInfo.icon}
                               {priorityInfo.label}
                             </Badge>
@@ -1077,7 +1310,13 @@ const MessageManagement: React.FC = () => {
                               <span>Telah dibaca</span>
                             </div>
                           ) : (
-                            <Button variant="outline" size="sm" onClick={() => handleMarkBroadcastRead(broadcast.id)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleMarkBroadcastRead(broadcast.id)
+                              }
+                            >
                               Tandai Telah Dibaca
                             </Button>
                           )}

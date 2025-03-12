@@ -4,7 +4,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card";
 import {
   Table,
@@ -13,7 +13,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
 import {
   Dialog,
@@ -21,13 +21,13 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -37,7 +37,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -88,10 +88,10 @@ const UserManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [editMode, setEditMode] = useState(false);
   const [editedUser, setEditedUser] = useState<Partial<UserProfile>>({});
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -99,14 +99,14 @@ const UserManagement: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      
+
       setUsers(data || []);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -118,10 +118,12 @@ const UserManagement: React.FC = () => {
 
   const handleResetPassword = async () => {
     if (!selectedUser || !newPassword) return;
-    
+
     try {
       // Implement edge function call for password reset
-      toast.success("Reset password akan diimplementasikan melalui Edge Function");
+      toast.success(
+        "Reset password akan diimplementasikan melalui Edge Function"
+      );
       setShowResetPassword(false);
       setNewPassword("");
     } catch (error) {
@@ -132,34 +134,36 @@ const UserManagement: React.FC = () => {
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
-    
+
     try {
       // Delete the user from profiles table
       const { error: profileError } = await supabase
         .from("profiles")
         .delete()
         .eq("id", selectedUser.id);
-        
+
       if (profileError) throw profileError;
-      
+
       toast.success("Pengguna berhasil dihapus");
       setShowDeleteConfirm(false);
-      
+
       // Update local state
-      setUsers(users.filter(u => u.id !== selectedUser.id));
-      
+      setUsers(users.filter((u) => u.id !== selectedUser.id));
     } catch (error) {
       console.error("Error deleting user:", error);
       toast.error("Gagal menghapus pengguna");
     }
   };
 
-  const handleToggleAdmin = async (userId: string, isCurrentlyAdmin: boolean | null) => {
+  const handleToggleAdmin = async (
+    userId: string,
+    isCurrentlyAdmin: boolean | null
+  ) => {
     if (!user?.is_admin) {
       toast.error("Anda tidak memiliki izin untuk melakukan tindakan ini");
       return;
     }
-    
+
     try {
       const { error } = await supabase
         .from("profiles")
@@ -167,15 +171,20 @@ const UserManagement: React.FC = () => {
         .eq("id", userId);
 
       if (error) throw error;
-      
-      // Update local state
-      setUsers(users.map(u => 
-        u.id === userId ? { ...u, is_admin: !isCurrentlyAdmin } : u
-      ));
-      
-      toast.success(`User ${isCurrentlyAdmin ? "bukan lagi admin" : "sekarang menjadi admin"}`);
 
-      
+      // Update local state
+      setUsers(
+        users.map((u) =>
+          u.id === userId ? { ...u, is_admin: !isCurrentlyAdmin } : u
+        )
+      );
+
+      toast.success(
+        `User ${
+          isCurrentlyAdmin ? "bukan lagi admin" : "sekarang menjadi admin"
+        }`
+      );
+
       // Update selected user if it's the currently selected one
       if (selectedUser && selectedUser.id === userId) {
         setSelectedUser({ ...selectedUser, is_admin: !isCurrentlyAdmin });
@@ -188,20 +197,20 @@ const UserManagement: React.FC = () => {
 
   const handleSaveUserDetails = async () => {
     if (!selectedUser || !editedUser) return;
-    
+
     try {
       const { error } = await supabase
         .from("profiles")
         .update(editedUser)
         .eq("id", selectedUser.id);
-        
+
       if (error) throw error;
-      
+
       // Update local state
       const updatedUser = { ...selectedUser, ...editedUser };
-      setUsers(users.map(u => u.id === selectedUser.id ? updatedUser : u));
+      setUsers(users.map((u) => (u.id === selectedUser.id ? updatedUser : u)));
       setSelectedUser(updatedUser);
-      
+
       toast.success("Detail pengguna berhasil diperbarui");
       setEditMode(false);
     } catch (error) {
@@ -211,39 +220,44 @@ const UserManagement: React.FC = () => {
   };
 
   // Filter users based on search query and active tab
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = users.filter((user) => {
     // Search filter
-    const matchesSearch = !searchQuery || 
-      (user.full_name && user.full_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (user.forwarding && user.forwarding.toLowerCase().includes(searchQuery.toLowerCase()));
-      
+    const matchesSearch =
+      !searchQuery ||
+      (user.full_name &&
+        user.full_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.forwarding &&
+        user.forwarding.toLowerCase().includes(searchQuery.toLowerCase()));
+
     // Tab filter
     if (activeTab === "all") return matchesSearch;
-    if (activeTab === "general") return matchesSearch && user.account_type === "general";
-    if (activeTab === "professional") return matchesSearch && user.account_type === "professional";
+    if (activeTab === "general")
+      return matchesSearch && user.account_type === "general";
+    if (activeTab === "professional")
+      return matchesSearch && user.account_type === "professional";
     if (activeTab === "admin") return matchesSearch && user.is_admin === true;
-    
+
     return matchesSearch;
   });
-  
+
   // Pagination logic
   const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
   const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * USERS_PER_PAGE, 
+    (currentPage - 1) * USERS_PER_PAGE,
     currentPage * USERS_PER_PAGE
   );
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-semibold mb-6">Manajemen Pengguna</h1>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Daftar Pengguna</CardTitle>
           <CardDescription>
             Kelola profil pengguna, reset password, dan atur hak akses
           </CardDescription>
-          
+
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-4">
             <div className="relative w-full md:w-80">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -257,9 +271,9 @@ const UserManagement: React.FC = () => {
                 }}
               />
             </div>
-            
-            <Tabs 
-              value={activeTab} 
+
+            <Tabs
+              value={activeTab}
               onValueChange={(v) => {
                 setActiveTab(v);
                 setCurrentPage(1); // Reset to first page on tab change
@@ -275,7 +289,7 @@ const UserManagement: React.FC = () => {
             </Tabs>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           {loading ? (
             <div className="space-y-4">
@@ -327,18 +341,24 @@ const UserManagement: React.FC = () => {
                               )}
                             </div>
                             <div>
-                              <p className="font-medium">{userItem.full_name || "Tanpa Nama"}</p>
+                              <p className="font-medium">
+                                {userItem.full_name || "Tanpa Nama"}
+                              </p>
                               <p className="text-sm text-muted-foreground">
                                 {userItem.forwarding || "No email"}
                               </p>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-  userItem.account_type === "professional" 
-    ? "bg-blue-100 text-blue-700" 
-    : "bg-green-100 text-green-700"
-}`}>
-  {userItem.account_type === "professional" ? "Professional" : "General"}
-</span>
+                                <span
+                                  className={`text-xs px-2 py-0.5 rounded-full ${
+                                    userItem.account_type === "professional"
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-green-100 text-green-700"
+                                  }`}
+                                >
+                                  {userItem.account_type === "professional"
+                                    ? "Professional"
+                                    : "General"}
+                                </span>
 
                                 {userItem.is_admin && (
                                   <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
@@ -410,7 +430,12 @@ const UserManagement: React.FC = () => {
                                     <span>Hapus Pengguna</span>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onClick={() => handleToggleAdmin(userItem.id, userItem.is_admin)}
+                                    onClick={() =>
+                                      handleToggleAdmin(
+                                        userItem.id,
+                                        userItem.is_admin
+                                      )
+                                    }
                                   >
                                     {userItem.is_admin ? (
                                       <>
@@ -434,7 +459,7 @@ const UserManagement: React.FC = () => {
                   </TableBody>
                 </Table>
               </div>
-              
+
               {/* Pagination controls */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center space-x-2 mt-4">
@@ -452,7 +477,9 @@ const UserManagement: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
                     disabled={currentPage === totalPages}
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -468,12 +495,16 @@ const UserManagement: React.FC = () => {
       <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editMode ? "Edit Profil Pengguna" : "Detail Pengguna"}</DialogTitle>
+            <DialogTitle>
+              {editMode ? "Edit Profil Pengguna" : "Detail Pengguna"}
+            </DialogTitle>
             <DialogDescription>
-              {editMode ? "Ubah informasi profil pengguna" : "Informasi lengkap tentang pengguna ini"}
+              {editMode
+                ? "Ubah informasi profil pengguna"
+                : "Informasi lengkap tentang pengguna ini"}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedUser && (
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
@@ -490,20 +521,32 @@ const UserManagement: React.FC = () => {
                 )}
                 <div>
                   {editMode ? (
-                    <Input 
-                      value={editedUser.full_name || ''} 
-                      onChange={(e) => setEditedUser({...editedUser, full_name: e.target.value})}
+                    <Input
+                      value={editedUser.full_name || ""}
+                      onChange={(e) =>
+                        setEditedUser({
+                          ...editedUser,
+                          full_name: e.target.value
+                        })
+                      }
                       placeholder="Nama Lengkap"
                       className="mb-1"
                     />
                   ) : (
-                    <h3 className="font-medium">{selectedUser.full_name || "Tanpa Nama"}</h3>
+                    <h3 className="font-medium">
+                      {selectedUser.full_name || "Tanpa Nama"}
+                    </h3>
                   )}
-                  
+
                   {editMode ? (
-                    <Input 
-                      value={editedUser.forwarding || ''} 
-                      onChange={(e) => setEditedUser({...editedUser, forwarding: e.target.value})}
+                    <Input
+                      value={editedUser.forwarding || ""}
+                      onChange={(e) =>
+                        setEditedUser({
+                          ...editedUser,
+                          forwarding: e.target.value
+                        })
+                      }
                       placeholder="Email"
                     />
                   ) : (
@@ -513,11 +556,13 @@ const UserManagement: React.FC = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium">ID Pengguna</p>
-                  <p className="text-sm text-muted-foreground">{selectedUser.id}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.id}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Jenis Akun</p>
@@ -540,9 +585,11 @@ const UserManagement: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium">Kota</p>
                   {editMode ? (
-                    <Input 
-                      value={editedUser.city || ''} 
-                      onChange={(e) => setEditedUser({...editedUser, city: e.target.value})}
+                    <Input
+                      value={editedUser.city || ""}
+                      onChange={(e) =>
+                        setEditedUser({ ...editedUser, city: e.target.value })
+                      }
                       placeholder="Kota"
                     />
                   ) : (
@@ -554,9 +601,14 @@ const UserManagement: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium">Profesi</p>
                   {editMode ? (
-                    <Input 
-                      value={editedUser.profession || ''} 
-                      onChange={(e) => setEditedUser({...editedUser, profession: e.target.value})}
+                    <Input
+                      value={editedUser.profession || ""}
+                      onChange={(e) =>
+                        setEditedUser({
+                          ...editedUser,
+                          profession: e.target.value
+                        })
+                      }
                       placeholder="Profesi"
                     />
                   ) : (
@@ -569,21 +621,26 @@ const UserManagement: React.FC = () => {
                   <p className="text-sm font-medium">Tanggal Bergabung</p>
                   <p className="text-sm text-muted-foreground">
                     {selectedUser.created_at
-                      ? new Date(selectedUser.created_at).toLocaleString("id-ID")
+                      ? new Date(selectedUser.created_at).toLocaleString(
+                          "id-ID"
+                        )
                       : "Tidak diketahui"}
                   </p>
                 </div>
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
             {editMode ? (
               <>
-                <Button variant="outline" onClick={() => {
-                  setEditMode(false);
-                  setEditedUser({});
-                }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditMode(false);
+                    setEditedUser({});
+                  }}
+                >
                   Batal
                 </Button>
                 <Button onClick={handleSaveUserDetails}>
@@ -592,13 +649,16 @@ const UserManagement: React.FC = () => {
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={() => setShowUserDetails(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUserDetails(false)}
+                >
                   Tutup
                 </Button>
                 {user?.is_admin && selectedUser && (
                   <>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => {
                         setEditMode(true);
                         setEditedUser({
@@ -612,8 +672,17 @@ const UserManagement: React.FC = () => {
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit Profil
                     </Button>
-                    <Button onClick={() => handleToggleAdmin(selectedUser.id, selectedUser.is_admin)}>
-                      {selectedUser.is_admin ? "Batalkan Admin" : "Jadikan Admin"}
+                    <Button
+                      onClick={() =>
+                        handleToggleAdmin(
+                          selectedUser.id,
+                          selectedUser.is_admin
+                        )
+                      }
+                    >
+                      {selectedUser.is_admin
+                        ? "Batalkan Admin"
+                        : "Jadikan Admin"}
                     </Button>
                   </>
                 )}
@@ -632,12 +701,12 @@ const UserManagement: React.FC = () => {
               Reset password untuk pengguna {selectedUser?.full_name || "ini"}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <p className="text-sm">
               Masukkan password baru untuk pengguna ini.
             </p>
-            
+
             <Input
               placeholder="Password baru"
               type="password"
@@ -645,9 +714,12 @@ const UserManagement: React.FC = () => {
               onChange={(e) => setNewPassword(e.target.value)}
             />
           </div>
-          
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowResetPassword(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowResetPassword(false)}
+            >
               Batal
             </Button>
             <Button onClick={handleResetPassword} disabled={!newPassword}>
@@ -663,14 +735,18 @@ const UserManagement: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Konfirmasi Hapus Pengguna</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus pengguna {selectedUser?.full_name || "ini"}?
-              Tindakan ini tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus pengguna{" "}
+              {selectedUser?.full_name || "ini"}? Tindakan ini tidak dapat
+              dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600">
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-red-600"
+            >
               Hapus Pengguna
             </AlertDialogAction>
           </AlertDialogFooter>
