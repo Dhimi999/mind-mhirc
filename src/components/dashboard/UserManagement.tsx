@@ -179,11 +179,7 @@ const UserManagement: React.FC = () => {
         )
       );
 
-      toast.success(
-        `User ${
-          isCurrentlyAdmin ? "bukan lagi admin" : "sekarang menjadi admin"
-        }`
-      );
+      toast.success(`User ${isCurrentlyAdmin ? "bukan lagi admin" : "sekarang menjadi admin"}`);
 
       // Update selected user if it's the currently selected one
       if (selectedUser && selectedUser.id === userId) {
