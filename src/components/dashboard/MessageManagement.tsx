@@ -1,16 +1,62 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, User, Send, Plus, Megaphone, Clock, CheckCircle, Info, AlertTriangle, AlertCircle, Trash, Search, X, RefreshCw } from "lucide-react";
+import {
+  MessageSquare,
+  User,
+  Send,
+  Plus,
+  Megaphone,
+  Clock,
+  CheckCircle,
+  Info,
+  AlertTriangle,
+  AlertCircle,
+  Trash,
+  Search,
+  X,
+  RefreshCw
+} from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +69,7 @@ interface Profile {
   is_admin: boolean | null;
   account_type: string | null;
 }
+
 interface ChatRoom {
   id: string;
   created_at: string;
@@ -32,6 +79,7 @@ interface ChatRoom {
   participants: Profile[];
   created_by: string;
 }
+
 interface ChatMessage {
   id: string;
   chat_room_id: string;
@@ -41,6 +89,7 @@ interface ChatMessage {
   read_by: string[];
   sender?: Profile;
 }
+
 interface Broadcast {
   id: string;
   title: string;
@@ -277,18 +326,34 @@ const MessageManagement: React.FC = () => {
   const handleMarkBroadcastRead = async (broadcastId: string) => {
     if (!user) return;
     try {
-      // Update kolom recepient_read dengan menambahkan ID user menggunakan fungsi raw Supabase
+      // Dapatkan pesan siaran dari state untuk mengambil nilai recepient_read saat ini
+      const currentBroadcast = broadcasts.find(b => b.id === broadcastId);
+      const currentRead: string[] = currentBroadcast?.recepient_read || [];
+      
+      // Jika user sudah ada di array, tidak perlu update lagi
+      if (currentRead.includes(user.id)) {
+        toast("Pesan sudah ditandai sebagai telah dibaca.");
+        return;
+      }
+      
+      // Buat array baru dengan menambahkan user.id
+      const updatedRead = [...currentRead, user.id];
+
+      // Lakukan update tanpa menggunakan supabase.raw
       const { error } = await supabase
         .from("broadcasts")
-        .update({
-          recepient_read: supabase.raw("array_append(recepient_read, ?)", [user.id])
-        })
+        .update({ recepient_read: updatedRead })
         .eq("id", broadcastId);
+      
       if (error) throw error;
-      // Update state broadcasts agar UI langsung ter-reflect
-      setBroadcasts((prevBroadcasts) =>
-        prevBroadcasts.map((b) => (b.id === broadcastId ? { ...b, is_read: true } : b))
+      
+      // Perbarui state broadcasts agar UI langsung merefleksikan perubahan
+      setBroadcasts(prevBroadcasts =>
+        prevBroadcasts.map(b =>
+          b.id === broadcastId ? { ...b, recepient_read: updatedRead, is_read: true } : b
+        )
       );
+
       toast("Pesan siaran ditandai telah dibaca.");
     } catch (error) {
       console.error("Error marking broadcast as read:", error);
@@ -312,12 +377,11 @@ const MessageManagement: React.FC = () => {
           filteredBroadcasts = broadcastsData
             .filter((broadcast) => {
               const userAccountType = user.account_type || "general";
-              const broadcastRecipients =
-                Array.isArray(broadcast.recipients)
-                  ? broadcast.recipients
-                  : typeof broadcast.recipients === "string"
-                  ? [broadcast.recipients]
-                  : [];
+              const broadcastRecipients = Array.isArray(broadcast.recipients)
+                ? broadcast.recipients
+                : typeof broadcast.recipients === "string"
+                ? [broadcast.recipients]
+                : [];
               return (
                 broadcastRecipients.includes("all") ||
                 broadcastRecipients.includes(userAccountType) ||
@@ -382,7 +446,7 @@ const MessageManagement: React.FC = () => {
     };
   }, [user]);
 
-  // Buat ruang obrolan baru (hanya untuk admin)
+  // Buat ruang obrolan baru
   const handleCreateChatRoom = async () => {
     if (!user || !selectedUserId) return;
     setIsCreatingRoom(true);
@@ -393,10 +457,12 @@ const MessageManagement: React.FC = () => {
         .select()
         .single();
       if (roomError) throw roomError;
-      const { error: participantsError } = await supabase.from("chat_participants").insert([
-        { chat_room_id: roomData.id, user_id: user.id },
-        { chat_room_id: roomData.id, user_id: selectedUserId }
-      ]);
+      const { error: participantsError } = await supabase
+        .from("chat_participants")
+        .insert([
+          { chat_room_id: roomData.id, user_id: user.id },
+          { chat_room_id: roomData.id, user_id: selectedUserId }
+        ]);
       if (participantsError) throw participantsError;
       const { data: selectedUser, error: userError } = await supabase
         .from("profiles")
@@ -434,13 +500,24 @@ const MessageManagement: React.FC = () => {
         toast("Anda tidak memiliki izin untuk menghapus ruang obrolan ini.");
         return;
       }
-      const { error: messagesError } = await supabase.from("chat_messages").delete().eq("chat_room_id", selectedRoomId);
+      const { error: messagesError } = await supabase
+        .from("chat_messages")
+        .delete()
+        .eq("chat_room_id", selectedRoomId);
       if (messagesError) throw messagesError;
-      const { error: participantsError } = await supabase.from("chat_participants").delete().eq("chat_room_id", selectedRoomId);
+      const { error: participantsError } = await supabase
+        .from("chat_participants")
+        .delete()
+        .eq("chat_room_id", selectedRoomId);
       if (participantsError) throw participantsError;
-      const { error: roomError } = await supabase.from("chat_rooms").delete().eq("id", selectedRoomId);
+      const { error: roomError } = await supabase
+        .from("chat_rooms")
+        .delete()
+        .eq("id", selectedRoomId);
       if (roomError) throw roomError;
-      setChatRooms((prevRooms) => prevRooms.filter((room) => room.id !== selectedRoomId));
+      setChatRooms((prevRooms) =>
+        prevRooms.filter((room) => room.id !== selectedRoomId)
+      );
       setSelectedRoomId(null);
       setMessages([]);
       toast("Ruang obrolan berhasil dihapus.");
@@ -491,6 +568,7 @@ const MessageManagement: React.FC = () => {
     const date = new Date(dateString);
     return format(date, "dd MMMM yyyy, HH:mm", { locale: idLocale });
   };
+
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, "HH:mm", { locale: idLocale });
@@ -617,9 +695,7 @@ const MessageManagement: React.FC = () => {
                                 filteredUsers.map((user) => (
                                   <div
                                     key={user.id}
-                                    className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${
-                                      selectedUserId === user.id ? "bg-muted" : "hover:bg-muted/50"
-                                    }`}
+                                    className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${selectedUserId === user.id ? "bg-muted" : "hover:bg-muted/50"}`}
                                     onClick={() => setSelectedUserId(user.id)}
                                   >
                                     {user.avatar_url ? (
@@ -675,9 +751,7 @@ const MessageManagement: React.FC = () => {
                         return (
                           <div
                             key={room.id}
-                            className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors relative ${
-                              selectedRoomId === room.id ? "bg-muted border border-primary/20" : "bg-card"
-                            }`}
+                            className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors relative ${selectedRoomId === room.id ? "bg-muted border border-primary/20" : "bg-card"}`}
                             onClick={() => setSelectedRoomId(room.id)}
                           >
                             <div className="flex items-center">
@@ -704,8 +778,7 @@ const MessageManagement: React.FC = () => {
                               {canDelete && selectedRoomId === room.id && (
                                 <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
                                   <AlertDialogTrigger asChild>
-                                    {/* Pastikan ada elemen trigger yang terlihat */}
-                                    <Button variant="ghost" size="icon" className="absolute top-2 right-2">
+                                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6 p-0 text-muted-foreground hover:text-destructive hover:bg-transparent" onClick={(e) => { e.stopPropagation(); setShowConfirmDelete(true); }}>
                                       <Trash className="h-4 w-4" />
                                     </Button>
                                   </AlertDialogTrigger>
@@ -717,8 +790,10 @@ const MessageManagement: React.FC = () => {
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                                      <AlertDialogAction onClick={handleDeleteChatRoom} className="bg-destructive hover:bg-destructive/90">
+                                      <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+                                        Batal
+                                      </AlertDialogCancel>
+                                      <AlertDialogAction onClick={(e) => { e.stopPropagation(); handleDeleteChatRoom(); }} className="bg-destructive hover:bg-destructive/90">
                                         {isDeletingRoom ? "Menghapus..." : "Hapus"}
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
@@ -769,7 +844,7 @@ const MessageManagement: React.FC = () => {
                             </CardDescription>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center space-x-2">
                           {/* Tombol Refresh Manual */}
                           <Button variant="ghost" size="icon" onClick={refreshMessages}>
                             <RefreshCw className="h-5 w-5" />
@@ -838,24 +913,13 @@ const MessageManagement: React.FC = () => {
                       )}
                     </CardContent>
                     <CardFooter className="border-t p-3">
-                      <form
-                        className="flex w-full items-center space-x-2"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }}
-                      >
+                      <form className="flex w-full items-center space-x-2" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
                         <Textarea
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
                           placeholder="Ketik pesan..."
                           className="min-h-[60px] flex-1 resize-none"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSendMessage();
-                            }
-                          }}
+                          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                         />
                         <Button type="submit" size="icon" disabled={!newMessage.trim() || isSendingMessage}>
                           <Send className="h-4 w-4" />
@@ -905,13 +969,7 @@ const MessageManagement: React.FC = () => {
                                 </div>
                               ) : (
                                 filteredUsers.map((user) => (
-                                  <div
-                                    key={user.id}
-                                    className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${
-                                      selectedUserId === user.id ? "bg-muted" : "hover:bg-muted/50"
-                                    }`}
-                                    onClick={() => setSelectedUserId(user.id)}
-                                  >
+                                  <div key={user.id} className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${selectedUserId === user.id ? "bg-muted" : "hover:bg-muted/50"}`} onClick={() => setSelectedUserId(user.id)}>
                                     {user.avatar_url ? (
                                       <img src={user.avatar_url} alt={user.full_name || "User"} className="h-10 w-10 rounded-full object-cover" />
                                     ) : (
@@ -971,12 +1029,7 @@ const MessageManagement: React.FC = () => {
                   {broadcasts.map((broadcast) => {
                     const priorityInfo = getPriorityLabel(broadcast.priority);
                     return (
-                      <div
-                        key={broadcast.id}
-                        className={`border rounded-lg p-4 ${
-                          broadcast.is_read ? "bg-card" : "bg-muted border-primary/20"
-                        } ${broadcast.priority === "urgent" ? "border-red-500" : ""}`}
-                      >
+                      <div key={broadcast.id} className={`border rounded-lg p-4 ${broadcast.is_read ? "bg-card" : "bg-muted border-primary/20"} ${broadcast.priority === "urgent" ? "border-red-500" : ""}`}>
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center">
                             <h3 className="font-semibold">{broadcast.title}</h3>
