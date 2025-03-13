@@ -55,7 +55,7 @@ const TestListResults = ({
         "Big Five Inventory (BFI) adalah alat ukur yang dirancang untuk menilai kepribadian individu berusia 18 tahun ke atas. BFI-10 merupakan versi singkat dari versi aslinya yang terdiri dari 44 item."
     },
     "sas-sv": {
-      name: "Social Anxiety Scale - Short Version",
+      name: "Smartphone Addiction Scale - Short Version",
       description:
         "Tes Kecanduan Smartphone adalah alat ukur untuk mengukur tingkat ketergantungan seseorang terhadap penggunaan smartphone dalam kehidupan sehari-hari."
     }

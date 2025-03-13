@@ -256,7 +256,7 @@ const TestResultsTable = ({
       name: "Big Five Inventory"
     },
     "sas-sv": {
-      name: "Social Anxiety Scale - Short Version"
+      name: "Smartphone Addiction Scale - Short Version"
     }
   };
   return (
