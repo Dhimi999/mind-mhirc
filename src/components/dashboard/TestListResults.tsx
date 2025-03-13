@@ -86,9 +86,11 @@ const TestListResults = ({
 
         {/* ✅ Tombol kembali hanya muncul jika sedang melihat tabel/detail */}
         {(isTableView || selectedTestId) && (
-          <Button variant="outline" size="sm" onClick={handleBack}>
-            ⬅ Kembali
-          </Button>
+          <div className="flex justify-between items-center mb-6">
+            <Button variant="outline" size="sm" onClick={handleBack}>
+              ⬅ Kembali
+            </Button>
+          </div>
         )}
 
         {/* ✅ Tampilkan halaman detail jika ada test yang dipilih */}
