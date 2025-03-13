@@ -41,37 +41,33 @@ const ContactForm = () => {
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
-
+    
     try {
-      // Kirim data langsung ke tabel contact_messages
+      // Kirim data langsung ke tabel contact_messages tanpa user_id
       const { error } = await supabase.from("contact_messages").insert([
         {
           name: data.name,
           email: data.email,
           subject: data.subject,
           message: data.message,
-          // Misalnya status di set ke 'pending'
           status: "pending",
-          user_id: (await supabase.auth.getUser()).data.user?.id || null,
         },
       ]);
 
       if (error) {
         throw error;
       }
-
+      
       form.reset();
       toast({
         title: "Pesan terkirim!",
-        description:
-          "Terima kasih telah menghubungi kami. Kami akan segera membalas pesan Anda.",
+        description: "Terima kasih telah menghubungi kami. Kami akan segera membalas pesan Anda.",
       });
     } catch (error) {
       console.error("Error submitting form:", error);
       toast({
         title: "Gagal mengirim pesan",
-        description:
-          "Terjadi kesalahan saat mengirim pesan. Silakan coba lagi nanti.",
+        description: "Terjadi kesalahan saat mengirim pesan. Silakan coba lagi nanti.",
         variant: "destructive",
       });
     } finally {
@@ -96,7 +92,7 @@ const ContactForm = () => {
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="email"
@@ -111,7 +107,7 @@ const ContactForm = () => {
             )}
           />
         </div>
-
+        
         <FormField
           control={form.control}
           name="subject"
@@ -125,7 +121,7 @@ const ContactForm = () => {
             </FormItem>
           )}
         />
-
+        
         <FormField
           control={form.control}
           name="message"
@@ -133,40 +129,24 @@ const ContactForm = () => {
             <FormItem>
               <FormLabel>Pesan</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Tuliskan pesan Anda di sini"
-                  className="min-h-32"
-                  {...field}
+                <Textarea 
+                  placeholder="Tuliskan pesan Anda di sini" 
+                  className="min-h-32" 
+                  {...field} 
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
+        
         <div className="flex gap-4">
           <Button type="submit" className="flex-1" disabled={isSubmitting}>
             {isSubmitting ? (
               <span className="flex items-center">
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 Mengirim...
               </span>
