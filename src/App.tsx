@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +23,7 @@ import Cookies from "./pages/Cookies";
 import ForgetPassword from "./pages/ForgetPassword";
 import SetNewPassword from "./pages/SetNewPassword";
 import EmailConfirmed from "./pages/EmailConfirmed";
+import TokenExpired from "./pages/TokenExpired";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +59,7 @@ const AppRoutes = () => {
         <Route path="/forget-password-by-email" element={<ForgetPassword />} />
         <Route path="/set-new-password-forget" element={<SetNewPassword />} />
         <Route path="/email-confirmed" element={<EmailConfirmed />} />
+        <Route path="/token-expired" element={<TokenExpired />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

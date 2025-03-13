@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -61,6 +62,9 @@ export const signUp = async (
   userData: SignUpData
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    // Make sure we use the absolute URL for email confirmation
+    const redirectUrl = new URL('/email-confirmed', window.location.origin).toString();
+    
     const { data, error } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
@@ -72,10 +76,11 @@ export const signUp = async (
           profession: userData.profession,
           account_type: userData.account_type,
           forwarding: userData.forwarding
-        }
+        },
+        emailRedirectTo: redirectUrl
       }
     });
-    console.log("Auth:" + userData);
+
     if (error) throw error;
 
     return { success: true };
@@ -217,6 +222,56 @@ export const updatePassword = async (
     return {
       success: false,
       error: error.message || "Gagal memperbarui password. Silakan coba lagi."
+    };
+  }
+};
+
+export const resendConfirmationEmail = async (
+  email: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Make sure we use the absolute URL for email confirmation
+    const redirectUrl = new URL('/email-confirmed', window.location.origin).toString();
+    
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
+    });
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Resend confirmation email error:", error);
+    return {
+      success: false,
+      error: error.message || "Gagal mengirim email konfirmasi. Silakan coba lagi."
+    };
+  }
+};
+
+export const sendPasswordResetEmail = async (
+  email: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Use the absolute path including the domain
+    const redirectUrl = new URL('/set-new-password-forget', window.location.origin).toString();
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    });
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Password reset email error:", error);
+    return {
+      success: false,
+      error: error.message || "Gagal mengirim email reset password. Silakan coba lagi."
     };
   }
 };

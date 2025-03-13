@@ -20,8 +20,11 @@ const ForgetPassword = () => {
     setIsLoading(true);
 
     try {
+      // Use the absolute path including the domain
+      const redirectUrl = new URL('/set-new-password-forget', window.location.origin).toString();
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/set-new-password-forget`,
+        redirectTo: redirectUrl,
       });
 
       if (error) throw error;
