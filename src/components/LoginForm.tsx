@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn, UserPlus, Briefcase, User } from "lucide-react";
@@ -93,7 +94,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
         const { success, error } = await signUp(userData);
 
         if (error) {
-          if (error.message.toLowerCase().includes("already registered")) {
+          if (error.toLowerCase().includes("already registered")) {
             toast({
               title: "Pendaftaran Gagal",
               description: "Email sudah terdaftar",
@@ -102,7 +103,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           } else {
             toast({
               title: "Pendaftaran Gagal",
-              description: error.message || "Terjadi kesalahan, silahkan coba lagi",
+              description: error || "Terjadi kesalahan, silahkan coba lagi",
               variant: "destructive"
             });
           }
