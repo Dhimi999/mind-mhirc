@@ -8,6 +8,7 @@ export interface AnonymousUserData {
   name: string;
   birthdate: string;
   email: string;
+  city: string;
 }
 
 interface AnonymousUserFormProps {
@@ -18,9 +19,9 @@ const AnonymousUserForm = ({ onSubmit }: AnonymousUserFormProps) => {
   const [formData, setFormData] = useState<AnonymousUserData>({
     name: "",
     birthdate: "",
-    email: ""
+    email: "",
+    city: ""
   });
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -89,7 +90,18 @@ const AnonymousUserForm = ({ onSubmit }: AnonymousUserFormProps) => {
           umur anda
         </p>
       </div>
-
+      <div className="space-y-2">
+        <Label htmlFor="city">Asal Kota</Label>
+        <Input
+          id="city"
+          name="city"
+          type="text"
+          placeholder="Masukkan asal kota Anda"
+          value={formData.city}
+          onChange={handleChange}
+          required
+        />
+      </div>
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input

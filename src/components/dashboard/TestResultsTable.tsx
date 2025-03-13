@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Button from "@/components/Button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TestResultsTable = ({
   category,
@@ -20,23 +21,32 @@ const TestResultsTable = ({
   const [userNames, setUserNames] = useState<{ [key: string]: string | null }>(
     {}
   );
+  const { user } = useAuth();
+  let isAdmin = false;
+  let isProfessional = false;
 
   useEffect(() => {
     if (!test_name) return;
-
+    isProfessional = user?.account_type === "professional";
+    console.log("Admin:" + isAdmin);
     const fetchData = async () => {
       setLoading(true);
       try {
         let query = supabase
           .from("test_results")
           .select(
-            "id, user_id, test_id, result_summary, created_at, anonymous_name, other_person_name, notes,anonymous_birthdate"
+            "id, user_id, test_id, result_summary, created_at, anonymous_name,for_other, other_person_name, notes,anonymous_birthdate , city"
           )
           .eq("test_id", test_name)
           .order("created_at", { ascending: false });
 
         if (category === "self") {
-          query = query.eq("user_id", userId);
+          query = query.eq("user_id", userId).is("other_person_name", null);
+        }
+        if (category === "others" && isProfessional === true) {
+          query = query
+            .eq("user_id", userId)
+            .not("other_person_name", "is", null);
         }
         const { data, error } = await query;
         if (error) throw error;
@@ -68,6 +78,7 @@ const TestResultsTable = ({
       }
     };
     fetchData();
+    console.log(testResults);
   }, [category, test_name, userId]);
 
   const getNameDisplay = (row) => {
@@ -110,13 +121,13 @@ const TestResultsTable = ({
     }
   };
   const getNameTextOnly = (row) => {
-    if (row.for_other && row.other_person_name) {
+    if (row?.for_other && row?.other_person_name) {
       return row.other_person_name;
     }
-    if (row.anonymous_name) {
+    if (row?.anonymous_name) {
       return row.anonymous_name;
     }
-    if (userNames[row.user_id]) {
+    if (userNames[row?.user_id] && !row?.for_other) {
       return userNames[row.user_id];
     }
     return "-";
@@ -271,9 +282,13 @@ const TestResultsTable = ({
                 {isSpecialTest && (
                   <>
                     <th className="border border-gray-300 px-4 py-2">Hasil</th>
-                    <th className="border border-gray-300 px-4 py-2">
-                      Interpretasi
-                    </th>
+                    {!user?.is_admin && (
+                      <>
+                        <th className="border border-gray-300 px-4 py-2">
+                          Interpretasi
+                        </th>
+                      </>
+                    )}
                   </>
                 )}
                 {isSDQTest && (
@@ -294,6 +309,9 @@ const TestResultsTable = ({
                 <th className="border border-gray-300 px-4 py-2">
                   Tanggal Lahir
                 </th>
+                {user?.is_admin && (
+                  <th className="border border-gray-300 px-4 py-2">Kota</th>
+                )}
                 <th className="border border-gray-300 px-4 py-2">Tanggal</th>
               </tr>
             </thead>
@@ -316,7 +334,6 @@ const TestResultsTable = ({
                     row.result_summary
                   ));
                 }
-
                 return (
                   <tr
                     key={row.id}
@@ -347,9 +364,13 @@ const TestResultsTable = ({
                         <td className="border border-gray-300 px-4 py-2">
                           {level}
                         </td>
-                        <td className="border border-gray-300 px-4 py-2">
-                          {interpretation}
-                        </td>
+                        {!user?.is_admin && (
+                          <>
+                            <th className="border border-gray-300 px-4 py-2">
+                              {interpretation}
+                            </th>
+                          </>
+                        )}
                       </>
                     ) : (
                       <td className="border border-gray-300 px-4 py-2">
@@ -363,6 +384,13 @@ const TestResultsTable = ({
                     <td className="border border-gray-300 px-4 py-2">
                       {row.anonymous_birthdate?.slice(0, 10) || "-"}
                     </td>
+                    {user?.is_admin && (
+                      <>
+                        <th className="border border-gray-300 px-4 py-2">
+                          {row.city?.slice(0, 10) || "-"}
+                        </th>
+                      </>
+                    )}
                     <td className="border border-gray-300 px-4 py-2">
                       {row.created_at?.slice(0, 10) || "-"}
                     </td>

@@ -77,6 +77,7 @@ interface TestResultData {
   for_other: boolean;
   other_person_name?: string | null;
   notes?: string | null;
+  city?: string | null;
   bfi_results?: BFIResults;
   sdq_results?: {
     difficultyScore: number;
@@ -562,7 +563,8 @@ const TestDetail = () => {
           otherPersonData?.birthdate || anonymousData?.birthdate,
         for_other: testPerson === "other",
         other_person_name: otherPersonData?.name,
-        notes: otherPersonData?.notes
+        notes: otherPersonData?.notes,
+        city: user?.city || anonymousData?.city
       };
       if (test?.id === "bfi") {
         const bfiResults = calculateBFIResults(userAnswers);

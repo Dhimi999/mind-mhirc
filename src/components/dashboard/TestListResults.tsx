@@ -6,10 +6,12 @@ import TestResultsDetail from "@/components/dashboard/TestResultsDetail";
 
 const TestListResults = ({
   isProfessional,
-  userId
+  userId,
+  isAdmin
 }: {
   isProfessional: boolean;
   userId: string;
+  isAdmin: boolean;
 }) => {
   const [category, setCategory] = useState("self"); // 'self' atau 'others'
   const [selectedTest, setSelectedTest] = useState<string | null>(null);
@@ -79,6 +81,11 @@ const TestListResults = ({
                 <TabsTrigger value="others" className="flex-1">
                   Hasil Tes Orang Lain
                 </TabsTrigger>
+                {isProfessional && isAdmin && (
+                  <TabsTrigger value="allData" className="flex-1">
+                    Hasil Seluruh Tes
+                  </TabsTrigger>
+                )}
               </TabsList>
             )}
           </div>
@@ -109,7 +116,9 @@ const TestListResults = ({
               <h2 className="text-lg font-medium mb-4">
                 {category === "self"
                   ? "Hasil Tes Anda"
-                  : "Hasil Tes Orang Lain"}
+                  : category === "others"
+                  ? "Hasil Tes Orang Lain"
+                  : "Hasil Seluruh Tes"}
               </h2>
               <div className="space-y-4">
                 {["srq", "sdq", "bfi", "sas-sv"].map((test, index) => (

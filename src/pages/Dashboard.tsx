@@ -830,7 +830,11 @@ const DashboardOverview = ({ user }: { user: any }) => {
 
 const DashboardResults = ({ user }: { user: any }) => (
   <div>
-    <TestListResults isProfessional={isProfessional} userId={id} />
+    <TestListResults
+      isProfessional={isProfessional}
+      userId={id}
+      isAdmin={isAdmin}
+    />
   </div>
 );
 
