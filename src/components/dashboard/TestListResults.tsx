@@ -3,6 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Button from "@/components/Button";
 import TestResultsTable from "@/components/dashboard/TestResultsTable";
 import TestResultsDetail from "@/components/dashboard/TestResultsDetail";
+import { User, Users, Globe } from "lucide-react"; // Import ikon dari Lucide
 
 const TestListResults = ({
   isProfessional,
@@ -74,16 +75,30 @@ const TestListResults = ({
         {!isTableView && !selectedTestId && (
           <div className="flex justify-between items-center mb-6">
             {isProfessional && (
-              <TabsList className="w-full max-w-md">
-                <TabsTrigger value="self" className="flex-1">
-                  Hasil Tes Diri
+              <TabsList className="w-full max-w-none sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl grid grid-cols-3">
+                <TabsTrigger value="self" className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  <span className="hidden sm:block text-xs">
+                    Hasil Tes Diri
+                  </span>
                 </TabsTrigger>
-                <TabsTrigger value="others" className="flex-1">
-                  Hasil Tes Orang Lain
+
+                <TabsTrigger value="others" className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  <span className="hidden sm:block text-xs">
+                    Hasil Tes Orang Lain
+                  </span>
                 </TabsTrigger>
+
                 {isProfessional && isAdmin && (
-                  <TabsTrigger value="allData" className="flex-1">
-                    Hasil Seluruh Tes
+                  <TabsTrigger
+                    value="allData"
+                    className="flex items-center gap-2"
+                  >
+                    <Globe className="h-5 w-5" />
+                    <span className="hidden sm:block text-xs">
+                      Hasil Seluruh Tes
+                    </span>
                   </TabsTrigger>
                 )}
               </TabsList>
