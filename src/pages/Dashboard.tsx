@@ -101,144 +101,125 @@ const Dashboard = () => {
       }
     };
     fetchUserProfile();
+    fetchUnreadBroadcastsCount();
   }, [user]);
 
   // Ambil unread broadcasts count (logika dari Dashboard (1))
-  useEffect(() => {
-    if (!user) return;
-    const fetchUnreadBroadcastsCount = async () => {
-      try {
-        let accountTypeFilter: string[] = [];
-        if (user.account_type === "professional") {
-          accountTypeFilter = ["professional", "all"];
-        } else {
-          accountTypeFilter = ["general", "all"];
-        }
-        const { data: broadcasts, error: broadcastError } = await supabase
-          .from("broadcasts")
-          .select("id, recipients")
-          .containedBy("recipients", accountTypeFilter);
-        if (broadcastError) throw broadcastError;
-        if (!broadcasts || broadcasts.length === 0) {
-          setUnreadBroadcastsCount(0);
-          globalUnreadBroadcastsCount = unreadBroadcastsCount;
-          return;
-        }
-        const broadcastIds = broadcasts.map((b) => b.id);
-        const { data: recipientsData, error: recipientsError } = await supabase
-          .from("broadcast_recipients")
-          .select("broadcast_id, is_read")
-          .eq("user_id", user.id)
-          .in("broadcast_id", broadcastIds)
-          .eq("is_read", true);
-        if (recipientsError) throw recipientsError;
-        const readBroadcastIds =
-          recipientsData?.map((r) => r.broadcast_id) || [];
-        const unreadCount = broadcasts.filter(
-          (b) => !readBroadcastIds.includes(b.id)
-        ).length;
-        setUnreadBroadcastsCount(unreadCount);
-        globalUnreadBroadcastsCount = unreadBroadcastsCount;
-      } catch (error) {
-        console.error("Error fetching unread broadcasts count:", error);
+  const fetchUnreadBroadcastsCount = async () => {
+    try {
+      let accountTypeFilter: string[] = [];
+      if (user.account_type === "professional") {
+        accountTypeFilter = ["professional", "all"];
+      } else {
+        accountTypeFilter = ["general", "all"];
       }
-    };
-    fetchUnreadBroadcastsCount();
 
-    const broadcastsSubscription = supabase
-      .channel("broadcasts_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "broadcasts"
-        },
-        () => {
-          fetchUnreadBroadcastsCount();
-        }
-      )
-      .subscribe();
+      // Ambil semua broadcast yang bisa dilihat user
+      const { data: broadcasts, error: broadcastError } = await supabase
+        .from("broadcasts")
+        .select("id, recipients, recepient_read") // Perbaiki nama kolom jika perlu
+        .overlaps("recipients", accountTypeFilter); // Pastikan user bisa melihat
 
-    const recipientsSubscription = supabase
-      .channel("broadcast_recipients_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "broadcast_recipients",
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchUnreadBroadcastsCount();
-        }
-      )
-      .subscribe();
+      if (broadcastError) throw broadcastError;
 
-    return () => {
-      supabase.removeChannel(broadcastsSubscription);
-      supabase.removeChannel(recipientsSubscription);
-    };
-  }, [user]);
+      if (!broadcasts || broadcasts.length === 0) {
+        setUnreadBroadcastsCount(0);
+        globalUnreadBroadcastsCount = 0;
+        return;
+      }
 
-  // Menggunakan logika pengambilan ruang obrolan dari Dashboard (2)
-  useEffect(() => {
-    if (!user) return;
-    const fetchChatRooms = async () => {
-      setIsSidebarOpen(false); // opsional, jika ingin menutup sidebar setelah navigasi
-      try {
-        const { data: roomsData, error: roomsError } = await supabase
-          .from("chat_rooms")
-          .select("*")
-          .order("updated_at", { ascending: false });
-        if (roomsError) throw roomsError;
-        if (!roomsData || roomsData.length === 0) {
-          setChatRooms([]);
-          return;
-        }
-        const roomsWithParticipants: any[] = [];
-        for (const room of roomsData) {
-          try {
-            const { data: participants, error: participantsError } =
-              await supabase
-                .from("chat_participants")
-                .select("user_id")
-                .eq("chat_room_id", room.id);
-            if (participantsError) throw participantsError;
-            const isUserParticipant = participants?.some(
-              (p) => p.user_id === user.id
-            );
-            if (isUserParticipant) {
-              const userIds = participants.map((p) => p.user_id);
-              const { data: profilesData, error: profilesError } =
-                await supabase
-                  .from("profiles")
-                  .select("id, full_name, avatar_url, is_admin, account_type")
-                  .in("id", userIds);
-              if (profilesError) throw profilesError;
-              roomsWithParticipants.push({
-                ...room,
-                participants: profilesData || []
-              });
+      // Filter broadcast yang belum dibaca oleh user
+      const unreadCount = broadcasts.filter((broadcast) => {
+        let recipientRead: string[] = [];
+
+        // Pastikan recepient_read ada dan dalam format array yang valid
+        if (broadcast.recepient_read) {
+          if (Array.isArray(broadcast.recepient_read)) {
+            recipientRead = broadcast.recepient_read.filter(
+              (item) => typeof item === "string"
+            ) as string[];
+          } else if (typeof broadcast.recepient_read === "string") {
+            try {
+              recipientRead = JSON.parse(broadcast.recepient_read);
+            } catch (e) {
+              recipientRead = [];
             }
-          } catch (error) {
-            console.error(
-              `Error fetching participants for room ${room.id}:`,
-              error
-            );
           }
         }
-        setChatRooms(roomsWithParticipants);
-        if (roomsWithParticipants.length > 0 && !selectedRoomId) {
-          setSelectedRoomId(roomsWithParticipants[0].id);
-        }
-      } catch (error) {
-        console.error("Error fetching chat rooms:", error);
-      }
-    };
-    fetchChatRooms();
-  }, [user, selectedRoomId]);
+        console.log(
+          "Recipient read:" + recipientRead,
+          "dari broadcast:" + broadcast.recepient_read
+        );
+
+        // Kembalikan true jika user belum membaca broadcast ini
+        return !recipientRead.includes(user.id);
+      }).length;
+
+      // Set jumlah broadcast yang belum dibaca
+      setUnreadBroadcastsCount(unreadCount);
+      globalUnreadBroadcastsCount = unreadCount;
+    } catch (error) {
+      console.error("Error fetching unread broadcasts count:", error);
+    }
+  };
+
+  // Menggunakan logika pengambilan ruang obrolan dari Dashboard (2)
+  // useEffect(() => {
+  //   if (!user) return;
+  //   const fetchChatRooms = async () => {
+  //     setIsSidebarOpen(false); // opsional, jika ingin menutup sidebar setelah navigasi
+  //     try {
+  //       const { data: roomsData, error: roomsError } = await supabase
+  //         .from("chat_rooms")
+  //         .select("*")
+  //         .order("updated_at", { ascending: false });
+  //       if (roomsError) throw roomsError;
+  //       if (!roomsData || roomsData.length === 0) {
+  //         setChatRooms([]);
+  //         return;
+  //       }
+  //       const roomsWithParticipants: any[] = [];
+  //       for (const room of roomsData) {
+  //         try {
+  //           const { data: participants, error: participantsError } =
+  //             await supabase
+  //               .from("chat_participants")
+  //               .select("user_id")
+  //               .eq("chat_room_id", room.id);
+  //           if (participantsError) throw participantsError;
+  //           const isUserParticipant = participants?.some(
+  //             (p) => p.user_id === user.id
+  //           );
+  //           if (isUserParticipant) {
+  //             const userIds = participants.map((p) => p.user_id);
+  //             const { data: profilesData, error: profilesError } =
+  //               await supabase
+  //                 .from("profiles")
+  //                 .select("id, full_name, avatar_url, is_admin, account_type")
+  //                 .in("id", userIds);
+  //             if (profilesError) throw profilesError;
+  //             roomsWithParticipants.push({
+  //               ...room,
+  //               participants: profilesData || []
+  //             });
+  //           }
+  //         } catch (error) {
+  //           console.error(
+  //             `Error fetching participants for room ${room.id}:`,
+  //             error
+  //           );
+  //         }
+  //       }
+  //       setChatRooms(roomsWithParticipants);
+  //       if (roomsWithParticipants.length > 0 && !selectedRoomId) {
+  //         setSelectedRoomId(roomsWithParticipants[0].id);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching chat rooms:", error);
+  //     }
+  //   };
+  //   fetchChatRooms();
+  // }, [user, selectedRoomId]);
 
   const handleLogout = async () => {
     try {

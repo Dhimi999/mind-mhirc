@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser, getCurrentUser, signOut } from "@/services/authService";
@@ -22,7 +21,9 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children
+}) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -45,12 +46,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const { success, error } = await signOut();
-      
+
       if (success) {
         // Clear all session data
         setUser(null);
-        localStorage.removeItem('supabase.auth.token');
-        
+        localStorage.removeItem("supabase.auth.token");
+
         toast({
           title: "Logout Berhasil",
           description: "Anda telah berhasil keluar dari akun",
@@ -78,16 +79,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUser();
 
     // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session ? "Session exists" : "No session");
-      
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        refreshUser();
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setIsLoading(false);
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log(
+          "Auth state changed:",
+          event,
+          session ? "Session exists" : "No session"
+        );
+
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          refreshUser();
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
+          setIsLoading(false);
+        }
       }
-    });
+    );
 
     return () => {
       // Clean up subscription

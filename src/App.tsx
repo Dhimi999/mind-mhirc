@@ -1,11 +1,10 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { AuthProvider } from "@/contexts/AuthContext"; 
+import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Tests from "./pages/Tests";
 import TestDetail from "./pages/TestDetail";
@@ -24,8 +23,24 @@ import ForgetPassword from "./pages/ForgetPassword";
 import SetNewPassword from "./pages/SetNewPassword";
 import EmailConfirmed from "./pages/EmailConfirmed";
 import TokenExpired from "./pages/TokenExpired";
+import { useAuth } from "@/contexts/AuthContext"; // Pastikan AuthContext memiliki fungsi untuk cek login
+import { Navigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
+const ProtectedRoute = ({ children }) => {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Bisa diganti dengan spinner
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
 
 // ScrollToTop component to handle automatic scrolling
 const ScrollToTop = () => {
@@ -52,7 +67,14 @@ const AppRoutes = () => {
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard/*" element={<Dashboard />} />
+        <Route
+          path="/dashboard/*"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />{" "}
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/cookies" element={<Cookies />} />
