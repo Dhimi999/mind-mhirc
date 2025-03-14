@@ -642,7 +642,7 @@ const TestDetail = () => {
             <img
               src={result.image}
               alt="Result illustration"
-              className="mx-auto mb-6 rounded-lg max-w-sm object-fill"
+              className="mx-auto mb-6 rounded-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-md  xl:max-w-md "
             />
             <div className="recommendations mt-6">
               <h4 className="font-semibold mb-2">Rekomendasi:</h4>
@@ -671,7 +671,7 @@ const TestDetail = () => {
             <img
               src={result.image}
               alt="Result illustration"
-              className="mx-auto mb-6 rounded-lg max-w-sm"
+              className="mx-auto mb-6 rounded-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-md  xl:max-w-md "
             />
             <div className="recommendations mt-6">
               <h4 className="font-semibold mb-2">Rekomendasi:</h4>
@@ -976,7 +976,7 @@ const TestDetail = () => {
               <img
                 src={overallResult.image}
                 alt="Result illustration"
-                className="mx-auto mb-6 rounded-lg max-w-sm"
+                className="mx-auto mb-6 rounded-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-md  xl:max-w-md "
               />
 
               <div className="recommendations mt-6">
@@ -1240,25 +1240,25 @@ const TestDetail = () => {
                   className="flex items-center gap-2"
                 >
                   <Info className="h-4 w-4" />
-                  <span>Ringkasan</span>
+                  <span className="hidden sm:block ">Ringkasan</span>
                 </TabsTrigger>
                 <TabsTrigger value="tips" className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4" />
-                  <span>Tips & Saran</span>
+                  <span className="hidden sm:block ">Tips & Saran</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="resources"
                   className="flex items-center gap-2"
                 >
                   <BookOpen className="h-4 w-4" />
-                  <span>Sumber Belajar</span>
+                  <span className="hidden sm:block ">Sumber Belajar</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="experts"
                   className="flex items-center gap-2"
                 >
                   <HelpCircle className="h-4 w-4" />
-                  <span>Pendapat Ahli</span>
+                  <span className="hidden sm:block ">Pendapat Ahli</span>
                 </TabsTrigger>
               </TabsList>
 
