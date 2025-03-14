@@ -187,27 +187,37 @@ const TeamSection = () => {
             Para Ahli di Balik Mind MHIRC
           </h2>
           <p className="text-muted-foreground text-sm">
-            Tim multidisiplin kami terdiri dari peneliti kesehatan mental, ahli keperawatan jiwa, 
-            pengembang teknologi, dan mitra strategis yang berdedikasi.
+            Tim multidisiplin kami terdiri dari peneliti kesehatan mental, ahli
+            keperawatan jiwa, pengembang teknologi, dan mitra strategis yang
+            berdedikasi.
           </p>
         </div>
-        
+
         <div className="space-y-10">
           {teamCategories.map((category) => (
             <div key={category.id} className="fade-in">
-              <div className={`p-4 rounded-xl bg-gradient-to-r ${category.color} mb-6 shadow-sm`}>
+              <div
+                className={`p-4 rounded-xl bg-gradient-to-r ${category.color} mb-6 shadow-sm`}
+              >
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
                   <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
                     <div className="text-primary">{category.icon}</div>
                   </div>
                   <div className="text-center sm:text-left">
                     <h3 className="text-xl font-bold">{category.title}</h3>
-                    <p className="text-muted-foreground text-sm">{category.description}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {category.description}
+                    </p>
                   </div>
                 </div>
               </div>
-              
-              <div className={`grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4`}>
+              <div
+                className={`grid gap-4 ${
+                  category.members.length === 1
+                    ? "grid-cols-1 place-items-center" // Jika hanya 1 anggota, gunakan 1 kolom dan center item
+                    : "grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                }`}
+              >
                 {category.members.map((member) => (
                   <TeamMember key={member.name} {...member} />
                 ))}
