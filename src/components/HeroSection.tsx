@@ -24,7 +24,7 @@ const HeroSection = () => {
         animationDelay: '0.3s'
       }}>
           <div className="relative z-10 glass-effect p-6 rounded-2xl shadow-highlight max-w-lg md:max-w-lg sm:max-w-md xs:max-w-sm mx-auto h-auto">
-            <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=600" alt="Profesional kesehatan mental" className="w-full h-auto rounded-xl object-cover" />
+            <img alt="Profesional kesehatan mental" src="/lovable-uploads/36e79f4a-9ed2-4581-99ff-a37630ac88e8.png" className="w-full h-auto rounded-xl object-cover" />
             
             <div className="absolute -bottom-6 -right-6 glass-effect p-4 rounded-xl shadow-soft animate-float">
               <div className="flex items-center space-x-3">

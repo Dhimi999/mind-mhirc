@@ -1,12 +1,8 @@
-
 import { Link } from "react-router-dom";
 import { Brain, Mail, MapPin, Phone } from "lucide-react";
-
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  
-  return (
-    <footer className="bg-background border-t">
+  return <footer className="bg-background border-t">
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="space-y-4">
@@ -93,9 +89,7 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start space-x-3">
                 <MapPin size={18} className="text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm">
-                  Jl. Mental Sehat No. 123, Jakarta, Indonesia
-                </span>
+                <span className="text-muted-foreground text-sm">Universitas Brawijaya, Malang, Indonesia</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Phone size={18} className="text-primary flex-shrink-0" />
@@ -105,9 +99,9 @@ const Footer = () => {
               </li>
               <li className="flex items-center space-x-3">
                 <Mail size={18} className="text-primary flex-shrink-0" />
-                <span className="text-muted-foreground text-sm">
-                  info@mindmhirc.org
-                </span>
+                <span className="text-muted-foreground text-sm">mindmhirc@gmail.com
+info@mindmhirc.my.id
+              </span>
               </li>
             </ul>
           </div>
@@ -122,8 +116,6 @@ const Footer = () => {
           </p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;

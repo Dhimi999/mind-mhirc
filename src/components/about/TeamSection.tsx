@@ -177,42 +177,37 @@ const TeamSection = () => {
   ];
 
   return (
-    <section className="py-16 px-4 sm:px-6 bg-background">
+    <section className="py-12 px-4 sm:px-6 bg-background">
       <div className="container mx-auto">
-        <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
+        <div className="text-center max-w-3xl mx-auto mb-10 fade-in">
           <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-1 text-primary text-sm font-medium mb-4">
             <span>Tim Kami</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">
             Para Ahli di Balik Mind MHIRC
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Tim multidisiplin kami terdiri dari peneliti kesehatan mental, ahli keperawatan jiwa, 
-            pengembang teknologi, dan mitra strategis yang berdedikasi untuk menciptakan 
-            solusi kesehatan mental terbaik.
+            pengembang teknologi, dan mitra strategis yang berdedikasi.
           </p>
         </div>
         
-        <div className="space-y-16">
+        <div className="space-y-10">
           {teamCategories.map((category) => (
             <div key={category.id} className="fade-in">
-              <div className={`p-6 rounded-xl bg-gradient-to-r ${category.color} mb-8 shadow-sm`}>
-                <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm">
+              <div className={`p-4 rounded-xl bg-gradient-to-r ${category.color} mb-6 shadow-sm`}>
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
                     <div className="text-primary">{category.icon}</div>
                   </div>
-                  <div className="text-center md:text-left">
-                    <h3 className="text-2xl font-bold">{category.title}</h3>
-                    <p className="text-muted-foreground">{category.description}</p>
+                  <div className="text-center sm:text-left">
+                    <h3 className="text-xl font-bold">{category.title}</h3>
+                    <p className="text-muted-foreground text-sm">{category.description}</p>
                   </div>
                 </div>
               </div>
               
-              <div className={`grid grid-cols-1 ${
-                category.id === "ketua" || category.id === "filkom" 
-                  ? "md:grid-cols-1 max-w-md mx-auto" 
-                  : "md:grid-cols-2 lg:grid-cols-4"
-              } gap-6`}>
+              <div className={`grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4`}>
                 {category.members.map((member) => (
                   <TeamMember key={member.name} {...member} />
                 ))}
