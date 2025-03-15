@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Bold,
@@ -40,16 +41,12 @@ interface ToolbarButtonsProps {
   setImageAlt: React.Dispatch<React.SetStateAction<string>>;
   showLinkPopover: boolean;
   setShowLinkPopover: React.Dispatch<React.SetStateAction<boolean>>;
-  // Untuk popover input gambar
   showImagePopover: boolean;
   setShowImagePopover: React.Dispatch<React.SetStateAction<boolean>>;
   handleLink: () => void;
-  // handleImage akan dipanggil setelah proses crop selesai
-  handleImage: (croppedImageUrl: string) => void;
+  handleImage: () => void;
   onLinkButtonClick: () => void;
   onImageButtonClick: () => void;
-  // Fungsi untuk submit input gambar (tutup popover input dan buka modal crop)
-  onImageInputSubmit: () => void;
 }
 
 export const ToolbarButtons = ({
@@ -72,11 +69,9 @@ export const ToolbarButtons = ({
   handleImage,
   onLinkButtonClick,
   onImageButtonClick,
-  onImageInputSubmit,
 }: ToolbarButtonsProps) => {
   return (
     <div className="bg-muted p-2 flex flex-wrap gap-1 border-b">
-      {/* Formatting Buttons */}
       <Button
         type="button"
         variant="ghost"
@@ -104,10 +99,9 @@ export const ToolbarButtons = ({
       >
         <Underline className="h-4 w-4" />
       </Button>
-
+      
       <Separator orientation="vertical" className="mx-1 h-6" />
-
-      {/* Heading Buttons */}
+      
       <Button
         type="button"
         variant="ghost"
@@ -135,10 +129,9 @@ export const ToolbarButtons = ({
       >
         <Heading3 className="h-4 w-4" />
       </Button>
-
+      
       <Separator orientation="vertical" className="mx-1 h-6" />
-
-      {/* Alignment Buttons */}
+      
       <Button
         type="button"
         variant="ghost"
@@ -166,10 +159,9 @@ export const ToolbarButtons = ({
       >
         <AlignRight className="h-4 w-4" />
       </Button>
-
+      
       <Separator orientation="vertical" className="mx-1 h-6" />
-
-      {/* List & Quote Buttons */}
+      
       <Button
         type="button"
         variant="ghost"
@@ -197,10 +189,9 @@ export const ToolbarButtons = ({
       >
         <Quote className="h-4 w-4" />
       </Button>
-
+      
       <Separator orientation="vertical" className="mx-1 h-6" />
-
-      {/* Link Popover */}
+      
       <Popover open={showLinkPopover} onOpenChange={setShowLinkPopover}>
         <PopoverTrigger asChild>
           <Button
@@ -227,8 +218,8 @@ export const ToolbarButtons = ({
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
               />
-              <Button
-                size="sm"
+              <Button 
+                size="sm" 
                 className="w-full"
                 onClick={handleLink}
                 disabled={!linkUrl || !linkText}
@@ -239,8 +230,7 @@ export const ToolbarButtons = ({
           </div>
         </PopoverContent>
       </Popover>
-
-      {/* Image Popover */}
+      
       <Popover open={showImagePopover} onOpenChange={setShowImagePopover}>
         <PopoverTrigger asChild>
           <Button
@@ -267,10 +257,10 @@ export const ToolbarButtons = ({
                 value={imageAlt}
                 onChange={(e) => setImageAlt(e.target.value)}
               />
-              <Button
-                size="sm"
+              <Button 
+                size="sm" 
                 className="w-full"
-                onClick={onImageInputSubmit}
+                onClick={handleImage}
                 disabled={!imageUrl}
               >
                 Tambahkan
@@ -279,10 +269,9 @@ export const ToolbarButtons = ({
           </div>
         </PopoverContent>
       </Popover>
-
+      
       <Separator orientation="vertical" className="mx-1 h-6" />
-
-      {/* Undo/Redo Buttons */}
+      
       <Button
         type="button"
         variant="ghost"

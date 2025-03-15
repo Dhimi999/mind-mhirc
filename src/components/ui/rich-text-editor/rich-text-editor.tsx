@@ -1,8 +1,8 @@
+
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ToolbarButtons } from "./toolbar-buttons";
-import ImageCropModal from "./image-crop-modal";
 
 interface RichTextEditorProps {
   value: string;
@@ -19,18 +19,17 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showLinkPopover, setShowLinkPopover] = useState(false);
-  // State untuk input gambar (popover) dan modal crop terpisah
-  const [showImageInputPopover, setShowImageInputPopover] = useState(false);
-  const [showImageCropModal, setShowImageCropModal] = useState(false);
-
+  const [showImagePopover, setShowImagePopover] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkText, setLinkText] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageAlt, setImageAlt] = useState("");
   const [isEditorInitialized, setIsEditorInitialized] = useState(false);
+  
+  // Save selection range for popover usage
   const [selectionRange, setSelectionRange] = useState<Range | null>(null);
 
-  // Inisialisasi konten editor dari prop value
+  // Initialize the editor with the HTML content
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.innerHTML = value || "";
@@ -38,10 +37,10 @@ export function RichTextEditor({
     }
   }, []);
 
-  // Tambahkan style khusus ke <head> agar formatting terlihat pada contentEditable
+  // Apply styles to make formatting visible in the editor
   useEffect(() => {
     if (isEditorInitialized && editorRef.current) {
-      const style = document.createElement("style");
+      const style = document.createElement('style');
       style.innerHTML = `
         [contenteditable] h1 { font-size: 2em; font-weight: bold; margin-top: 0.67em; margin-bottom: 0.67em; }
         [contenteditable] h2 { font-size: 1.5em; font-weight: bold; margin-top: 0.83em; margin-bottom: 0.83em; }
@@ -56,18 +55,14 @@ export function RichTextEditor({
     }
   }, [isEditorInitialized]);
 
-  // Update konten editor jika prop value berubah (selama editor tidak dalam focus)
+  // Fix for value updates from props
   useEffect(() => {
-    if (
-      isEditorInitialized &&
-      editorRef.current &&
-      !editorRef.current.contains(document.activeElement)
-    ) {
+    if (isEditorInitialized && editorRef.current && !editorRef.current.contains(document.activeElement)) {
+      // Only update innerHTML if the editor doesn't have focus to avoid cursor jumping
       editorRef.current.innerHTML = value || "";
     }
   }, [value, isEditorInitialized]);
 
-  // Simpan selection sebelum membuka popover/modal
   const saveSelection = () => {
     if (window.getSelection) {
       const selection = window.getSelection();
@@ -77,7 +72,6 @@ export function RichTextEditor({
     }
   };
 
-  // Kembalikan selection yang telah disimpan
   const restoreSelection = () => {
     if (selectionRange && window.getSelection) {
       const selection = window.getSelection();
@@ -88,14 +82,20 @@ export function RichTextEditor({
     }
   };
 
-  // Eksekusi perintah menggunakan document.execCommand
+  // Command functions
   const execCommand = (command: string, value: string | null = null) => {
+    // Restore selection if we're in a popover
     if (!document.activeElement?.contains(editorRef.current)) {
       editorRef.current?.focus();
       restoreSelection();
     }
+    
     document.execCommand(command, false, value);
+    
+    // Ensure change is registered
     handleContentChange();
+    
+    // Focus the editor again
     editorRef.current?.focus();
   };
 
@@ -125,31 +125,37 @@ export function RichTextEditor({
     }
   };
 
-  // Fungsi untuk menyisipkan gambar hasil crop ke dalam editor
-  const handleImageInsertion = (croppedImageUrl: string) => {
-    restoreSelection();
-    const imgAltText = imageAlt || "Image";
-    const imgHtml = `<img src="${croppedImageUrl}" alt="${imgAltText}" style="display: block; max-width:100%; border-radius:8px; margin:10px auto;" />`;
-    document.execCommand("insertHTML", false, imgHtml);
-    setImageUrl("");
-    setImageAlt("");
-    setShowImageCropModal(false);
-    handleContentChange();
-    editorRef.current?.focus();
+  const handleImage = () => {
+    if (imageUrl) {
+      restoreSelection();
+      const imgAlt = imageAlt || "Image";
+      const imgHtml = `<img src="${imageUrl}" alt="${imgAlt}" style="max-width:100%;border-radius:8px;margin:10px 0;" />`;
+      document.execCommand("insertHTML", false, imgHtml);
+      setImageUrl("");
+      setImageAlt("");
+      setShowImagePopover(false);
+      handleContentChange();
+    }
   };
 
-  // Saat tombol image di toolbar ditekan, simpan selection dan tampilkan popover input gambar
+  const onLinkButtonClick = () => {
+    saveSelection();
+    // Get selected text for link
+    if (window.getSelection) {
+      const selection = window.getSelection();
+      if (selection && !selection.isCollapsed) {
+        setLinkText(selection.toString());
+      }
+    }
+    setShowLinkPopover(true);
+  };
+
   const onImageButtonClick = () => {
     saveSelection();
-    setShowImageInputPopover(true);
+    setShowImagePopover(true);
   };
 
-  // Saat user submit input gambar, tutup popover dan tampilkan modal crop
-  const handleImageInputSubmit = () => {
-    setShowImageInputPopover(false);
-    setShowImageCropModal(true);
-  };
-
+  // Handle content changes
   const handleContentChange = () => {
     if (editorRef.current) {
       const content = editorRef.current.innerHTML;
@@ -159,7 +165,7 @@ export function RichTextEditor({
 
   return (
     <div className={cn("border rounded-md", className)}>
-      <ToolbarButtons
+      <ToolbarButtons 
         onFormat={handleFormat}
         onHeading={handleHeading}
         onAlignment={handleAlignment}
@@ -173,25 +179,14 @@ export function RichTextEditor({
         setImageAlt={setImageAlt}
         showLinkPopover={showLinkPopover}
         setShowLinkPopover={setShowLinkPopover}
-        // Gunakan state untuk popover input gambar
-        showImagePopover={showImageInputPopover}
-        setShowImagePopover={setShowImageInputPopover}
+        showImagePopover={showImagePopover}
+        setShowImagePopover={setShowImagePopover}
         handleLink={handleLink}
-        handleImage={handleImageInsertion}
-        onLinkButtonClick={() => {
-          saveSelection();
-          if (window.getSelection) {
-            const selection = window.getSelection();
-            if (selection && !selection.isCollapsed) {
-              setLinkText(selection.toString());
-            }
-          }
-          setShowLinkPopover(true);
-        }}
+        handleImage={handleImage}
+        onLinkButtonClick={onLinkButtonClick}
         onImageButtonClick={onImageButtonClick}
-        onImageInputSubmit={handleImageInputSubmit}
       />
-
+      
       <ScrollArea className="h-[500px]">
         <div
           ref={editorRef}
@@ -201,24 +196,15 @@ export function RichTextEditor({
           data-placeholder={placeholder}
           role="textbox"
           onFocus={() => {
+            // Make sure contentEditable div has a proper placeholder when empty
             if (editorRef.current && !editorRef.current.innerHTML.trim()) {
-              editorRef.current.innerHTML = "";
+              editorRef.current.innerHTML = '';
             }
           }}
           onBlur={handleContentChange}
-          style={{ position: "relative" }}
+          style={{ position: 'relative' }}
         />
       </ScrollArea>
-
-      {/* Tampilkan modal crop gambar jika state showImageCropModal true */}
-      {showImageCropModal && imageUrl && (
-        <ImageCropModal
-          imageUrl={imageUrl}
-          onClose={() => setShowImageCropModal(false)}
-          onCrop={handleImageInsertion}
-          aspect={16 / 9}
-        />
-      )}
     </div>
   );
 }
