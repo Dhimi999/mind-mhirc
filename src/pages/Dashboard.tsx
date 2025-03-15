@@ -695,7 +695,9 @@ const DashboardOverview = ({ user }: { user: any }) => {
           </p>
 
           <p className="text-xs text-muted-foreground">
-            Terdapat pesan yang belum dibaca
+            {globalUnreadBroadcastsCount && globalUnreadBroadcastsCount > 0
+              ? "Terdapat pesan yang belum dibaca"
+              : "Semua pesan telah dibaca"}
           </p>
         </div>
         <div className="bg-card shadow-soft rounded-xl p-4 md:p-6">
