@@ -10,7 +10,7 @@ interface TeamMemberType {
   email?: string;
   socialLinks?: {
     linkedin?: string;
-    twitter?: string;
+    schoolar?: string;
     website?: string;
   };
 }
@@ -37,8 +37,13 @@ const TeamSection = () => {
           name: "Dr. Ns. Heni Dwi Windarwati., M.Kep.Sp.Kep.J",
           role: "Ketua (0026028001)",
           bio: "Memimpin inisiatif penelitian dan pengembangan inovasi kesehatan mental di Indonesia dengan fokus pada pendekatan berbasis bukti dan peka budaya.",
-          image: "https://randomuser.me/api/portraits/women/44.jpg",
-          email: "heni.windarwati@mindmhirc.org"
+          image: "https://media.licdn.com/dms/image/v2/D4D03AQGKrnp1gvZvyA/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1711167024171?e=2147483647&v=beta&t=0j_nJYOMsitYzAVA5qd7FQoBiFzIrhPVLYHl82-dQjk",
+          email: "henipsik.fk@ub.ac.id",
+          socialLinks: {
+            linkedin: "https://www.linkedin.com/in/heni-dwi-windarwati-37a416300",
+            schoolar: "https://scholar.google.co.id/citations?user=YDXOzfMAAAAJ&hl=en",
+            website: "https://fikes.ub.ac.id/en/sdm_all/heni-dwi-windarwati-2/"
+          }
         }
       ]
     },
@@ -51,59 +56,95 @@ const TeamSection = () => {
       members: [
         {
           name: "Dr. Ns. Retno Lestari., S.Kep.M.Nurs",
-          role: "Anggota FIKES (0014098001)",
+          role: "Universitas Brawijaya (0014098001)",
           bio: "Spesialis dalam penelitian keperawatan jiwa dengan fokus pada intervensi preventif.",
-          image: "https://randomuser.me/api/portraits/women/42.jpg",
-          email: "retno.lestari@mindmhirc.org"
+          image: "https://apps.ub.ac.id/upload/kepegawaian/2021/03/31/20210331_112831_179472.jpg",
+          email: "retno.lestari.fk@ub.ac.id",
+          socialLinks: {
+            linkedin: "https://id.linkedin.com/in/dr-retno-lestari-s-kep-ns-m-nurs-3870835a",
+            schoolar: "https://scholar.google.com/citations?user=xgzT_WkAAAAJ&hl=en",
+            website: "https://fikes.ub.ac.id/id/sdm_all/retno-lestari/"
+          }
         },
         {
           name: "Dr. Ns. Lilik Supriati., S.Kep.M.Kep",
-          role: "Anggota FIKES (0705058302)",
+          role: "Universitas Brawijaya (0705058302)",
           bio: "Ahli dalam pengembangan program kesehatan mental berbasis komunitas.",
-          image: "https://randomuser.me/api/portraits/women/22.jpg",
-          email: "lilik.supriati@mindmhirc.org"
+          image: "https://fikes.ub.ac.id/wp-content/uploads/2024/02/WhatsApp-Image-2023-07-11-at-10.44.33.jpeg",
+          email: "liliks.83@ub.ac.id",
+          socialLinks:  {
+            linkedin: "https://id.linkedin.com/in/lilik-supriati-09b39975",
+            schoolar: "https://scholar.google.co.id/citations?user=TlrTIO4AAAAJ&hl=id",
+            website: "https://fikes.ub.ac.id/en/sdm_all/lilik-supriati-2/"
+          }
         },
         {
           name: "Ns. Ridhoyanti Hidayah., S.Kep.M.Kep",
-          role: "Anggota FIKES (0020098502)",
+          role: "Universitas Brawijaya (0020098502)",
           bio: "Fokus pada intervensi keperawatan jiwa untuk kelompok remaja dan dewasa muda.",
-          image: "https://randomuser.me/api/portraits/women/67.jpg",
-          email: "ridhoyanti.hidayah@mindmhirc.org"
+          image: "https://fikes.ub.ac.id/wp-content/uploads/2023/11/WhatsApp-Image-2023-11-11-at-12.13.49-1536x1536.jpeg",
+          email: "ridhoyanti.fk@ub.ac.id",
+          socialLinks: {
+            schoolar: "https://scholar.google.co.id/citations?user=SGjAt3kAAAAJ&hl=id",
+            website: "https://fikes.ub.ac.id/id/sdm_all/ridhoyanti-hidayah/"
+          }
         },
         {
           name: "Ns. Muhammad Sunarto., M.Kep.Sp.Kep.J",
-          role: "Anggota FIKES (0020117103)",
+          role: "Universitas Brawijaya (0020117103)",
           bio: "Spesialis keperawatan jiwa dengan pengalaman dalam manajemen kasus kompleks.",
-          image: "https://randomuser.me/api/portraits/men/32.jpg",
-          email: "muhammad.sunarto@mindmhirc.org"
+          image: "https://fikes.ub.ac.id/wp-content/uploads/2024/02/20210317_150549_743020.jpg",
+          email: "nartompsikfk@ub.ac.id",
+          socialLinks: {
+            linkedin: "https://www.linkedin.com/in/muhammad-sunarto-9bb862303",
+            schoolar: "https://scholar.google.com/citations?user=Tzc0o9oAAAAJ&hl=id",
+            website: "https://fikes.ub.ac.id/id/sdm_all/muhammad-sunarto/"
+          }
         },
         {
           name: "Ns. Renny Nova., M.Kep.Sp.Kep.J",
-          role: "Anggota FIKES (120188493)",
+          role: "Universitas Brawijaya (120188493)",
           bio: "Ahli intervensi kesehatan mental pada populasi geriatri.",
-          image: "https://randomuser.me/api/portraits/women/52.jpg",
-          email: "renny.nova@mindmhirc.org"
+          image: "https://fikes.ub.ac.id/wp-content/uploads/2023/11/rv.jpeg",
+          email: "reva.fk.psik@ub.ac.id",
+          socialLinks:  {
+            linkedin: "https://www.linkedin.com/in/renny-nova-561200114",
+            schoolar: "https://scholar.google.co.id/citations?user=vo-2G48AAAAJ&hl=id",
+            website: "https://fikes.ub.ac.id/id/sdm_all/renny-nova/"
+          }
         },
         {
           name: "Dr. Kuswantoro Rusca Putra., SKp., M.Kep",
-          role: "Anggota FIKES (0022057901)",
+          role: "Universitas Brawijaya (0022057901)",
           bio: "Peneliti dengan fokus pada pengembangan model perawatan kesehatan mental berbasis keluarga.",
-          image: "https://randomuser.me/api/portraits/men/45.jpg",
-          email: "kuswantoro.putra@mindmhirc.org"
+          image: "https://nursing.ub.ac.id/wp-content/uploads/2021/12/WhatsApp-Image-2021-11-11-at-12.07.45-Kuswantoro-Rusca-Putra-768x823.jpeg",
+          email: "kuswantoro.putra@mindmhirc.org",
+          socialLinks: {
+            schoolar: "https://scholar.google.co.id/citations?user=999r5dUAAAAJ&hl=en",
+            website: "https://nursing.ub.ac.id/en/staff/kuswantoro-rusca-putra/"
+          }
         },
         {
           name: "Dr. Ns. Rinik Eko Kapti., S.Kep., M.Kep",
-          role: "Anggota FIKES (0031018203)",
+          role: "Universitas Brawijaya (0031018203)",
           bio: "Spesialis dalam penelitian keperawatan jiwa pediatrik.",
-          image: "https://randomuser.me/api/portraits/women/29.jpg",
-          email: "rinik.kapti@mindmhirc.org"
+          image: "https://fikes.ub.ac.id/wp-content/uploads/2024/02/WhatsApp-Image-2024-02-29-at-13.53.58.jpeg",
+          email: "rinik.kapti@mindmhirc.org",
+          socialLinks: {
+            schoolar: "https://scholar.google.co.id/citations?user=Xhyh8FkAAAAJ&hl=en",
+            website: "https://fikes.ub.ac.id/id/sdm_all/rinik-eko-kapti/"
+          }
         },
         {
           name: "Dr. Nurul Muslihah, SP., M.Kes",
-          role: "Anggota FIKES (0026017405)",
-          bio: "Ahli dalam aspek nutrisi dan pengaruhnya terhadap kesehatan mental.",
-          image: "https://randomuser.me/api/portraits/women/24.jpg",
-          email: "nurul.muslihah@mindmhirc.org"
+          role: "Universitas Brawijaya (0026017405)",
+          bio: "Ahli dalam aspek epidemiologi dan intervensi melalui nutrisi",
+          image: "https://fikes.ub.ac.id/wp-content/uploads/2023/11/Foto-Nurul-Muslihah_Gizi.jpg",
+          email: "nurul_muslihah.fk@ub.ac.id",
+          socialLinks: {
+            schoolar: "https://scholar.google.co.id/citations?user=1sDmmY8AAAAJ&hl=en",
+            website: "https://fikes.ub.ac.id/id/sdm_all/nurul-muslihah/"
+          }
         }
       ]
     },
@@ -116,10 +157,14 @@ const TeamSection = () => {
       members: [
         {
           name: "Ir. Satrio Agung Wicaksono, S.Kom, M.Kom",
-          role: "Anggota FILKOM (0021058602)",
-          bio: "Ahli pengembangan teknologi kesehatan dan sistem informasi kesehatan mental.",
-          image: "https://randomuser.me/api/portraits/men/54.jpg",
-          email: "satrio.wicaksono@mindmhirc.org"
+          role: "Universitas Brawijaya (0021058602)",
+          bio: "Ahli Pengembangan Sistem Informasi, Datawarehouse, basis data terdistribusi, kecerdasan buatan, data mining.",
+          image: "https://file-filkom.ub.ac.id/fileupload/assets/upload/foto/PTIIK/dosen/201301081122.jpg",
+          email: "satrio@ub.ac.id",
+          socialLinks: {
+            schoolar: "https://scholar.google.co.id/citations?user=72NRVv4AAAAJ&hl=en",
+            website: "https://filkom.ub.ac.id/profile/dosen/satrio.agung.wicaksono"
+          }
         }
       ]
     },
@@ -127,50 +172,69 @@ const TeamSection = () => {
       id: "mitra",
       title: "Anggota Mitra Kerja Sama",
       icon: <Handshake className="h-5 w-5" />,
-      description: "Kolaborator dan mitra strategis",
+      description: "Kolaborator dan Mitra Strategis",
       color: "from-emerald-400/20 to-emerald-400/5",
       members: [
         {
           name: "Ns. Niken Asih Laras Ati, S.Kep.M.Kep",
-          role: "Mitra Kerja Sama",
+          role: "Universitas Jember",
           bio: "Spesialis dalam pengembangan program kesehatan mental kolaboratif.",
-          image: "https://randomuser.me/api/portraits/women/65.jpg"
+          image: "https://i1.rgstatic.net/ii/profile.image/933073357131777-1599473432427_Q512/Niken-Ati.jpg",
+          email: "199505302022032020@unej.ac.id",
+          socialLinks: {
+            linkedin: "https://id.linkedin.com/in/niken-asih-laras-ati-b99551160",
+            schoolar: "https://scholar.google.com/citations?user=uyIU5-gAAAAJ&hl=en"
+          }
         },
         {
           name: "Ns. Mira Wahyu Kusumawati, S.Kep.M.Kep",
-          role: "Mitra Kerja Sama",
+          role: "Universitas Kusuma Husada",
           bio: "Fokus pada intervensi kesehatan mental berbasis komunitas.",
-          image: "https://randomuser.me/api/portraits/women/59.jpg"
+          image: "https://scholar.googleusercontent.com/citations?view_op=medium_photo&user=oRzkCCIAAAAJ&citpid=7",
+          socialLinks: {
+            schoolar: "https://scholar.google.com/citations?user=oRzkCCIAAAAJ&hl=id"
+          }
         },
         {
           name: "Dr. dr Irmansyah, Sp.KJ",
-          role: "Mitra Kerja Sama (BRIN)",
+          role: "Badan Riset dan Inovasi Nasional (BRIN)",
           bio: "Psikiater dan peneliti dengan fokus pada penelitian kesehatan mental nasional.",
-          image: "https://randomuser.me/api/portraits/men/62.jpg"
+          image: "https://fk.ui.ac.id/wp-content/uploads/2015/08/Promosi-Doktor-Irmansyah.jpg"
         },
         {
           name: "Dr Asri Maharani",
-          role: "Mitra Kerja Sama (The University of Manchester)",
+          role: "The University of Manchester",
           bio: "Peneliti di bidang kesehatan mental dengan fokus pada determinan sosial.",
-          image: "https://randomuser.me/api/portraits/women/56.jpg"
+          image: "https://research.manchester.ac.uk/files-asset/279158748/foto_UoM_crop.png?w=320&f=webp",
+          email: "asri.maharani@manchester.ac.uk",
+          socialLinks: {
+            linkedin: "https://www.linkedin.com/in/asri-maharani-59634633/",
+            schoolar: "https://scholar.google.co.uk/citations?user=cVRlCo0AAAAJ&hl=en",
+            website: "https://research.manchester.ac.uk/en/persons/asri.maharani"
+          }
         },
         {
           name: "Helen Brooks, Ph.D. MRes BSc",
-          role: "Mitra Kerja Sama (The University of Manchester)",
+          role: "The University of Manchester",
           bio: "Peneliti dengan fokus pada keterlibatan pasien dalam perawatan kesehatan mental.",
-          image: "https://randomuser.me/api/portraits/women/33.jpg"
+          image: "https://research.manchester.ac.uk/files-asset/174649053/thumbnail_image0.jpg?w=320&f=webp",
+          socialLinks: {
+            linkedin: "https://uk.linkedin.com/in/helen-brooks-6a7bbb117",
+            schoolar: "https://scholar.google.co.uk/citations?user=bcWvv5gAAAAJ&hl=en",
+            website: "https://research.manchester.ac.uk/en/persons/helen.brooks"
+          }
         },
         {
           name: "Agus Sugianto S.Pd., M.HP",
           role: "Mental Health Promotion Specialist (KPSI)",
           bio: "Spesialis dalam pengembangan dan implementasi program promosi kesehatan mental.",
-          image: "https://randomuser.me/api/portraits/men/75.jpg"
+          image: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"
         },
         {
           name: "dr. Herbet Sidabutar., Sp.KJ",
-          role: "Mitra Kerja Sama (Kementrian Kesehatan)",
+          role: "Kementrian Kesehatan",
           bio: "Psikiater dengan fokus pada pengembangan kebijakan kesehatan mental nasional.",
-          image: "https://randomuser.me/api/portraits/men/41.jpg"
+          image: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"
         }
       ]
     }
