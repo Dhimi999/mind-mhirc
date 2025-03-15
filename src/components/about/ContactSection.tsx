@@ -34,7 +34,7 @@ const ContactSection = () => {
                     </svg>
                   }
                   label="Email"
-                  value="info@mindmhirc.org"
+                  value= "mindmhirc@gmail.com info@mindmhirc.my.id"
                 />
                 
                 <ContactInfo 
@@ -44,7 +44,7 @@ const ContactSection = () => {
                     </svg>
                   }
                   label="Telepon"
-                  value="+62 21 7890 1234"
+                  value="-"
                 />
                 
                 <ContactInfo 
@@ -55,7 +55,7 @@ const ContactSection = () => {
                     </svg>
                   }
                   label="Alamat"
-                  value="Jl. Kesehatan Mental No. 45, Jakarta Selatan 12345, Indonesia"
+                  value="Universitas Brawijaya, Malang, Indonesia"
                 />
               </div>
             </div>
