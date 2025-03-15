@@ -211,12 +211,16 @@ const BlogPostPage = () => {
               __html: post.content
             }} />
               
-              {post.references_cit && <div className="mt-12 pt-6 border-t">
+              {post.references_cit && Array.isArray(post.references_cit) && (
+                <div className="mt-12 pt-6 border-t break-words">
                   <h2 className="text-xl font-semibold mb-4">Referensi</h2>
-                  <div dangerouslySetInnerHTML={{
-                __html: post.references_cit as string
-              }} />
-                </div>}
+                  <ul className="list-disc list-outside pl-1 space-y-2 text-justify">
+                  {post.references_cit.map((ref: string, idx: number) => (
+                    <li className="pr-4" key={idx}>{ref}</li>
+                  ))}
+                  </ul>
+                </div>
+              )}
             </article>
             
             <div className="border-t border-border mt-12 pt-8">
@@ -339,11 +343,13 @@ const BlogPostPage = () => {
         .blog-content a {
           color: #2563eb;
           text-decoration: underline;
+          overflow-wrap: break-word;
         }
         
         .blog-content p {
           text-align: justify;
           line-height: 1.625;
+          overflow-wrap: break-word;
         }
         
         .blog-content img {
