@@ -35,7 +35,7 @@ const TeamSection = () => {
       members: [
         {
           name: "Dr. Ns. Heni Dwi Windarwati., M.Kep.Sp.Kep.J",
-          role: "Ketua (0026028001)",
+          role: "Universitas Brawijaya (0026028001)",
           bio: "Memimpin inisiatif penelitian dan pengembangan inovasi kesehatan mental di Indonesia dengan fokus pada pendekatan berbasis bukti dan peka budaya.",
           image:
             "https://media.licdn.com/dms/image/v2/D4D03AQGKrnp1gvZvyA/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1711167024171?e=2147483647&v=beta&t=0j_nJYOMsitYzAVA5qd7FQoBiFzIrhPVLYHl82-dQjk",

@@ -32,7 +32,12 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   if (isLoading) {
-    return <div>Loading...</div>; // Bisa diganti dengan spinner
+    return (
+      <div className="flex flex-col justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Memuat Data...</p>
+      </div>
+    )
   }
 
   if (!user) {

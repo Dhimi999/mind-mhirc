@@ -30,13 +30,13 @@ const LogoMeaning = () => {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-          <div className="flex justify-center order-2 lg:order-1">
+          <div className="flex justify-center order-1">
             <div className="relative">
               <div className="absolute -inset-10 bg-gradient-to-tr from-primary/5 via-accent/5 to-secondary/5 rounded-full animate-spin-slow blur-3xl opacity-70"></div>
               <div className="relative overflow-hidden rounded-full p-2 bg-gradient-to-tr from-primary/30 to-secondary/30 shadow-xl">
                 <div className="bg-white rounded-full p-4">
                   <img 
-                    src="/lovable-uploads/f1e145af-f219-4e03-adfb-d4d892faee8a.png"
+                    src="web_tumbnail\f1e145af-f219-4e03-adfb-d4d892faee8a.png"
                     alt="Logo Mind MHIRC"
                     className="w-48 h-48 md:w-60 md:h-60 object-contain relative z-10"
                   />
@@ -45,7 +45,7 @@ const LogoMeaning = () => {
             </div>
           </div>
           
-          <div className="space-y-4 order-1 lg:order-2">
+          <div className="space-y-4 order-2">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="lamp">
                 <AccordionTrigger className="hover:no-underline">
