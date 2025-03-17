@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadAvatar } from "@/services/storageService";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
+import { KeyRound, Lock } from "lucide-react";
+import { updatePassword } from "@/services/authService";
 
 const AccountSettings = () => {
   const { toast } = useToast();
@@ -23,7 +25,13 @@ const AccountSettings = () => {
   const [birthDate, setBirthDate] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [isEmailProvider, setIsEmailProvider] = useState(false);
+  
+  // Password state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -52,6 +60,13 @@ const AccountSettings = () => {
         setProfession(data.profession || null);
         setCity(data.city || null);
         setBirthDate(data.birth_date ? new Date(data.birth_date).toISOString().split("T")[0] : null);
+      }
+      
+      // Check if user is using email provider
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const providerInfo = session.user.app_metadata?.provider || "";
+        setIsEmailProvider(providerInfo === "email" || !providerInfo);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -188,6 +203,60 @@ const AccountSettings = () => {
       await handleAvatarUpload();
     }
   };
+  
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Konfirmasi password baru tidak cocok",
+        description: "Pastikan password baru dan konfirmasi password sama.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password terlalu pendek",
+        description: "Password baru minimal 6 karakter.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setPasswordLoading(true);
+    
+    try {
+      const { success, error } = await updatePassword(
+        currentPassword,
+        newPassword
+      );
+      
+      if (!success) {
+        throw new Error(error);
+      }
+      
+      // Reset form
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      
+      toast({
+        title: "Password berhasil diperbarui",
+        description: "Password Anda telah berhasil diperbarui.",
+      });
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      toast({
+        title: "Gagal memperbarui password",
+        description: error.message || "Terjadi kesalahan saat memperbarui password.",
+        variant: "destructive",
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const getAccountTypeLabel = (type: string | null) => {
     switch (type) {
@@ -201,48 +270,6 @@ const AccountSettings = () => {
   };
 
   const isProfessional = accountType === "professional";
-
-  const handleDeleteAccount = async () => {
-    if (!user) return;
-    
-    try {
-      setDeleteLoading(true);
-      
-      // First delete the profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", user.id);
-        
-      if (profileError) throw profileError;
-      
-      // Then delete the auth user (this will cascade delete all related data due to RLS)
-      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
-      
-      if (authError) throw authError;
-      
-      // Log the user out
-      await logout();
-      
-      toast({
-        title: "Akun Dihapus",
-        description: "Akun Anda telah berhasil dihapus.",
-      });
-      
-      // Redirect to homepage
-      navigate("/");
-      
-    } catch (error: any) {
-      console.error("Error deleting account:", error);
-      toast({
-        title: "Gagal Menghapus Akun",
-        description: error.message || "Terjadi kesalahan saat menghapus akun Anda.",
-        variant: "destructive",
-      });
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -388,43 +415,83 @@ const AccountSettings = () => {
         </CardContent>
       </Card>
 
-      {/* Account Termination Section */}
-      <Card className="border-destructive/20">
+      {/* Password Update Section */}
+      <Card>
         <CardHeader>
-          <CardTitle className="text-destructive">Terminasi Akun</CardTitle>
+          <CardTitle>Perbarui Password</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <p className="text-muted-foreground">
-              Menghapus akun Anda akan menghapus semua data profil, hasil tes, dan informasi lainnya yang terkait dengan akun Anda secara permanen. Tindakan ini tidak dapat dibatalkan.
-            </p>
-            
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  Terminasi Akun Saya
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Konfirmasi Penghapusan Akun</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Apakah Anda yakin ingin menghapus akun Anda? Semua data Anda akan dihapus secara permanen dan tidak dapat dikembalikan.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleDeleteAccount} 
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    disabled={deleteLoading}
-                  >
-                    {deleteLoading ? "Menghapus..." : "Ya, Hapus Akun Saya"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          {isEmailProvider ? (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current_password" className="flex items-center gap-1">
+                    <KeyRound className="w-4 h-4" />
+                    Password Saat Ini
+                  </Label>
+                  <Input 
+                    id="current_password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="new_password" className="flex items-center gap-1">
+                    <Lock className="w-4 h-4" />
+                    Password Baru
+                  </Label>
+                  <Input 
+                    id="new_password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirm_password" className="flex items-center gap-1">
+                    <Lock className="w-4 h-4" />
+                    Konfirmasi Password Baru
+                  </Label>
+                  <Input 
+                    id="confirm_password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <Button
+                type="submit"
+                disabled={passwordLoading}
+                className="mt-2"
+              >
+                {passwordLoading ? "Memperbarui..." : "Perbarui Password"}
+              </Button>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+                <p className="text-amber-800 text-sm">
+                  <Lock className="inline-block mr-2 h-4 w-4" />
+                  Akun Anda terhubung dengan Google, sehingga tidak dapat merubah password.
+                </p>
+              </div>
+              
+              <Button 
+                disabled
+                variant="outline"
+              >
+                Perbarui Password
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

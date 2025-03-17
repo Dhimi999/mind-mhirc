@@ -1,12 +1,14 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthUser, getCurrentUser, signOut } from "@/services/authService";
+import { AuthUser, getCurrentUser, signOut, checkOAuthProfileCompletion } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isOAuthProfileIncomplete: boolean;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -15,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   isAuthenticated: false,
+  isOAuthProfileIncomplete: false,
   refreshUser: async () => {},
   logout: async () => {}
 });
@@ -26,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOAuthProfileIncomplete, setIsOAuthProfileIncomplete] = useState(false);
   const { toast } = useToast();
 
   const refreshUser = async () => {
@@ -34,6 +38,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const currentUser = await getCurrentUser();
       console.log("Current user from refreshUser:", currentUser);
       setUser(currentUser);
+      
+      // Check if OAuth profile needs completion (has auth but missing birth_date/city)
+      if (currentUser) {
+        const { complete } = await checkOAuthProfileCompletion();
+        setIsOAuthProfileIncomplete(!complete);
+      } else {
+        setIsOAuthProfileIncomplete(false);
+      }
     } catch (error) {
       console.error("Error refreshing user:", error);
       setUser(null);
@@ -108,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user,
         isLoading,
         isAuthenticated: !!user,
+        isOAuthProfileIncomplete,
         refreshUser,
         logout
       }}

@@ -1,10 +1,11 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect } from "react";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Tests from "./pages/Tests";
 import TestDetail from "./pages/TestDetail";
@@ -23,12 +24,11 @@ import ForgetPassword from "./pages/ForgetPassword";
 import SetNewPassword from "./pages/SetNewPassword";
 import EmailConfirmed from "./pages/EmailConfirmed";
 import TokenExpired from "./pages/TokenExpired";
-import { useAuth } from "@/contexts/AuthContext"; // Pastikan AuthContext memiliki fungsi untuk cek login
-import { Navigate } from "react-router-dom";
+import CompleteOAuthProfile from "./pages/CompleteOAuthProfile";
 
 const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isOAuthProfileIncomplete } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -44,7 +44,44 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Redirect to complete profile if needed
+  if (isOAuthProfileIncomplete) {
+    return <Navigate to="/complete-profile" state={{ from: location }} replace />;
+  }
+
   return children;
+};
+
+// Auth callback handler
+const AuthCallback = () => {
+  const { refreshUser, isLoading, isAuthenticated, isOAuthProfileIncomplete } = useAuth();
+  const navigate = useLocation();
+
+  useEffect(() => {
+    const handleCallback = async () => {
+      await refreshUser();
+    };
+
+    handleCallback();
+  }, [refreshUser]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Memuat...</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    if (isOAuthProfileIncomplete) {
+      return <Navigate to="/complete-profile" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Navigate to="/login" replace />;
 };
 
 // ScrollToTop component to handle automatic scrolling
@@ -79,7 +116,7 @@ const AppRoutes = () => {
               <Dashboard />
             </ProtectedRoute>
           }
-        />{" "}
+        />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/cookies" element={<Cookies />} />
@@ -87,6 +124,8 @@ const AppRoutes = () => {
         <Route path="/set-new-password-forget" element={<SetNewPassword />} />
         <Route path="/email-confirmed" element={<EmailConfirmed />} />
         <Route path="/token-expired" element={<TokenExpired />} />
+        <Route path="/complete-profile" element={<CompleteOAuthProfile />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

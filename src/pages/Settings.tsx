@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { UserCircle, AtSign, MapPin, Briefcase, Calendar, User, ShieldCheck, Image } from "lucide-react";
+import { UserCircle, AtSign, MapPin, Briefcase, Calendar, User, ShieldCheck, Image, KeyRound, Lock } from "lucide-react";
+import { updatePassword } from "@/services/authService";
 
 interface ProfileFormValues {
   full_name: string;
@@ -29,6 +30,7 @@ export default function Settings() {
   const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [isEmailProvider, setIsEmailProvider] = useState(false);
   
   const [profileValues, setProfileValues] = useState<ProfileFormValues>({
     full_name: "",
@@ -76,6 +78,14 @@ export default function Settings() {
               birth_date: data.birth_date || "",
             }));
           }
+          
+          // Check if user is using email provider
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const providerInfo = session.user.app_metadata?.provider || "";
+            setIsEmailProvider(providerInfo === "email" || !providerInfo);
+          }
+          
         } catch (error) {
           console.error('Error fetching profile data:', error);
         }
@@ -145,11 +155,14 @@ export default function Settings() {
     setPasswordLoading(true);
     
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: passwordValues.new_password
-      });
+      const { success, error } = await updatePassword(
+        passwordValues.current_password,
+        passwordValues.new_password
+      );
       
-      if (error) throw error;
+      if (!success) {
+        throw new Error(error);
+      }
       
       // Reset form
       setPasswordValues({
@@ -312,48 +325,79 @@ export default function Settings() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current_password">Password Saat Ini</Label>
-                <Input 
-                  id="current_password" 
-                  name="current_password"
-                  type="password"
-                  value={passwordValues.current_password}
-                  onChange={handlePasswordChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="new_password">Password Baru</Label>
-                <Input 
-                  id="new_password" 
-                  name="new_password"
-                  type="password"
-                  value={passwordValues.new_password}
-                  onChange={handlePasswordChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="confirm_password">Konfirmasi Password Baru</Label>
-                <Input 
-                  id="confirm_password" 
-                  name="confirm_password"
-                  type="password"
-                  value={passwordValues.confirm_password}
-                  onChange={handlePasswordChange}
-                />
-              </div>
-              
-              <div className="pt-2">
-                <Button 
-                  type="submit" 
-                  disabled={passwordLoading}
-                  className="w-full"
-                >
-                  {passwordLoading ? "Memperbarui..." : "Perbarui Password"}
-                </Button>
-              </div>
+              {isEmailProvider ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="current_password" className="flex items-center gap-1">
+                      <KeyRound className="w-4 h-4" />
+                      Password Saat Ini
+                    </Label>
+                    <Input 
+                      id="current_password" 
+                      name="current_password"
+                      type="password"
+                      value={passwordValues.current_password}
+                      onChange={handlePasswordChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="new_password" className="flex items-center gap-1">
+                      <Lock className="w-4 h-4" />
+                      Password Baru
+                    </Label>
+                    <Input 
+                      id="new_password" 
+                      name="new_password"
+                      type="password"
+                      value={passwordValues.new_password}
+                      onChange={handlePasswordChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm_password" className="flex items-center gap-1">
+                      <Lock className="w-4 h-4" />
+                      Konfirmasi Password Baru
+                    </Label>
+                    <Input 
+                      id="confirm_password" 
+                      name="confirm_password"
+                      type="password"
+                      value={passwordValues.confirm_password}
+                      onChange={handlePasswordChange}
+                    />
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Button 
+                      type="submit" 
+                      disabled={passwordLoading}
+                      className="w-full"
+                    >
+                      {passwordLoading ? "Memperbarui..." : "Perbarui Password"}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+                    <p className="text-amber-800 text-sm">
+                      <Lock className="inline-block mr-2 h-4 w-4" />
+                      Akun Anda terhubung dengan Google, sehingga tidak dapat merubah password.
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    type="button" 
+                    disabled={true}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Perbarui Password
+                  </Button>
+                </div>
+              )}
             </form>
           </CardContent>
         </Card>

@@ -20,11 +20,30 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from "@/components/ui/badge";
-import { Megaphone, Clock, Send, Users, User, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Megaphone, Clock, Send, Users, User, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 type Broadcast = Tables<'broadcasts'>;
 
@@ -39,6 +58,10 @@ const BroadcastManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<{ id: string, account_type: string }[]>([]);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 5;
   const { user } = useAuth();
 
   // Fetch users to populate recipient_id
@@ -60,16 +83,32 @@ const BroadcastManagement = () => {
     fetchUsers();
   }, []);
 
-  // Fetch broadcasts from Supabase
+  // Fetch broadcasts from Supabase with pagination
   useEffect(() => {
     const fetchBroadcasts = async () => {
       try {
         setLoading(true);
         
+        // Get total count for pagination
+        const { count, error: countError } = await supabase
+          .from('broadcasts')
+          .select('*', { count: 'exact', head: true });
+          
+        if (countError) throw countError;
+        
+        // Calculate total pages
+        const total = count || 0;
+        setTotalPages(Math.ceil(total / itemsPerPage));
+        
+        // Fetch paginated broadcasts
+        const from = (currentPage - 1) * itemsPerPage;
+        const to = from + itemsPerPage - 1;
+        
         const { data, error } = await supabase
           .from('broadcasts')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range(from, to);
         
         if (error) throw error;
         
@@ -83,7 +122,7 @@ const BroadcastManagement = () => {
     };
     
     fetchBroadcasts();
-  }, []);
+  }, [currentPage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,19 +177,15 @@ const BroadcastManagement = () => {
       
       if (error) throw error;
       
-      // Add the new broadcast to state
-      if (data && data.length > 0) {
-        setBroadcasts([data[0], ...broadcasts]);
-      }
-      
       // Reset form
       setTitle('');
       setMessage('');
       setRecipient('all');
       setPriority('regular');
       
-      // Switch to history tab
+      // Switch to history tab and refresh broadcasts
       setActiveTab('history');
+      setCurrentPage(1); // Reset to first page after new broadcast
       
       toast.success('Siaran berhasil dikirim');
     } catch (err) {
@@ -158,6 +193,35 @@ const BroadcastManagement = () => {
       toast.error('Gagal mengirim siaran. Silakan coba lagi.');
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleDeleteBroadcast = async (id: string) => {
+    try {
+      setIsDeleting(id);
+      
+      // Delete broadcast
+      const { error } = await supabase
+        .from('broadcasts')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setBroadcasts(broadcasts.filter(broadcast => broadcast.id !== id));
+      
+      toast.success('Siaran berhasil dihapus');
+      
+      // Check if we need to go to previous page
+      if (broadcasts.length === 1 && currentPage > 1) {
+        setCurrentPage(prev => prev - 1);
+      }
+    } catch (err) {
+      console.error('Error deleting broadcast:', err);
+      toast.error('Gagal menghapus siaran. Silakan coba lagi.');
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -389,10 +453,74 @@ const BroadcastManagement = () => {
                             <CheckCircle2 className="mr-1 h-3 w-3" />
                             Terkirim
                           </Badge>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Hapus Siaran</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Apakah Anda yakin ingin menghapus siaran ini? 
+                                  Tindakan ini tidak dapat dibatalkan.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteBroadcast(broadcast.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  disabled={isDeleting === broadcast.id}
+                                >
+                                  {isDeleting === broadcast.id ? 'Menghapus...' : 'Hapus'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <Pagination className="mt-6">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({length: totalPages}, (_, i) => i + 1).map((page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink 
+                              isActive={page === currentPage}
+                              onClick={() => setCurrentPage(page)}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
                 </div>
               )}
             </CardContent>

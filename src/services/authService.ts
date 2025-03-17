@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -28,6 +27,13 @@ export interface AuthUser {
   birth_date?: string | null;
   city?: string | null;
   profession?: string | null;
+}
+
+export interface OAuthProfileData {
+  birth_date: string;
+  city: string;
+  profession?: string;
+  account_type: "general" | "professional";
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
@@ -62,7 +68,6 @@ export const signUp = async (
   userData: SignUpData
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Make sure we use the absolute URL for email confirmation
     const redirectUrl = new URL('/email-confirmed', window.location.origin).toString();
     
     const { data, error } = await supabase.auth.signUp({
@@ -114,25 +119,128 @@ export const signIn = async (
   }
 };
 
+export const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const redirectTo = new URL('/auth/callback', window.location.origin).toString();
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectTo,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      }
+    });
+
+    if (error) throw error;
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Google login error:", error);
+    return {
+      success: false,
+      error: error.message || "Login dengan Google gagal. Silakan coba lagi."
+    };
+  }
+};
+
+export const checkOAuthProfileCompletion = async (): Promise<{ complete: boolean; userData?: Partial<AuthUser> }> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      return { complete: false };
+    }
+    
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+    
+    if (error) throw error;
+    
+    const userMetadata = session.user.user_metadata || {};
+    
+    const isProfileComplete = data && data.birth_date && data.city ? true : false;
+    
+    return { 
+      complete: isProfileComplete,
+      userData: {
+        id: session.user.id,
+        email: session.user.email,
+        full_name: userMetadata.full_name || data?.full_name,
+        avatar_url: userMetadata.avatar_url || data?.avatar_url,
+        account_type: data?.account_type as "general" | "professional" || "general",
+        birth_date: data?.birth_date,
+        city: data?.city,
+        profession: data?.profession,
+        is_admin: data?.is_admin
+      }
+    };
+  } catch (error) {
+    console.error("Error checking profile completion:", error);
+    return { complete: false };
+  }
+};
+
+export const completeOAuthProfile = async (
+  profileData: OAuthProfileData
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      return { 
+        success: false, 
+        error: "Sesi login tidak valid" 
+      };
+    }
+    
+    const userMetadata = session.user.user_metadata || {};
+    
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: userMetadata.full_name || session.user.user_metadata?.name,
+        avatar_url: userMetadata.avatar_url || session.user.user_metadata?.avatar_url,
+        birth_date: profileData.birth_date,
+        city: profileData.city,
+        profession: profileData.profession,
+        account_type: profileData.account_type,
+        forwarding: session.user.email
+      })
+      .eq("id", session.user.id);
+    
+    if (error) throw error;
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Profile completion error:", error);
+    return {
+      success: false,
+      error: error.message || "Gagal melengkapi profil. Silakan coba lagi."
+    };
+  }
+};
+
 export const signOut = async (): Promise<{
   success: boolean;
   error?: string;
 }> => {
   try {
-    // First clear the local session
     const { error } = await supabase.auth.signOut();
 
     if (error) throw error;
 
-    // Clear any local storage items related to auth if needed
     localStorage.removeItem("supabase.auth.token");
 
-    // Return success
     return { success: true };
   } catch (error: any) {
     console.error("Logout error:", error);
 
-    // Even if there's an error, we want to attempt to clear local state
     localStorage.removeItem("supabase.auth.token");
 
     return {
@@ -196,7 +304,6 @@ export const updatePassword = async (
       };
     }
 
-    // First verify current password
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: session.user.email,
       password: currentPassword
@@ -209,7 +316,6 @@ export const updatePassword = async (
       };
     }
 
-    // Update to new password
     const { error } = await supabase.auth.updateUser({
       password: newPassword
     });
@@ -230,7 +336,6 @@ export const resendConfirmationEmail = async (
   email: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Make sure we use the absolute URL for email confirmation
     const redirectUrl = new URL('/email-confirmed', window.location.origin).toString();
     
     const { error } = await supabase.auth.resend({
@@ -257,7 +362,6 @@ export const sendPasswordResetEmail = async (
   email: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Use the absolute path including the domain
     const redirectUrl = new URL('/set-new-password-forget', window.location.origin).toString();
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
