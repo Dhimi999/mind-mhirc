@@ -379,3 +379,80 @@ export const sendPasswordResetEmail = async (
     };
   }
 };
+
+export const deactivateAccount = async (): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return {
+        success: false,
+        error: "Sesi login tidak valid"
+      };
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        is_active: false,
+        deactive_at: new Date().toISOString()
+      })
+      .eq("id", session.user.id);
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Account deactivation error:", error);
+    return {
+      success: false,
+      error: error.message || "Gagal menonaktifkan akun. Silakan coba lagi."
+    };
+  }
+};
+
+export const reactivateAccount = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        is_active: true,
+        deactive_at: null
+      })
+      .eq("id", userId);
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Account reactivation error:", error);
+    return {
+      success: false,
+      error: error.message || "Gagal mengaktifkan kembali akun. Silakan coba lagi."
+    };
+  }
+};
+
+export const sendReauthenticationToken = async (email: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: new URL('/email-confirmed', window.location.origin).toString()
+      }
+    });
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Reauthentication token error:", error);
+    return {
+      success: false,
+      error: error.message || "Gagal mengirim token autentikasi. Silakan coba lagi."
+    };
+  }
+};
