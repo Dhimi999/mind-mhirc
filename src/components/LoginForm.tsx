@@ -22,13 +22,15 @@ interface LoginFormProps {
 }
 
 const professions = [
-  "Psikolog",
   "Dokter",
-  "Psikiater",
-  "Konselor",
   "Guru/Pendidik",
+  "Konselor",
+  "Militer",
   "Pekerja Sosial",
   "Peneliti",
+  "Psikolog",
+  "Psikiater",
+  "Perawat",
   "Terapis",
   "Lainnya"
 ];
