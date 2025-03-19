@@ -1,1 +1,1 @@
-# Draft 112 (bismillah fix final aamiin)
+Selamat Datang di Mind MHIRC
