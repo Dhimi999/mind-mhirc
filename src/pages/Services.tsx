@@ -9,8 +9,8 @@ const Services = () => {
   const services = [
     {
       id: "1",
-      title: "Konsultasi Psikologi",
-      description: "Layanan konsultasi psikologi profesional untuk individu, pasangan, keluarga, dan kelompok.",
+      title: "Konsultasi Kesehatan Jiwa",
+      description: "Layanan konsultasi kesehatan jiwa profesional untuk individu, pasangan, keluarga, dan kelompok.",
       icon: Brain,
       color: "bg-primary"
     },

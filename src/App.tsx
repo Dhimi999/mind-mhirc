@@ -25,6 +25,7 @@ import SetNewPassword from "./pages/SetNewPassword";
 import EmailConfirmed from "./pages/EmailConfirmed";
 import TokenExpired from "./pages/TokenExpired";
 import CompleteOAuthProfile from "./pages/CompleteOAuthProfile";
+import UnderMaintanance from "./pages/UnderMaintenance";
 
 const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }) => {
@@ -101,13 +102,14 @@ const AppRoutes = () => {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/tests" element={<Tests />} />
-        <Route path="/tests/:id" element={<TestDetail />} />
+        <Route path="/tests" element={<UnderMaintanance />} />
+        <Route path="/tests/:id" element={<UnderMaintanance />} />
         <Route path="/services" element={<Services />} />
-        <Route path="/services/:id" element={<ServiceDetail />} />
+        <Route path="/services/:id" element={<ServiceDetail />} /> 
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/publications" element={<UnderMaintanance />} />
         <Route path="/login" element={<Login />} />
         <Route
           path="/dashboard/*"
@@ -147,3 +149,7 @@ const App = () => (
 );
 
 export default App;
+
+
+// Tests
+// TestDetail

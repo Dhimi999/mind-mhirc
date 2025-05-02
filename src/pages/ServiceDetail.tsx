@@ -15,13 +15,13 @@ const ServiceDetail = () => {
   const servicesData = [
     {
       id: "1",
-      title: "Konsultasi Psikologi",
-      description: "Layanan konsultasi psikologi profesional untuk individu, pasangan, keluarga, dan kelompok.",
-      longDescription: "Konsultasi psikologi kami menawarkan pendekatan yang komprehensif untuk mendukung kesehatan mental Anda. Tim profesional kami yang berpengalaman akan membantu Anda mengidentifikasi tantangan, mengembangkan strategi pengatasan, dan mencapai tujuan kesehatan mental Anda.",
+      title: "Konsultasi Kesehatan Jiwa",
+      description: "Layanan konsultasi kesehatan jiwa profesional untuk individu, pasangan, keluarga, dan kelompok.",
+      longDescription: "Konsultasi kesehatan jiwa kami menawarkan pendekatan yang komprehensif untuk mendukung kesehatan mental Anda. Tim profesional kami yang berpengalaman akan membantu Anda mengidentifikasi tantangan, mengembangkan strategi pengatasan, dan mencapai tujuan kesehatan mental Anda.",
       icon: Brain,
       color: "bg-primary",
       benefits: [
-        "Asesmen psikologis komprehensif",
+        "Asesmen kesehatan jiwa komprehensif",
         "Terapi individual, pasangan, dan keluarga",
         "Pendekatan berbasis bukti dan peka budaya",
         "Fleksibilitas jadwal konsultasi",

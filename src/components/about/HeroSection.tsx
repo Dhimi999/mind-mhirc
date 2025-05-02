@@ -17,6 +17,7 @@ const HeroSection = () => {
             Tentang <span className="text-primary">Mind MHIRC</span>
           </h1>
           <p className="text-base md:text-lg text-muted-foreground">
+            <strong> Mind Mental Health for Innovation Research Center (Mind MHIRC) </strong> merupakan 
             Pusat Riset Inovatif Kesehatan Mental yang didedikasikan untuk mengembangkan 
             solusi kesehatan mental yang berbasis bukti, peka budaya, dan terjangkau 
             untuk masyarakat Indonesia.

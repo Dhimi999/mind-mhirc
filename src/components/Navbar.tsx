@@ -15,6 +15,7 @@ const Navbar = () => {
     { name: "Tes", path: "/tests" },
     { name: "Layanan", path: "/services" },
     { name: "Blog", path: "/blog" },
+    { name: "Publikasi", path: "/publications" },
     { name: "Tentang", path: "/about" },
   ];
 
