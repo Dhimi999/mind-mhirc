@@ -1,1 +1,0 @@
-Selamat Datang di Mind MHIRC
