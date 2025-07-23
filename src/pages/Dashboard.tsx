@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as React from "react";
 import {
   Routes,
   Route,
@@ -323,10 +324,24 @@ const Dashboard = () => {
                       Janji Konsultasi
                     </Link>
                     <Link
-                      to="/dashboard/messages"
+                      to="/dashboard/diary"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
+                      <BookOpen className="mr-3 h-5 w-5" />
+                      Catatan Harian
+                    </Link>
+                    <Link
+                      to="/dashboard/ai-companion"
                       className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
                     >
                       <MessageSquare className="mr-3 h-5 w-5" />
+                      Teman AI
+                    </Link>
+                    <Link
+                      to="/dashboard/messages"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
+                      <Mail className="mr-3 h-5 w-5" />
                       Pesan
                       {unreadBroadcastsCount > 0 && (
                         <span className="ml-auto bg-primary text-white text-xs py-0.5 px-1.5 rounded-full">
@@ -493,6 +508,8 @@ const Dashboard = () => {
                   path="appointments/*"
                   element={<DashboardAppointments user={mockUser} />}
                 />
+                <Route path="diary/*" element={<DashboardDiary user={mockUser} />} />
+                <Route path="ai-companion/*" element={<DashboardAICompanion user={mockUser} />} />
                 <Route path="messages/*" element={<MessageManagement />} />
                 {mockUser.role === "Teacher" && (
                   <Route
@@ -929,6 +946,24 @@ const DashboardHelp = ({ user }: { user: any }) => (
     <HelpSection />
   </div>
 );
+
+const DashboardDiary = ({ user }: { user: any }) => {
+  const Diary = React.lazy(() => import("./Diary"));
+  return (
+    <React.Suspense fallback={<div className="flex justify-center items-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+      <Diary />
+    </React.Suspense>
+  );
+};
+
+const DashboardAICompanion = ({ user }: { user: any }) => {
+  const AICompanion = React.lazy(() => import("./AICompanion"));
+  return (
+    <React.Suspense fallback={<div className="flex justify-center items-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+      <AICompanion />
+    </React.Suspense>
+  );
+};
 
 const DashboardNotFound = () => (
   <div className="text-center py-12">
