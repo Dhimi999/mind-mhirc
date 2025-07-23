@@ -249,7 +249,7 @@ const MessageManagement: React.FC = () => {
           let convertedReadBy: string[] = [];
           if (message.read_by) {
             if (Array.isArray(message.read_by)) {
-              convertedReadBy = message.read_by;
+              convertedReadBy = message.read_by.filter((item): item is string => typeof item === "string");
             } else if (typeof message.read_by === "string") {
               try {
                 convertedReadBy = JSON.parse(message.read_by);
