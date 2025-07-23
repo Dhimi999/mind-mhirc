@@ -3,7 +3,13 @@
   const config = {
     HIGHLIGHT_COLOR: "#0da2e7",
     HIGHLIGHT_BG: "#0da2e71a",
-    ALLOWED_ORIGINS: ["http://localhost:4000", "https://www.vercel.com", "https://www.mind-mhirc.my.id", "https://mind-mhirc.my.id", "https://mind-mhirc.vercel.app"],
+    ALLOWED_ORIGINS: [
+      "http://localhost:4000",
+      "https://www.vercel.com",
+      "https://www.mind-mhirc.my.id",
+      "https://mind-mhirc.my.id",
+      "https://mind-mhirc.vercel.app"
+    ],
     DEBOUNCE_DELAY: 10,
     Z_INDEX: 10000,
     TOOLTIP_OFFSET: 25,
@@ -20,16 +26,37 @@
   };
 
   // Fungsi untuk mengirim pesan ke origin yang diizinkan
+  // const sendMessage = (msg) => {
+  //   config.ALLOWED_ORIGINS.forEach(origin => {
+  //     try {
+  //       if (window.parent) {
+  //         window.parent.postMessage(msg, origin);
+  //       }
+  //     } catch (err) {
+  //       console.error(`Gagal mengirim pesan ke ${origin}:`, err);
+  //     }
+  //   });
+  // };
+
   const sendMessage = (msg) => {
-    config.ALLOWED_ORIGINS.forEach(origin => {
-      try {
-        if (window.parent) {
-          window.parent.postMessage(msg, origin);
-        }
-      } catch (err) {
-        console.error(`Gagal mengirim pesan ke ${origin}:`, err);
+    // Hanya jalankan jika ada parent window
+    if (!window.parent || window.parent === window) {
+      return;
+    }
+
+    try {
+      // 1. Dapatkan origin dari parent window
+      const parentOrigin = window.parent.location.origin;
+
+      // 2. Cek apakah origin tersebut ada di dalam daftar yang diizinkan
+      if (config.ALLOWED_ORIGINS.includes(parentOrigin)) {
+        // 3. Kirim pesan hanya ke origin yang valid
+        window.parent.postMessage(msg, parentOrigin);
       }
-    });
+    } catch (err) {
+      // Error bisa terjadi jika parent window memiliki cross-origin yang sangat ketat
+      // jadi lebih baik diamkan saja daripada memenuhi console dengan error.
+    }
   };
 
   // Fungsi untuk memantau perubahan URL
@@ -66,60 +93,81 @@
   const selector = new Selector();
 
   // Buat tooltip dan style untuk highlight elemen
+  // const createTooltip = () => {
+  //   selector.tooltip = document.createElement("div");
+  //   selector.tooltip.className = "gpt-selector-tooltip";
+  //   selector.tooltip.setAttribute("role", "tooltip");
+  //   document.body.appendChild(selector.tooltip);
+
+  //   const style = document.createElement("style");
+  //   style.textContent = `
+  //     .gpt-selector-tooltip {
+  //       position: fixed;
+  //       z-index: ${config.Z_INDEX};
+  //       pointer-events: none;
+  //       background-color: ${config.HIGHLIGHT_COLOR};
+  //       color: white;
+  //       padding: 4px 8px;
+  //       border-radius: 4px;
+  //       font-size: 14px;
+  //       font-weight: bold;
+  //       line-height: 1;
+  //       white-space: nowrap;
+  //       display: none;
+  //       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  //       transition: opacity 0.2s ease-in-out;
+  //       margin: 0;
+  //     }
+  //     [${config.HOVERED_ATTR}]::before {
+  //       content: '';
+  //       position: absolute;
+  //       top: 0;
+  //       left: 0;
+  //       width: 100%;
+  //       height: 100%;
+  //       border-radius: 0;
+  //       outline: 1px dashed ${config.HIGHLIGHT_COLOR};
+  //       outline-offset: ${config.HIGHLIGHT_STYLE.NORMAL.OFFSET};
+  //       background-color: ${config.HIGHLIGHT_BG};
+  //       z-index: ${config.Z_INDEX};
+  //       pointer-events: none;
+  //     }
+  //     [${config.SELECTED_ATTR}]::before {
+  //       content: '';
+  //       position: absolute;
+  //       top: 0;
+  //       left: 0;
+  //       width: 100%;
+  //       height: 100%;
+  //       border-radius: 0;
+  //       outline: 1px dashed ${config.HIGHLIGHT_COLOR};
+  //       outline-offset: 3px;
+  //       z-index: ${config.Z_INDEX};
+  //       pointer-events: none;
+  //     }
+  //   `;
+  //   document.head.appendChild(style);
+  // };
+  //createTooltip();
+
+  // Buat tooltip dan atur variabel CSS
   const createTooltip = () => {
+    // Atur variabel CSS di root dokumen
+    document.documentElement.style.setProperty(
+      "--ce-highlight-color",
+      config.HIGHLIGHT_COLOR
+    );
+    document.documentElement.style.setProperty(
+      "--ce-highlight-bg",
+      config.HIGHLIGHT_BG
+    );
+    document.documentElement.style.setProperty("--ce-z-index", config.Z_INDEX);
+
+    // Buat elemen tooltip
     selector.tooltip = document.createElement("div");
     selector.tooltip.className = "gpt-selector-tooltip";
     selector.tooltip.setAttribute("role", "tooltip");
     document.body.appendChild(selector.tooltip);
-
-    const style = document.createElement("style");
-    style.textContent = `
-      .gpt-selector-tooltip {
-        position: fixed;
-        z-index: ${config.Z_INDEX};
-        pointer-events: none;
-        background-color: ${config.HIGHLIGHT_COLOR};
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 14px;
-        font-weight: bold;
-        line-height: 1;
-        white-space: nowrap;
-        display: none;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        transition: opacity 0.2s ease-in-out;
-        margin: 0;
-      }
-      [${config.HOVERED_ATTR}]::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border-radius: 0;
-        outline: 1px dashed ${config.HIGHLIGHT_COLOR};
-        outline-offset: ${config.HIGHLIGHT_STYLE.NORMAL.OFFSET};
-        background-color: ${config.HIGHLIGHT_BG};
-        z-index: ${config.Z_INDEX};
-        pointer-events: none;
-      }
-      [${config.SELECTED_ATTR}]::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border-radius: 0;
-        outline: 1px dashed ${config.HIGHLIGHT_COLOR};
-        outline-offset: 3px;
-        z-index: ${config.Z_INDEX};
-        pointer-events: none;
-      }
-    `;
-    document.head.appendChild(style);
   };
   createTooltip();
 
@@ -144,7 +192,10 @@
         selector.tooltip.style.top = config.FULL_WIDTH_TOOLTIP_OFFSET;
       } else {
         selector.tooltip.style.left = `${Math.max(0, rect.left)}px`;
-        selector.tooltip.style.top = `${Math.max(0, rect.top - config.TOOLTIP_OFFSET)}px`;
+        selector.tooltip.style.top = `${Math.max(
+          0,
+          rect.top - config.TOOLTIP_OFFSET
+        )}px`;
       }
       selector.tooltip.textContent = element.tagName.toLowerCase();
     } catch (err) {
@@ -231,11 +282,14 @@
   // Contoh: Toggle mode selector dengan tombol "s"
   document.addEventListener("keydown", (event) => {
     if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "s") {
-    event.preventDefault(); // Mencegah aksi bawaan jika ada
+      event.preventDefault(); // Mencegah aksi bawaan jika ada
       selector.isActive ? deactivateSelector() : activateSelector();
     }
   });
 
   // Kirim pesan bahwa script selector telah dimuat
-  sendMessage({ type: "SELECTOR_SCRIPT_LOADED", payload: { version: "1.0.0" } });
+  sendMessage({
+    type: "SELECTOR_SCRIPT_LOADED",
+    payload: { version: "1.0.0" }
+  });
 })();
