@@ -26,37 +26,16 @@
   };
 
   // Fungsi untuk mengirim pesan ke origin yang diizinkan
-  // const sendMessage = (msg) => {
-  //   config.ALLOWED_ORIGINS.forEach(origin => {
-  //     try {
-  //       if (window.parent) {
-  //         window.parent.postMessage(msg, origin);
-  //       }
-  //     } catch (err) {
-  //       console.error(`Gagal mengirim pesan ke ${origin}:`, err);
-  //     }
-  //   });
-  // };
-
   const sendMessage = (msg) => {
-    // Hanya jalankan jika ada parent window
-    if (!window.parent || window.parent === window) {
-      return;
-    }
-
-    try {
-      // 1. Dapatkan origin dari parent window
-      const parentOrigin = window.parent.location.origin;
-
-      // 2. Cek apakah origin tersebut ada di dalam daftar yang diizinkan
-      if (config.ALLOWED_ORIGINS.includes(parentOrigin)) {
-        // 3. Kirim pesan hanya ke origin yang valid
-        window.parent.postMessage(msg, parentOrigin);
+    config.ALLOWED_ORIGINS.forEach((origin) => {
+      try {
+        if (window.parent) {
+          window.parent.postMessage(msg, origin);
+        }
+      } catch (err) {
+        console.error(`Gagal mengirim pesan ke ${origin}:`, err);
       }
-    } catch (err) {
-      // Error bisa terjadi jika parent window memiliki cross-origin yang sangat ketat
-      // jadi lebih baik diamkan saja daripada memenuhi console dengan error.
-    }
+    });
   };
 
   // Fungsi untuk memantau perubahan URL
@@ -93,81 +72,60 @@
   const selector = new Selector();
 
   // Buat tooltip dan style untuk highlight elemen
-  // const createTooltip = () => {
-  //   selector.tooltip = document.createElement("div");
-  //   selector.tooltip.className = "gpt-selector-tooltip";
-  //   selector.tooltip.setAttribute("role", "tooltip");
-  //   document.body.appendChild(selector.tooltip);
-
-  //   const style = document.createElement("style");
-  //   style.textContent = `
-  //     .gpt-selector-tooltip {
-  //       position: fixed;
-  //       z-index: ${config.Z_INDEX};
-  //       pointer-events: none;
-  //       background-color: ${config.HIGHLIGHT_COLOR};
-  //       color: white;
-  //       padding: 4px 8px;
-  //       border-radius: 4px;
-  //       font-size: 14px;
-  //       font-weight: bold;
-  //       line-height: 1;
-  //       white-space: nowrap;
-  //       display: none;
-  //       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  //       transition: opacity 0.2s ease-in-out;
-  //       margin: 0;
-  //     }
-  //     [${config.HOVERED_ATTR}]::before {
-  //       content: '';
-  //       position: absolute;
-  //       top: 0;
-  //       left: 0;
-  //       width: 100%;
-  //       height: 100%;
-  //       border-radius: 0;
-  //       outline: 1px dashed ${config.HIGHLIGHT_COLOR};
-  //       outline-offset: ${config.HIGHLIGHT_STYLE.NORMAL.OFFSET};
-  //       background-color: ${config.HIGHLIGHT_BG};
-  //       z-index: ${config.Z_INDEX};
-  //       pointer-events: none;
-  //     }
-  //     [${config.SELECTED_ATTR}]::before {
-  //       content: '';
-  //       position: absolute;
-  //       top: 0;
-  //       left: 0;
-  //       width: 100%;
-  //       height: 100%;
-  //       border-radius: 0;
-  //       outline: 1px dashed ${config.HIGHLIGHT_COLOR};
-  //       outline-offset: 3px;
-  //       z-index: ${config.Z_INDEX};
-  //       pointer-events: none;
-  //     }
-  //   `;
-  //   document.head.appendChild(style);
-  // };
-  //createTooltip();
-
-  // Buat tooltip dan atur variabel CSS
   const createTooltip = () => {
-    // Atur variabel CSS di root dokumen
-    document.documentElement.style.setProperty(
-      "--ce-highlight-color",
-      config.HIGHLIGHT_COLOR
-    );
-    document.documentElement.style.setProperty(
-      "--ce-highlight-bg",
-      config.HIGHLIGHT_BG
-    );
-    document.documentElement.style.setProperty("--ce-z-index", config.Z_INDEX);
-
-    // Buat elemen tooltip
     selector.tooltip = document.createElement("div");
     selector.tooltip.className = "gpt-selector-tooltip";
     selector.tooltip.setAttribute("role", "tooltip");
     document.body.appendChild(selector.tooltip);
+
+    const style = document.createElement("style");
+    style.textContent = `
+      .gpt-selector-tooltip {
+        position: fixed;
+        z-index: ${config.Z_INDEX};
+        pointer-events: none;
+        background-color: ${config.HIGHLIGHT_COLOR};
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: bold;
+        line-height: 1;
+        white-space: nowrap;
+        display: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        transition: opacity 0.2s ease-in-out;
+        margin: 0;
+      }
+      [${config.HOVERED_ATTR}]::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        outline: 1px dashed ${config.HIGHLIGHT_COLOR};
+        outline-offset: ${config.HIGHLIGHT_STYLE.NORMAL.OFFSET};
+        background-color: ${config.HIGHLIGHT_BG};
+        z-index: ${config.Z_INDEX};
+        pointer-events: none;
+      }
+      [${config.SELECTED_ATTR}]::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        outline: 1px dashed ${config.HIGHLIGHT_COLOR};
+        outline-offset: 3px;
+        z-index: ${config.Z_INDEX};
+        pointer-events: none;
+      }
+    `;
+    document.head.appendChild(style);
   };
   createTooltip();
 
