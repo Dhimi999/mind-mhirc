@@ -1,13 +1,44 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, MessageCircle, Sparkles, Plus, MoreVertical, Trash2, Edit3 } from "lucide-react";
+import {
+  Send,
+  Bot,
+  User,
+  MessageCircle,
+  Sparkles,
+  Plus,
+  MoreVertical,
+  Trash2,
+  Edit3
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +60,8 @@ interface Conversation {
 
 const AICompanion = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
+  const [currentConversation, setCurrentConversation] =
+    useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -54,7 +86,9 @@ const AICompanion = () => {
   useEffect(() => {
     // Auto scroll to bottom when new message is added
     if (scrollAreaRef.current) {
-      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      const scrollElement = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
       if (scrollElement) {
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
@@ -63,19 +97,19 @@ const AICompanion = () => {
 
   const fetchConversations = async () => {
     if (!user) return;
-    
+
     try {
       setIsLoadingConversations(true);
       const { data, error } = await supabase
-        .from('ai_conversations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
+        .from("ai_conversations")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
 
       if (error) throw error;
-      
+
       setConversations(data || []);
-      
+
       // Auto-select the first conversation if exists
       if (data && data.length > 0 && !currentConversation) {
         setCurrentConversation(data[0]);
@@ -94,21 +128,23 @@ const AICompanion = () => {
 
   const fetchMessages = async (conversationId: string) => {
     if (!user) return;
-    
+
     try {
       setIsLoadingMessages(true);
       const { data, error } = await supabase
-        .from('ai_messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
+        .from("ai_messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
-      setMessages((data || []).map(msg => ({
-        ...msg,
-        sender: msg.sender as "user" | "ai"
-      })));
+      setMessages(
+        (data || []).map((msg) => ({
+          ...msg,
+          sender: msg.sender as "user" | "ai"
+        }))
+      );
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast({
@@ -126,10 +162,10 @@ const AICompanion = () => {
 
     try {
       const { data, error } = await supabase
-        .from('ai_conversations')
+        .from("ai_conversations")
         .insert({
           user_id: user.id,
-          title: `Obrolan ${new Date().toLocaleDateString('id-ID')}`
+          title: `Obrolan ${new Date().toLocaleDateString("id-ID")}`
         })
         .select()
         .single();
@@ -137,18 +173,17 @@ const AICompanion = () => {
       if (error) throw error;
 
       // Add welcome message
-      await supabase
-        .from('ai_messages')
-        .insert({
-          conversation_id: data.id,
-          user_id: user.id,
-          content: "Halo! Saya adalah teman AI Anda. Saya di sini untuk mendengarkan dan membantu Anda. Bagaimana kabar Anda hari ini?",
-          sender: "ai"
-        });
+      await supabase.from("ai_messages").insert({
+        conversation_id: data.id,
+        user_id: user.id,
+        content:
+          "Halo! Saya adalah teman AI Anda. Saya di sini untuk mendengarkan dan membantu Anda. Bagaimana kabar Anda hari ini?",
+        sender: "ai"
+      });
 
       setCurrentConversation(data);
       fetchConversations();
-      
+
       toast({
         title: "Obrolan Baru Dibuat",
         description: "Obrolan baru berhasil dibuat"
@@ -166,21 +201,25 @@ const AICompanion = () => {
   const deleteConversation = async (conversationId: string) => {
     try {
       const { error } = await supabase
-        .from('ai_conversations')
+        .from("ai_conversations")
         .delete()
-        .eq('id', conversationId);
+        .eq("id", conversationId);
 
       if (error) throw error;
 
       // If deleting current conversation, select another one or clear
       if (currentConversation?.id === conversationId) {
-        const remainingConversations = conversations.filter(c => c.id !== conversationId);
-        setCurrentConversation(remainingConversations.length > 0 ? remainingConversations[0] : null);
+        const remainingConversations = conversations.filter(
+          (c) => c.id !== conversationId
+        );
+        setCurrentConversation(
+          remainingConversations.length > 0 ? remainingConversations[0] : null
+        );
         setMessages([]);
       }
 
       fetchConversations();
-      
+
       toast({
         title: "Obrolan Dihapus",
         description: "Obrolan berhasil dihapus"
@@ -195,12 +234,15 @@ const AICompanion = () => {
     }
   };
 
-  const updateConversationTitle = async (conversationId: string, title: string) => {
+  const updateConversationTitle = async (
+    conversationId: string,
+    title: string
+  ) => {
     try {
       const { error } = await supabase
-        .from('ai_conversations')
+        .from("ai_conversations")
         .update({ title })
-        .eq('id', conversationId);
+        .eq("id", conversationId);
 
       if (error) throw error;
 
@@ -208,7 +250,7 @@ const AICompanion = () => {
       if (currentConversation?.id === conversationId) {
         setCurrentConversation({ ...currentConversation, title });
       }
-      
+
       toast({
         title: "Judul Diperbarui",
         description: "Judul obrolan berhasil diperbarui"
@@ -223,74 +265,128 @@ const AICompanion = () => {
     }
   };
 
+  // const sendMessage = async () => {
+  //   if (!inputMessage.trim() || !currentConversation || !user) return;
+
+  //   const userMessageContent = inputMessage;
+  //   setInputMessage("");
+  //   setIsTyping(true);
+
+  //   try {
+  //     // Save user message
+  //     const { data: userMessage, error: userError } = await supabase
+  //       .from('ai_messages')
+  //       .insert({
+  //         conversation_id: currentConversation.id,
+  //         user_id: user.id,
+  //         content: userMessageContent,
+  //         sender: "user"
+  //       })
+  //       .select()
+  //       .single();
+
+  //     if (userError) throw userError;
+
+  //     // Refresh messages
+  //     fetchMessages(currentConversation.id);
+
+  //     // Simulate AI response with delay
+  //     setTimeout(async () => {
+  //       const aiResponses = [
+  //         "Terima kasih telah berbagi dengan saya. Bagaimana perasaan Anda setelah menceritakan hal tersebut?",
+  //         "Saya mendengar Anda. Itu terdengar seperti pengalaman yang cukup menantang. Apakah ada hal yang bisa membantu Anda merasa lebih baik?",
+  //         "Saya memahami apa yang Anda rasakan. Kadang-kadang berbicara tentang perasaan kita bisa membantu melegakan pikiran.",
+  //         "Itu sangat menarik. Bisakah Anda ceritakan lebih lanjut tentang hal tersebut?",
+  //         "Saya menghargai kepercayaan Anda untuk berbagi dengan saya. Apakah ada hal lain yang ingin Anda diskusikan?",
+  //         "Terdengar seperti Anda sedang melewati banyak hal. Ingatlah bahwa tidak apa-apa untuk merasakan apa yang Anda rasakan saat ini.",
+  //         "Saya di sini untuk mendengarkan Anda. Apakah ada strategi atau aktivitas yang biasanya membantu Anda merasa lebih baik?"
+  //       ];
+
+  //       const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+
+  //       try {
+  //         await supabase
+  //           .from('ai_messages')
+  //           .insert({
+  //             conversation_id: currentConversation.id,
+  //             user_id: user.id,
+  //             content: randomResponse,
+  //             sender: "ai"
+  //           });
+
+  //         fetchMessages(currentConversation.id);
+  //       } catch (error) {
+  //         console.error("Error saving AI message:", error);
+  //       }
+
+  //       setIsTyping(false);
+  //     }, 1500 + Math.random() * 1000);
+
+  //   } catch (error) {
+  //     console.error("Error sending message:", error);
+  //     toast({
+  //       title: "Gagal Mengirim Pesan",
+  //       description: "Terjadi kesalahan saat mengirim pesan",
+  //       variant: "destructive"
+  //     });
+  //     setIsTyping(false);
+  //   }
+  // };
+
   const sendMessage = async () => {
     if (!inputMessage.trim() || !currentConversation || !user) return;
 
     const userMessageContent = inputMessage;
     setInputMessage("");
-    setIsTyping(true);
 
     try {
-      // Save user message
-      const { data: userMessage, error: userError } = await supabase
-        .from('ai_messages')
-        .insert({
-          conversation_id: currentConversation.id,
-          user_id: user.id,
-          content: userMessageContent,
-          sender: "user"
-        })
-        .select()
-        .single();
+      // 1. Simpan pesan pengguna ke tabel (ini sudah benar)
+      await supabase.from("ai_messages").insert({
+        conversation_id: currentConversation.id,
+        user_id: user.id,
+        content: userMessageContent,
+        sender: "user"
+      });
 
-      if (userError) throw userError;
-
-      // Refresh messages
+      // Panggil fetchMessages untuk langsung menampilkan pesan pengguna
       fetchMessages(currentConversation.id);
+      setIsTyping(true); // Tampilkan indikator "mengetik"
 
-      // Simulate AI response with delay
-      setTimeout(async () => {
-        const aiResponses = [
-          "Terima kasih telah berbagi dengan saya. Bagaimana perasaan Anda setelah menceritakan hal tersebut?",
-          "Saya mendengar Anda. Itu terdengar seperti pengalaman yang cukup menantang. Apakah ada hal yang bisa membantu Anda merasa lebih baik?",
-          "Saya memahami apa yang Anda rasakan. Kadang-kadang berbicara tentang perasaan kita bisa membantu melegakan pikiran.",
-          "Itu sangat menarik. Bisakah Anda ceritakan lebih lanjut tentang hal tersebut?",
-          "Saya menghargai kepercayaan Anda untuk berbagi dengan saya. Apakah ada hal lain yang ingin Anda diskusikan?",
-          "Terdengar seperti Anda sedang melewati banyak hal. Ingatlah bahwa tidak apa-apa untuk merasakan apa yang Anda rasakan saat ini.",
-          "Saya di sini untuk mendengarkan Anda. Apakah ada strategi atau aktivitas yang biasanya membantu Anda merasa lebih baik?"
-        ];
+      // 2. Panggil Supabase Edge Function 'chat-ai' untuk mendapatkan respons AI
+      const { data: aiData, error: functionError } =
+        await supabase.functions.invoke("chat-ai", {
+          body: { message: userMessageContent }
+        });
 
-        const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
-        
-        try {
-          await supabase
-            .from('ai_messages')
-            .insert({
-              conversation_id: currentConversation.id,
-              user_id: user.id,
-              content: randomResponse,
-              sender: "ai"
-            });
+      // Jika ada error saat memanggil function, hentikan proses
+      if (functionError) {
+        throw functionError;
+      }
 
-          fetchMessages(currentConversation.id);
-        } catch (error) {
-          console.error("Error saving AI message:", error);
-        }
-        
-        setIsTyping(false);
-      }, 1500 + Math.random() * 1000);
+      const aiResponseContent = aiData.text;
 
+      // 3. Simpan respons AI yang asli ke Supabase
+      await supabase.from("ai_messages").insert({
+        conversation_id: currentConversation.id,
+        user_id: user.id,
+        content: aiResponseContent,
+        sender: "ai"
+      });
+
+      // 4. Perbarui daftar pesan di UI untuk menampilkan respons AI
+      fetchMessages(currentConversation.id);
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Error invoking function or sending message:", error);
       toast({
-        title: "Gagal Mengirim Pesan",
-        description: "Terjadi kesalahan saat mengirim pesan",
+        title: "Gagal Mendapat Respons AI",
+        description: "Terjadi kesalahan saat berkomunikasi dengan AI.",
         variant: "destructive"
       });
+    } finally {
+      // 5. Hentikan indikator "mengetik"
       setIsTyping(false);
     }
   };
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -336,7 +432,7 @@ const AICompanion = () => {
             </Button>
           </div>
         </div>
-        
+
         <ScrollArea className="flex-1">
           {isLoadingConversations ? (
             <div className="flex justify-center items-center py-8">
@@ -346,17 +442,23 @@ const AICompanion = () => {
             <div className="text-center py-8 px-4">
               <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground">Belum ada obrolan</p>
-              <Button onClick={createNewConversation} size="sm" className="mt-2">
+              <Button
+                onClick={createNewConversation}
+                size="sm"
+                className="mt-2"
+              >
                 Mulai Obrolan
               </Button>
             </div>
           ) : (
             <div className="p-2 space-y-2">
               {conversations.map((conversation) => (
-                <Card 
+                <Card
                   key={conversation.id}
                   className={`cursor-pointer transition-colors ${
-                    currentConversation?.id === conversation.id ? 'bg-muted' : 'hover:bg-muted/50'
+                    currentConversation?.id === conversation.id
+                      ? "bg-muted"
+                      : "hover:bg-muted/50"
                   }`}
                   onClick={() => setCurrentConversation(conversation)}
                 >
@@ -374,49 +476,73 @@ const AICompanion = () => {
                             className="h-8 text-sm"
                             autoFocus
                           />
-                          <Button size="sm" onClick={saveTitleEdit} className="h-8 px-2">
+                          <Button
+                            size="sm"
+                            onClick={saveTitleEdit}
+                            className="h-8 px-2"
+                          >
                             ✓
                           </Button>
                         </div>
                       ) : (
                         <>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm truncate">{conversation.title}</h3>
+                            <h3 className="font-medium text-sm truncate">
+                              {conversation.title}
+                            </h3>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(conversation.updated_at).toLocaleDateString('id-ID')}
+                              {new Date(
+                                conversation.updated_at
+                              ).toLocaleDateString("id-ID")}
                             </p>
                           </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem 
-                                onClick={() => handleTitleEdit(conversation.id, conversation.title)}
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleTitleEdit(
+                                    conversation.id,
+                                    conversation.title
+                                  )
+                                }
                               >
                                 <Edit3 className="h-4 w-4 mr-2" />
                                 Edit Judul
                               </DropdownMenuItem>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                  >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Hapus
                                   </DropdownMenuItem>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Hapus Obrolan</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                      Hapus Obrolan
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Apakah Anda yakin ingin menghapus obrolan ini? Tindakan ini tidak dapat dibatalkan.
+                                      Apakah Anda yakin ingin menghapus obrolan
+                                      ini? Tindakan ini tidak dapat dibatalkan.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Batal</AlertDialogCancel>
                                     <AlertDialogAction
-                                      onClick={() => deleteConversation(conversation.id)}
+                                      onClick={() =>
+                                        deleteConversation(conversation.id)
+                                      }
                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     >
                                       Hapus
@@ -456,7 +582,9 @@ const AICompanion = () => {
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">{currentConversation.title}</h1>
+                  <h1 className="text-xl font-bold text-foreground">
+                    {currentConversation.title}
+                  </h1>
                   <p className="text-sm text-muted-foreground">
                     Selalu siap mendengarkan dan membantu Anda
                   </p>
@@ -477,7 +605,9 @@ const AICompanion = () => {
                       <div
                         key={message.id}
                         className={`flex gap-3 ${
-                          message.sender === "user" ? "justify-end" : "justify-start"
+                          message.sender === "user"
+                            ? "justify-end"
+                            : "justify-start"
                         }`}
                       >
                         {message.sender === "ai" && (
@@ -487,7 +617,7 @@ const AICompanion = () => {
                             </AvatarFallback>
                           </Avatar>
                         )}
-                        
+
                         <div
                           className={`max-w-[70%] ${
                             message.sender === "user"
@@ -495,12 +625,16 @@ const AICompanion = () => {
                               : "bg-muted"
                           } rounded-lg px-4 py-3`}
                         >
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                          <p className={`text-xs mt-1 ${
-                            message.sender === "user"
-                              ? "text-primary-foreground/70"
-                              : "text-muted-foreground"
-                          }`}>
+                          <p className="text-sm whitespace-pre-wrap">
+                            {message.content}
+                          </p>
+                          <p
+                            className={`text-xs mt-1 ${
+                              message.sender === "user"
+                                ? "text-primary-foreground/70"
+                                : "text-muted-foreground"
+                            }`}
+                          >
                             {formatTime(message.created_at)}
                           </p>
                         </div>
@@ -514,7 +648,7 @@ const AICompanion = () => {
                         )}
                       </div>
                     ))}
-                    
+
                     {isTyping && (
                       <div className="flex gap-3 justify-start">
                         <Avatar className="h-8 w-8 mt-2">
@@ -525,8 +659,14 @@ const AICompanion = () => {
                         <div className="bg-muted rounded-lg px-4 py-3">
                           <div className="flex gap-1">
                             <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                            <div
+                              className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                              style={{ animationDelay: "0.1s" }}
+                            ></div>
+                            <div
+                              className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                              style={{ animationDelay: "0.2s" }}
+                            ></div>
                           </div>
                         </div>
                       </div>
@@ -548,8 +688,8 @@ const AICompanion = () => {
                     className="flex-1"
                     disabled={isTyping}
                   />
-                  <Button 
-                    onClick={sendMessage} 
+                  <Button
+                    onClick={sendMessage}
                     disabled={!inputMessage.trim() || isTyping}
                     className="gap-2"
                   >
@@ -558,7 +698,8 @@ const AICompanion = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Fitur ini masih dalam pengembangan. Respons AI saat ini hanya simulasi.
+                  Fitur ini masih dalam pengembangan. Respons AI saat ini hanya
+                  simulasi.
                 </p>
               </div>
             </div>
