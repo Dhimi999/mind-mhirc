@@ -1,7 +1,6 @@
 // supabase/functions/chat-ai/index.ts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-// PERUBAHAN 1: Impor dari esm.sh dengan cara standar
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
 
 const corsHeaders = {
@@ -16,7 +15,8 @@ serve(async (req) => {
   }
 
   try {
-    const { message } = await req.json();
+    // # PERUBAHAN: Ambil 'history' dan 'message' dari body
+    const { history, message } = await req.json();
     if (!message) {
       throw new Error("Message is required.");
     }
@@ -26,11 +26,16 @@ serve(async (req) => {
       throw new Error("Gemini API key not found in secrets.");
     }
 
-    // PERUBAHAN 2: Kembali ke cara pemanggilan standar
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const result = await model.generateContent(message);
+    // # PERUBAHAN: Gunakan riwayat untuk memulai sesi chat
+    const chat = model.startChat({
+      history: history || [] // Gunakan riwayat yang dikirim, atau array kosong jika tidak ada
+    });
+
+    // Kirim pesan baru dalam sesi chat yang sudah ada
+    const result = await chat.sendMessage(message);
     const response = await result.response;
     const text = response.text();
 

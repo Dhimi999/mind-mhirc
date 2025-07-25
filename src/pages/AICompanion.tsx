@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,13 +26,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +49,7 @@ interface Conversation {
   title: string;
   created_at: string;
   updated_at: string;
+  summary?: string | null; // Tambahkan kolom ini
 }
 
 const AICompanion = () => {
@@ -74,17 +68,32 @@ const AICompanion = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchConversations();
+    if (user) {
+      fetchConversations();
+    }
   }, [user]);
 
   useEffect(() => {
-    if (currentConversation) {
-      fetchMessages(currentConversation.id);
+    const conversationToSummarize = currentConversation;
+    const messagesToSummarize = messages;
+
+    if (conversationToSummarize) {
+      fetchMessages(conversationToSummarize.id);
     }
+
+    // Fungsi cleanup ini akan dijalankan saat 'currentConversation' BERUBAH
+    return () => {
+      // Pastikan ada percakapan sebelumnya dan ada pesan di dalamnya
+      if (conversationToSummarize && messagesToSummarize.length > 1) {
+        updateConversationSummaryIfNeeded(
+          conversationToSummarize,
+          messagesToSummarize
+        );
+      }
+    };
   }, [currentConversation]);
 
   useEffect(() => {
-    // Auto scroll to bottom when new message is added
     if (scrollAreaRef.current) {
       const scrollElement = scrollAreaRef.current.querySelector(
         "[data-radix-scroll-area-viewport]"
@@ -97,7 +106,6 @@ const AICompanion = () => {
 
   const fetchConversations = async () => {
     if (!user) return;
-
     try {
       setIsLoadingConversations(true);
       const { data, error } = await supabase
@@ -105,12 +113,8 @@ const AICompanion = () => {
         .select("*")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false });
-
       if (error) throw error;
-
       setConversations(data || []);
-
-      // Auto-select the first conversation if exists
       if (data && data.length > 0 && !currentConversation) {
         setCurrentConversation(data[0]);
       }
@@ -128,16 +132,13 @@ const AICompanion = () => {
 
   const fetchMessages = async (conversationId: string) => {
     if (!user) return;
-
     try {
       setIsLoadingMessages(true);
       const { data, error } = await supabase
         .from("ai_messages")
         .select("*")
         .eq("conversation_id", conversationId)
-        .eq("user_id", user.id)
         .order("created_at", { ascending: true });
-
       if (error) throw error;
       setMessages(
         (data || []).map((msg) => ({
@@ -157,11 +158,46 @@ const AICompanion = () => {
     }
   };
 
+  // const createNewConversation = async () => {
+  //   if (!user) return;
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from("ai_conversations")
+  //       .insert({
+  //         user_id: user.id,
+  //         title: `Obrolan ${new Date().toLocaleDateString("id-ID")}`
+  //       })
+  //       .select()
+  //       .single();
+  //     if (error) throw error;
+  //     await supabase.from("ai_messages").insert({
+  //       conversation_id: data.id,
+  //       user_id: user.id,
+  //       content:
+  //         "Halo! Saya adalah teman AI Anda. Saya di sini untuk mendengarkan dan membantu Anda. Bagaimana kabar Anda hari ini?",
+  //       sender: "ai"
+  //     });
+  //     fetchConversations();
+  //     setCurrentConversation(data);
+  //     toast({
+  //       title: "Obrolan Baru Dibuat",
+  //       description: "Obrolan baru berhasil dibuat"
+  //     });
+  //   } catch (error) {
+  //     console.error("Error creating conversation:", error);
+  //     toast({
+  //       title: "Gagal Membuat Obrolan",
+  //       description: "Terjadi kesalahan saat membuat obrolan baru",
+  //       variant: "destructive"
+  //     });
+  //   }
+  // };
   const createNewConversation = async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // 1. Buat percakapan baru di database dan dapatkan datanya kembali
+      const { data: newConversation, error: conversationError } = await supabase
         .from("ai_conversations")
         .insert({
           user_id: user.id,
@@ -170,19 +206,35 @@ const AICompanion = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (conversationError) throw conversationError;
 
-      // Add welcome message
-      await supabase.from("ai_messages").insert({
-        conversation_id: data.id,
-        user_id: user.id,
+      // 2. Siapkan pesan AI pertama secara lokal
+      const initialAiMessage: Message = {
+        id: `temp-ai-${Date.now()}`,
         content:
           "Halo! Saya adalah teman AI Anda. Saya di sini untuk mendengarkan dan membantu Anda. Bagaimana kabar Anda hari ini?",
-        sender: "ai"
-      });
+        sender: "ai",
+        created_at: new Date().toISOString(),
+        conversation_id: newConversation.id
+      };
 
-      setCurrentConversation(data);
-      fetchConversations();
+      // 3. Masukkan pesan AI pertama ke database (tanpa perlu menunggu selesai)
+      supabase
+        .from("ai_messages")
+        .insert({
+          conversation_id: newConversation.id,
+          user_id: user.id,
+          content: initialAiMessage.content,
+          sender: "ai"
+        })
+        .then(({ error }) => {
+          if (error) console.error("Gagal menyimpan pesan AI pertama:", error);
+        });
+
+      // 4. Perbarui state lokal secara langsung (Optimistic UI)
+      setConversations((prev) => [newConversation, ...prev]); // Tambahkan ke paling atas
+      setCurrentConversation(newConversation);
+      setMessages([initialAiMessage]); // Atur pesan pertama untuk UI
 
       toast({
         title: "Obrolan Baru Dibuat",
@@ -197,40 +249,41 @@ const AICompanion = () => {
       });
     }
   };
-
   const deleteConversation = async (conversationId: string) => {
+    const originalConversations = [...conversations];
+    const conversationToDelete = conversations.find(
+      (c) => c.id === conversationId
+    );
+
+    setConversations(
+      originalConversations.filter((c) => c.id !== conversationId)
+    );
+    if (currentConversation?.id === conversationId) {
+      const remaining = originalConversations.filter(
+        (c) => c.id !== conversationId
+      );
+      setCurrentConversation(remaining.length > 0 ? remaining[0] : null);
+      setMessages([]);
+    }
+
     try {
       const { error } = await supabase
         .from("ai_conversations")
         .delete()
         .eq("id", conversationId);
-
       if (error) throw error;
-
-      // If deleting current conversation, select another one or clear
-      if (currentConversation?.id === conversationId) {
-        const remainingConversations = conversations.filter(
-          (c) => c.id !== conversationId
-        );
-        setCurrentConversation(
-          remainingConversations.length > 0 ? remainingConversations[0] : null
-        );
-        setMessages([]);
-      }
-
-      fetchConversations();
-
-      toast({
-        title: "Obrolan Dihapus",
-        description: "Obrolan berhasil dihapus"
-      });
+      toast({ title: "Obrolan Dihapus" });
     } catch (error) {
       console.error("Error deleting conversation:", error);
       toast({
         title: "Gagal Menghapus",
-        description: "Terjadi kesalahan saat menghapus obrolan",
+        description: "Mengembalikan perubahan.",
         variant: "destructive"
       });
+      setConversations(originalConversations);
+      if (currentConversation?.id === conversationId) {
+        setCurrentConversation(conversationToDelete || null);
+      }
     }
   };
 
@@ -238,155 +291,197 @@ const AICompanion = () => {
     conversationId: string,
     title: string
   ) => {
+    const originalConversations = [...conversations];
+    const originalTitle = conversations.find(
+      (c) => c.id === conversationId
+    )?.title;
+
+    const updatedConversations = conversations.map((c) =>
+      c.id === conversationId
+        ? { ...c, title, updated_at: new Date().toISOString() }
+        : c
+    );
+    setConversations(updatedConversations);
+    if (currentConversation?.id === conversationId) {
+      setCurrentConversation((prev) => (prev ? { ...prev, title } : null));
+    }
+
     try {
       const { error } = await supabase
         .from("ai_conversations")
         .update({ title })
         .eq("id", conversationId);
-
       if (error) throw error;
-
-      fetchConversations();
-      if (currentConversation?.id === conversationId) {
-        setCurrentConversation({ ...currentConversation, title });
-      }
-
-      toast({
-        title: "Judul Diperbarui",
-        description: "Judul obrolan berhasil diperbarui"
-      });
+      toast({ title: "Judul Diperbarui" });
     } catch (error) {
-      console.error("Error updating conversation title:", error);
+      console.error("Error updating title:", error);
       toast({
         title: "Gagal Memperbarui",
-        description: "Terjadi kesalahan saat memperbarui judul",
+        description: "Mengembalikan perubahan.",
         variant: "destructive"
       });
+      setConversations(originalConversations);
+      if (currentConversation?.id === conversationId) {
+        setCurrentConversation((prev) =>
+          prev ? { ...prev, title: originalTitle || prev.title } : null
+        );
+      }
     }
   };
 
-  // const sendMessage = async () => {
-  //   if (!inputMessage.trim() || !currentConversation || !user) return;
+  const updateConversationSummaryIfNeeded = async (
+    conversation: Conversation,
+    allMessages: Message[]
+  ) => {
+    // 1. Ambil 10 pesan terakhir untuk dijadikan konteks
+    const recentMessages = allMessages.slice(-10);
+    if (recentMessages.length < 4) return; // Jangan rangkum jika percakapan terlalu pendek
 
-  //   const userMessageContent = inputMessage;
-  //   setInputMessage("");
-  //   setIsTyping(true);
+    // 2. Format pesan menjadi satu string
+    const conversationContext = recentMessages
+      .map((msg) => `${msg.sender === "user" ? "User" : "AI"}: ${msg.content}`)
+      .join("\n");
 
-  //   try {
-  //     // Save user message
-  //     const { data: userMessage, error: userError } = await supabase
-  //       .from('ai_messages')
-  //       .insert({
-  //         conversation_id: currentConversation.id,
-  //         user_id: user.id,
-  //         content: userMessageContent,
-  //         sender: "user"
-  //       })
-  //       .select()
-  //       .single();
+    // 3. Buat prompt khusus untuk merangkum
+    const summarizationPrompt = `
+    Berdasarkan percakapan berikut, buatlah sebuah rangkuman singkat (sekitar 5-7 kata) dalam Bahasa Indonesia yang menggambarkan topik utama.
 
-  //     if (userError) throw userError;
+    Percakapan:
+    ---
+    ${conversationContext}
+    ---
 
-  //     // Refresh messages
-  //     fetchMessages(currentConversation.id);
+    Contoh output: "Rencana Liburan ke Bali" atau "Diskusi Proyek Supabase".
 
-  //     // Simulate AI response with delay
-  //     setTimeout(async () => {
-  //       const aiResponses = [
-  //         "Terima kasih telah berbagi dengan saya. Bagaimana perasaan Anda setelah menceritakan hal tersebut?",
-  //         "Saya mendengar Anda. Itu terdengar seperti pengalaman yang cukup menantang. Apakah ada hal yang bisa membantu Anda merasa lebih baik?",
-  //         "Saya memahami apa yang Anda rasakan. Kadang-kadang berbicara tentang perasaan kita bisa membantu melegakan pikiran.",
-  //         "Itu sangat menarik. Bisakah Anda ceritakan lebih lanjut tentang hal tersebut?",
-  //         "Saya menghargai kepercayaan Anda untuk berbagi dengan saya. Apakah ada hal lain yang ingin Anda diskusikan?",
-  //         "Terdengar seperti Anda sedang melewati banyak hal. Ingatlah bahwa tidak apa-apa untuk merasakan apa yang Anda rasakan saat ini.",
-  //         "Saya di sini untuk mendengarkan Anda. Apakah ada strategi atau aktivitas yang biasanya membantu Anda merasa lebih baik?"
-  //       ];
+    Rangkuman:
+  `;
 
-  //       const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+    try {
+      // Panggil AI untuk mendapatkan rangkuman
+      const { data, error } = await supabase.functions.invoke("chat-ai", {
+        body: { message: summarizationPrompt }
+      });
 
-  //       try {
-  //         await supabase
-  //           .from('ai_messages')
-  //           .insert({
-  //             conversation_id: currentConversation.id,
-  //             user_id: user.id,
-  //             content: randomResponse,
-  //             sender: "ai"
-  //           });
+      if (error) throw error;
 
-  //         fetchMessages(currentConversation.id);
-  //       } catch (error) {
-  //         console.error("Error saving AI message:", error);
-  //       }
+      const newSummary = data.text.trim();
 
-  //       setIsTyping(false);
-  //     }, 1500 + Math.random() * 1000);
+      // LANGKAH 1: Perbarui state lokal secara optimis untuk UI yang responsif
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === conversation.id ? { ...c, summary: newSummary } : c
+        )
+      );
+      if (currentConversation?.id === conversation.id) {
+        setCurrentConversation((prev) =>
+          prev ? { ...prev, summary: newSummary } : null
+        );
+      }
 
-  //   } catch (error) {
-  //     console.error("Error sending message:", error);
-  //     toast({
-  //       title: "Gagal Mengirim Pesan",
-  //       description: "Terjadi kesalahan saat mengirim pesan",
-  //       variant: "destructive"
-  //     });
-  //     setIsTyping(false);
-  //   }
-  // };
+      // LANGKAH 2: Simpan perubahan ke database di latar belakang
+      // Jika ini gagal, UI sudah terlanjur update, namun untuk fitur non-kritis seperti ini tidak masalah.
+      await supabase
+        .from("ai_conversations")
+        .update({ summary: newSummary, updated_at: new Date().toISOString() })
+        .eq("id", conversation.id);
+    } catch (error) {
+      console.error("Gagal membuat rangkuman:", error);
+      // Tidak perlu menampilkan toast error ke pengguna agar tidak mengganggu
+    }
+  };
 
   const sendMessage = async () => {
+    // =================== 1. Validasi & Persiapan Data ===================
     if (!inputMessage.trim() || !currentConversation || !user) return;
 
     const userMessageContent = inputMessage;
+    const conversationId = currentConversation.id;
+
+    const tempUserMessage: Message = {
+      id: `temp-user-${Date.now()}`,
+      content: userMessageContent,
+      sender: "user",
+      created_at: new Date().toISOString(),
+      conversation_id: conversationId
+    };
+
+    // Ambil beberapa pesan terakhir
+    const recentMessages = messages.slice(-10);
+    // Cari indeks pesan 'user' pertama sebagai titik awal riwayat yang valid
+    const firstUserIndex = recentMessages.findIndex(
+      (msg) => msg.sender === "user"
+    );
+    // Buat riwayat yang valid
+    const validHistory =
+      firstUserIndex !== -1
+        ? recentMessages.slice(firstUserIndex).map((msg) => ({
+            role: msg.sender === "user" ? "user" : "model",
+            parts: [{ text: msg.content }]
+          }))
+        : [];
+
+    // =================== 2. Update UI Secara Optimis ===================
     setInputMessage("");
+    setMessages((prev) => [...prev, tempUserMessage]);
+    setIsTyping(true);
 
+    // =================== 3. Proses Asynchronous (API & DB) ===================
     try {
-      // 1. Simpan pesan pengguna ke tabel (ini sudah benar)
-      await supabase.from("ai_messages").insert({
-        conversation_id: currentConversation.id,
-        user_id: user.id,
-        content: userMessageContent,
-        sender: "user"
-      });
-
-      // Panggil fetchMessages untuk langsung menampilkan pesan pengguna
-      fetchMessages(currentConversation.id);
-      setIsTyping(true); // Tampilkan indikator "mengetik"
-
-      // 2. Panggil Supabase Edge Function 'chat-ai' untuk mendapatkan respons AI
       const { data: aiData, error: functionError } =
         await supabase.functions.invoke("chat-ai", {
-          body: { message: userMessageContent }
+          body: {
+            history: validHistory, // Gunakan riwayat yang sudah divalidasi
+            message: userMessageContent
+          }
         });
 
-      // Jika ada error saat memanggil function, hentikan proses
-      if (functionError) {
-        throw functionError;
-      }
+      if (functionError) throw functionError;
 
       const aiResponseContent = aiData.text;
-
-      // 3. Simpan respons AI yang asli ke Supabase
-      await supabase.from("ai_messages").insert({
-        conversation_id: currentConversation.id,
-        user_id: user.id,
+      const tempAiMessage: Message = {
+        id: `temp-ai-${Date.now()}`,
         content: aiResponseContent,
-        sender: "ai"
+        sender: "ai",
+        created_at: new Date().toISOString(),
+        conversation_id: conversationId
+      };
+
+      // Update state AI dan pemicu rangkuman
+      setMessages((prevMessages) => {
+        const finalMessages = [...prevMessages, tempAiMessage];
+
+        return finalMessages;
       });
 
-      // 4. Perbarui daftar pesan di UI untuk menampilkan respons AI
-      fetchMessages(currentConversation.id);
+      setIsTyping(false);
+
+      // Simpan pesan ke database
+      await Promise.all([
+        supabase.from("ai_messages").insert({
+          conversation_id: conversationId,
+          user_id: user.id,
+          content: userMessageContent,
+          sender: "user"
+        }),
+        supabase.from("ai_messages").insert({
+          conversation_id: conversationId,
+          user_id: user.id,
+          content: aiResponseContent,
+          sender: "ai"
+        })
+      ]);
     } catch (error) {
       console.error("Error invoking function or sending message:", error);
       toast({
         title: "Gagal Mendapat Respons AI",
-        description: "Terjadi kesalahan saat berkomunikasi dengan AI.",
+        description: "Pesan Anda tidak terkirim.",
         variant: "destructive"
       });
-    } finally {
-      // 5. Hentikan indikator "mengetik"
+      setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id));
       setIsTyping(false);
     }
   };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -475,20 +570,14 @@ const AICompanion = () => {
                             }}
                             className="h-8 text-sm"
                             autoFocus
+                            onBlur={saveTitleEdit}
                           />
-                          <Button
-                            size="sm"
-                            onClick={saveTitleEdit}
-                            className="h-8 px-2"
-                          >
-                            ✓
-                          </Button>
                         </div>
                       ) : (
                         <>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-medium text-sm truncate">
-                              {conversation.title}
+                              {conversation.summary || conversation.title}
                             </h3>
                             <p className="text-xs text-muted-foreground">
                               {new Date(
@@ -522,6 +611,7 @@ const AICompanion = () => {
                                 <AlertDialogTrigger asChild>
                                   <DropdownMenuItem
                                     onSelect={(e) => e.preventDefault()}
+                                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Hapus
@@ -583,7 +673,7 @@ const AICompanion = () => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-foreground">
-                    {currentConversation.title}
+                    {currentConversation.summary || currentConversation.title}
                   </h1>
                   <p className="text-sm text-muted-foreground">
                     Selalu siap mendengarkan dan membantu Anda
@@ -611,7 +701,7 @@ const AICompanion = () => {
                         }`}
                       >
                         {message.sender === "ai" && (
-                          <Avatar className="h-8 w-8 mt-2">
+                          <Avatar className="h-8 w-8 mt-2 flex-shrink-0">
                             <AvatarFallback className="bg-primary text-primary-foreground">
                               <Bot className="h-4 w-4" />
                             </AvatarFallback>
@@ -619,17 +709,17 @@ const AICompanion = () => {
                         )}
 
                         <div
-                          className={`max-w-[70%] ${
+                          className={`max-w-[70%] rounded-lg px-4 py-3 ${
                             message.sender === "user"
                               ? "bg-primary text-primary-foreground"
                               : "bg-muted"
-                          } rounded-lg px-4 py-3`}
+                          }`}
                         >
                           <p className="text-sm whitespace-pre-wrap">
                             {message.content}
                           </p>
                           <p
-                            className={`text-xs mt-1 ${
+                            className={`text-xs mt-1 text-right ${
                               message.sender === "user"
                                 ? "text-primary-foreground/70"
                                 : "text-muted-foreground"
@@ -640,7 +730,7 @@ const AICompanion = () => {
                         </div>
 
                         {message.sender === "user" && (
-                          <Avatar className="h-8 w-8 mt-2">
+                          <Avatar className="h-8 w-8 mt-2 flex-shrink-0">
                             <AvatarFallback className="bg-secondary text-secondary-foreground">
                               <User className="h-4 w-4" />
                             </AvatarFallback>
@@ -651,13 +741,13 @@ const AICompanion = () => {
 
                     {isTyping && (
                       <div className="flex gap-3 justify-start">
-                        <Avatar className="h-8 w-8 mt-2">
+                        <Avatar className="h-8 w-8 mt-2 flex-shrink-0">
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             <Bot className="h-4 w-4" />
                           </AvatarFallback>
                         </Avatar>
                         <div className="bg-muted rounded-lg px-4 py-3">
-                          <div className="flex gap-1">
+                          <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
                             <div
                               className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
@@ -697,10 +787,6 @@ const AICompanion = () => {
                     Kirim
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Fitur ini masih dalam pengembangan. Respons AI saat ini hanya
-                  simulasi.
-                </p>
               </div>
             </div>
           </>
