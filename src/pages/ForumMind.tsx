@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Heart, MessageCircle, Trash2, Send, Users } from "lucide-react";
 import {
   Dialog,
@@ -14,8 +13,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
+import { ForumHeader } from "@/components/forum/ForumHeader";
+import { ForumProfile } from "@/components/forum/ForumProfile";
+import { ForumNotifications } from "@/components/forum/ForumNotifications";
+import { CreatePost } from "@/components/forum/CreatePost";
 
 interface ForumUser {
   id: string;
@@ -49,11 +53,17 @@ const ForumMind = () => {
   const [showUsernameDialog, setShowUsernameDialog] = useState(false);
   const [username, setUsername] = useState("");
   const [posts, setPosts] = useState<ForumPost[]>([]);
-  const [newPostContent, setNewPostContent] = useState("");
   const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
   const [comments, setComments] = useState<ForumComment[]>([]);
   const [newCommentContent, setNewCommentContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const POSTS_PER_PAGE = 10;
 
   useEffect(() => {
     if (user) {
@@ -63,9 +73,22 @@ const ForumMind = () => {
 
   useEffect(() => {
     if (forumUser) {
-      fetchPosts();
+      fetchPosts(true);
     }
   }, [forumUser]);
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop !== document.documentElement.offsetHeight || isLoadingMore || !hasMorePosts) {
+        return;
+      }
+      loadMorePosts();
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isLoadingMore, hasMorePosts]);
 
   const checkForumUser = async () => {
     if (!user) return;
@@ -140,15 +163,19 @@ const ForumMind = () => {
     }
   };
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (reset = false) => {
     try {
+      const startRange = reset ? 0 : page * POSTS_PER_PAGE;
+      const endRange = startRange + POSTS_PER_PAGE - 1;
+
       const { data, error } = await supabase
         .from("forum_posts")
         .select(`
           *,
           forum_users(id, username, user_id)
         `)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(startRange, endRange);
 
       if (error) throw error;
 
@@ -169,7 +196,16 @@ const ForumMind = () => {
         })
       );
 
-      setPosts(postsWithLikes);
+      if (reset) {
+        setPosts(postsWithLikes);
+        setPage(1);
+      } else {
+        setPosts(prev => [...prev, ...postsWithLikes]);
+        setPage(prev => prev + 1);
+      }
+
+      // Check if there are more posts
+      setHasMorePosts(postsWithLikes.length === POSTS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching posts:", error);
       toast({
@@ -180,32 +216,16 @@ const ForumMind = () => {
     }
   };
 
-  const createPost = async () => {
-    if (!user || !forumUser || !newPostContent.trim()) return;
+  const loadMorePosts = useCallback(async () => {
+    if (isLoadingMore || !hasMorePosts) return;
 
-    try {
-      const { error } = await supabase.from("forum_posts").insert({
-        user_id: user.id,
-        forum_user_id: forumUser.id,
-        content: newPostContent.trim(),
-      });
+    setIsLoadingMore(true);
+    await fetchPosts(false);
+    setIsLoadingMore(false);
+  }, [isLoadingMore, hasMorePosts, page]);
 
-      if (error) throw error;
-
-      setNewPostContent("");
-      fetchPosts();
-      toast({
-        title: "Berhasil",
-        description: "Postingan berhasil dibuat!",
-      });
-    } catch (error) {
-      console.error("Error creating post:", error);
-      toast({
-        title: "Error",
-        description: "Gagal membuat postingan",
-        variant: "destructive",
-      });
-    }
+  const handlePostCreated = () => {
+    fetchPosts(true);
   };
 
   const toggleLike = async (postId: string, isLiked: boolean) => {
@@ -229,7 +249,7 @@ const ForumMind = () => {
         if (error) throw error;
       }
 
-      fetchPosts();
+      fetchPosts(true);
     } catch (error) {
       console.error("Error toggling like:", error);
       toast({
@@ -249,7 +269,7 @@ const ForumMind = () => {
 
       if (error) throw error;
 
-      fetchPosts();
+      fetchPosts(true);
       toast({
         title: "Berhasil",
         description: "Postingan berhasil dihapus",
@@ -320,7 +340,7 @@ const ForumMind = () => {
 
       setNewCommentContent("");
       fetchComments(selectedPost.id);
-      fetchPosts(); // Refresh posts to update comment count
+      fetchPosts(true); // Refresh posts to update comment count
       toast({
         title: "Berhasil",
         description: "Komentar berhasil dibuat!",
@@ -345,20 +365,11 @@ const ForumMind = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-          <Users className="h-8 w-8 text-primary" />
-          Forum Mind
-        </h1>
-        <p className="text-muted-foreground">
-          Berbagi cerita dan pengalaman secara anonim dengan komunitas
-        </p>
-        {forumUser && (
-          <p className="text-sm text-primary mt-2">
-            Anda masuk sebagai: <strong>@{forumUser.username}</strong>
-          </p>
-        )}
-      </div>
+      <ForumHeader 
+        forumUser={forumUser}
+        onProfileClick={() => setShowProfile(true)}
+        onNotificationClick={() => setShowNotifications(true)}
+      />
 
       {/* Username Dialog */}
       <Dialog open={showUsernameDialog} onOpenChange={setShowUsernameDialog}>
@@ -385,24 +396,23 @@ const ForumMind = () => {
 
       {forumUser && (
         <>
-          {/* Create Post */}
-          <Card className="mb-6">
-            <CardHeader>
-              <h2 className="text-lg font-semibold">Bagikan Pikiran Anda</h2>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                placeholder="Apa yang ingin Anda bagikan hari ini?"
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                className="min-h-[100px]"
-              />
-              <Button onClick={createPost} disabled={!newPostContent.trim()}>
-                <Send className="h-4 w-4 mr-2" />
-                Posting
-              </Button>
-            </CardContent>
-          </Card>
+          <CreatePost 
+            user={user}
+            forumUser={forumUser}
+            onPostCreated={handlePostCreated}
+          />
+
+          <ForumProfile
+            forumUser={forumUser}
+            isOpen={showProfile}
+            onClose={() => setShowProfile(false)}
+          />
+
+          <ForumNotifications
+            forumUser={forumUser}
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+          />
 
           {/* Posts */}
           <div className="space-y-4">
@@ -535,7 +545,14 @@ const ForumMind = () => {
               </Card>
             ))}
 
-            {posts.length === 0 && (
+            {isLoadingMore && (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-muted-foreground mt-2">Memuat postingan lainnya...</p>
+              </div>
+            )}
+
+            {posts.length === 0 && !isLoading && (
               <Card>
                 <CardContent className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -544,6 +561,12 @@ const ForumMind = () => {
                   </p>
                 </CardContent>
               </Card>
+            )}
+
+            {!hasMorePosts && posts.length > 0 && (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">Semua postingan telah dimuat</p>
+              </div>
             )}
           </div>
         </>
