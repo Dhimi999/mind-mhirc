@@ -338,6 +338,13 @@ const Dashboard = () => {
                       Teman AI
                     </Link>
                     <Link
+                      to="/dashboard/mindforum"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
+                      <Users className="mr-3 h-5 w-5" />
+                      Forum Mind
+                    </Link>
+                    <Link
                       to="/dashboard/messages"
                       className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
                     >
@@ -510,6 +517,7 @@ const Dashboard = () => {
                 />
                 <Route path="diary/*" element={<DashboardDiary user={mockUser} />} />
                 <Route path="ai-companion/*" element={<DashboardAICompanion user={mockUser} />} />
+                <Route path="mindforum/*" element={<DashboardForumMind user={mockUser} />} />
                 <Route path="messages/*" element={<MessageManagement />} />
                 {mockUser.role === "Teacher" && (
                   <Route
@@ -961,6 +969,15 @@ const DashboardAICompanion = ({ user }: { user: any }) => {
   return (
     <React.Suspense fallback={<div className="flex justify-center items-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
       <AICompanion />
+    </React.Suspense>
+  );
+};
+
+const DashboardForumMind = ({ user }: { user: any }) => {
+  const ForumMind = React.lazy(() => import("./ForumMind"));
+  return (
+    <React.Suspense fallback={<div className="flex justify-center items-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+      <ForumMind />
     </React.Suspense>
   );
 };

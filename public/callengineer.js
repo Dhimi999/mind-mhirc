@@ -3,7 +3,7 @@
   const config = {
     HIGHLIGHT_COLOR: "#0da2e7",
     HIGHLIGHT_BG: "#0da2e71a",
-    ALLOWED_ORIGINS: ["http://localhost:4000", "https://www.vercel.com", "https://www.mind-mhirc.my.id", "https://mind-mhirc.my.id", "https://mind-mhirc.vercel.app"],
+    ALLOWED_ORIGINS: ["http://localhost:4000", "https://www.vercel.com", "https://www.mind-mhirc.my.id", "https://mind-mhirc.my.id", "https://mind-mhirc.vercel.app", "https://www.mind-mhirc.my.id"],
     DEBOUNCE_DELAY: 10,
     Z_INDEX: 10000,
     TOOLTIP_OFFSET: 25,
