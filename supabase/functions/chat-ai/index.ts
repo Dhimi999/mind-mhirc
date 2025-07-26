@@ -27,7 +27,7 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemma-3-12b-it" });
 
     // # PERUBAHAN: Gunakan riwayat untuk memulai sesi chat
     const chat = model.startChat({
