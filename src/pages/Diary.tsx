@@ -1,16 +1,13 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Calendar, Trash2, Edit3, FileText, Palette, Image, ChevronLeft, ChevronRight, Heart, Coffee, Sun, Moon, Star } from "lucide-react";
+import { Plus, Search, Calendar, Trash2, Edit3, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { DiaryEntryForm } from "@/components/diary/DiaryEntryForm";
 
 interface DiaryEntry {
   id: string;
@@ -23,57 +20,7 @@ interface DiaryEntry {
   user_id: string;
 }
 
-interface Template {
-  id: string;
-  name: string;
-  icon: any;
-  color: string;
-  content: string;
-}
-
-const templates: Template[] = [
-  {
-    id: "gratitude",
-    name: "Rasa Syukur",
-    icon: Heart,
-    color: "#ff6b6b",
-    content: "Hari ini saya bersyukur untuk:\n\n1. \n2. \n3. \n\nMoment yang membuat saya bahagia:"
-  },
-  {
-    id: "reflection",
-    name: "Refleksi Harian",
-    icon: Coffee,
-    color: "#4ecdc4",
-    content: "Refleksi hari ini:\n\nHal yang berjalan baik:\n\nHal yang bisa diperbaiki:\n\nPelajaran yang didapat:"
-  },
-  {
-    id: "mood",
-    name: "Mood Tracker",
-    icon: Sun,
-    color: "#ffe66d",
-    content: "Mood hari ini: \n\nPenyebab perasaan ini:\n\nCara menghadapinya:\n\nHal positif hari ini:"
-  },
-  {
-    id: "dreams",
-    name: "Mimpi & Aspirasi",
-    icon: Star,
-    color: "#a8e6cf",
-    content: "Mimpi atau aspirasi:\n\nLangkah yang akan diambil:\n\nTarget waktu:\n\nMotivasi:"
-  },
-  {
-    id: "evening",
-    name: "Refleksi Malam",
-    icon: Moon,
-    color: "#b4a7d6",
-    content: "Sebelum tidur, saya ingin mencatat:\n\nHighlight hari ini:\n\nHal yang membuat tenang:\n\nRencana besok:"
-  }
-];
-
-const themeColors = [
-  "#ffffff", "#fff2cc", "#ffe6cc", "#ffcccc", "#ffccf2",
-  "#e6ccff", "#ccccff", "#cce6ff", "#ccffff", "#ccffe6",
-  "#ccffcc", "#e6ffcc", "#f0f0f0", "#e0e0e0", "#d0d0d0"
-];
+// Remove templates and colors from here as they're now in DiaryEntryForm
 
 const Diary = () => {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
@@ -88,7 +35,7 @@ const Diary = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  // Remove selectedTemplate as it's handled in DiaryEntryForm
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -123,8 +70,8 @@ const Diary = () => {
     }
   };
 
-  const saveEntry = async () => {
-    if (!user || !formData.title.trim() || !formData.content.trim()) {
+  const saveEntry = async (data: { title: string; content: string; theme_color: string; background_image: string }) => {
+    if (!user || !data.title.trim() || !data.content.trim()) {
       toast({
         title: "Data Tidak Lengkap",
         description: "Harap isi judul dan isi catatan",
@@ -138,10 +85,10 @@ const Diary = () => {
         const { error } = await supabase
           .from('diary_entries')
           .update({
-            title: formData.title,
-            content: formData.content,
-            theme_color: formData.theme_color,
-            background_image: formData.background_image || null
+            title: data.title,
+            content: data.content,
+            theme_color: data.theme_color,
+            background_image: data.background_image || null
           })
           .eq('id', editingEntry.id);
 
@@ -156,10 +103,10 @@ const Diary = () => {
           .from('diary_entries')
           .insert({
             user_id: user.id,
-            title: formData.title,
-            content: formData.content,
-            theme_color: formData.theme_color,
-            background_image: formData.background_image || null
+            title: data.title,
+            content: data.content,
+            theme_color: data.theme_color,
+            background_image: data.background_image || null
           });
 
         if (error) throw error;
@@ -173,7 +120,6 @@ const Diary = () => {
       setFormData({ title: "", content: "", theme_color: "#ffffff", background_image: "" });
       setEditingEntry(null);
       setIsDialogOpen(false);
-      setSelectedTemplate("");
       fetchEntries();
     } catch (error) {
       console.error("Error saving diary entry:", error);
@@ -224,24 +170,10 @@ const Diary = () => {
   const openNewDialog = () => {
     setEditingEntry(null);
     setFormData({ title: "", content: "", theme_color: "#ffffff", background_image: "" });
-    setSelectedTemplate("");
     setIsDialogOpen(true);
   };
 
-  const handleTemplateSelect = (templateId: string) => {
-    if (!templateId) return;
-    
-    const template = templates.find(t => t.id === templateId);
-    if (template) {
-      setFormData({
-        ...formData,
-        title: template.name,
-        content: template.content,
-        theme_color: template.color
-      });
-      setSelectedTemplate(templateId);
-    }
-  };
+  // Remove this function as template handling is now in DiaryEntryForm
 
   const filteredEntries = entries.filter(entry =>
     entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -280,94 +212,23 @@ const Diary = () => {
             Tulis dan simpan catatan harian Anda di sini
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNewDialog} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Catatan Baru
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingEntry ? "Edit Catatan" : "Catatan Baru"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6">
-              {!editingEntry && (
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Template (Opsional)</label>
-                  <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih template atau mulai dari kosong" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {templates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          <div className="flex items-center gap-2">
-                            <template.icon className="h-4 w-4" style={{ color: template.color }} />
-                            {template.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Judul</label>
-                  <Input
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Masukkan judul catatan..."
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block flex items-center gap-2">
-                    <Palette className="h-4 w-4" />
-                    Warna Tema
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {themeColors.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className={`w-8 h-8 rounded-full border-2 ${
-                          formData.theme_color === color ? 'border-primary' : 'border-muted'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => setFormData({ ...formData, theme_color: color })}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Isi Catatan</label>
-                <Textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  placeholder="Tulis catatan harian Anda di sini..."
-                  className="min-h-[300px] w-full"
-                  style={{ backgroundColor: formData.theme_color }}
-                />
-              </div>
-              
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Batal
-                </Button>
-                <Button onClick={saveEntry}>
-                  {editingEntry ? "Perbarui" : "Simpan"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={openNewDialog} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Catatan Baru
+        </Button>
+        
+        <DiaryEntryForm
+          isOpen={isDialogOpen}
+          onClose={() => {
+            setIsDialogOpen(false);
+            if (!editingEntry) {
+              setFormData({ title: "", content: "", theme_color: "#ffffff", background_image: "" });
+            }
+          }}
+          onSave={saveEntry}
+          initialData={editingEntry ? formData : undefined}
+          isEditing={!!editingEntry}
+        />
       </div>
 
       <div className="flex items-center gap-4">

@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MessageCircle, Trash2, Send, Users } from "lucide-react";
+import { Heart, MessageCircle, Trash2, Send, Users, MoreHorizontal } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +14,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format, differenceInHours } from "date-fns";
 import { id } from "date-fns/locale";
 import { ForumHeader } from "@/components/forum/ForumHeader";
 import { ForumProfile } from "@/components/forum/ForumProfile";
 import { ForumNotifications } from "@/components/forum/ForumNotifications";
 import { CreatePost } from "@/components/forum/CreatePost";
+import { ForumPostSkeletonList } from "@/components/forum/ForumPostSkeleton";
+import { formatPostDate } from "@/utils/dateFormat";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ForumUser {
   id: string;
@@ -62,6 +70,8 @@ const ForumMind = () => {
   const [page, setPage] = useState(0);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [showSkeletonTimer, setShowSkeletonTimer] = useState(false);
 
   const POSTS_PER_PAGE = 10;
 
@@ -73,7 +83,15 @@ const ForumMind = () => {
 
   useEffect(() => {
     if (forumUser) {
+      // Show skeleton for 5 seconds while fetching posts
+      setShowSkeletonTimer(true);
+      const timer = setTimeout(() => {
+        setShowSkeletonTimer(false);
+      }, 5000);
+      
       fetchPosts(true);
+      
+      return () => clearTimeout(timer);
     }
   }, [forumUser]);
 
@@ -231,6 +249,17 @@ const ForumMind = () => {
   const toggleLike = async (postId: string, isLiked: boolean) => {
     if (!user) return;
 
+    // Optimistic update for better UX
+    setPosts(prev => prev.map(post => 
+      post.id === postId 
+        ? { 
+            ...post, 
+            is_liked: !isLiked, 
+            likes_count: isLiked ? post.likes_count - 1 : post.likes_count + 1 
+          }
+        : post
+    ));
+
     try {
       if (isLiked) {
         const { error } = await supabase
@@ -249,9 +278,20 @@ const ForumMind = () => {
         if (error) throw error;
       }
 
+      // Refresh posts to get accurate counts from server
       fetchPosts(true);
     } catch (error) {
       console.error("Error toggling like:", error);
+      // Revert optimistic update on error
+      setPosts(prev => prev.map(post => 
+        post.id === postId 
+          ? { 
+              ...post, 
+              is_liked: isLiked, 
+              likes_count: isLiked ? post.likes_count + 1 : post.likes_count - 1 
+            }
+          : post
+      ));
       toast({
         title: "Error",
         description: "Gagal memproses like",
@@ -285,6 +325,8 @@ const ForumMind = () => {
   };
 
   const fetchComments = async (postId: string) => {
+    setComments([]); // Clear previous comments to prevent showing wrong data
+    setIsLoadingComments(true);
     try {
       const { data, error } = await supabase
         .from("forum_comments")
@@ -322,6 +364,8 @@ const ForumMind = () => {
         description: "Gagal memuat komentar",
         variant: "destructive",
       });
+    } finally {
+      setIsLoadingComments(false);
     }
   };
 
@@ -355,10 +399,50 @@ const ForumMind = () => {
     }
   };
 
+  const deleteComment = async (commentId: string) => {
+    try {
+      const { error } = await supabase
+        .from("forum_comments")
+        .delete()
+        .eq("id", commentId);
+
+      if (error) throw error;
+
+      if (selectedPost) {
+        fetchComments(selectedPost.id);
+        fetchPosts(true); // Refresh posts to update comment count
+      }
+      toast({
+        title: "Berhasil",
+        description: "Komentar berhasil dihapus",
+      });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus komentar",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <ForumHeader 
+          forumUser={null}
+          onProfileClick={() => {}}
+          onNotificationClick={() => {}}
+        />
+        <div className="mb-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-[120px] z-10 border-primary/20">
+          {/* Skeleton for create post */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="h-10 bg-muted rounded animate-pulse" />
+            </CardContent>
+          </Card>
+        </div>
+        <ForumPostSkeletonList />
       </div>
     );
   }
@@ -424,23 +508,32 @@ const ForumMind = () => {
                       <p className="font-semibold text-primary">
                         @{post.forum_users.username}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(post.created_at), {
-                          addSuffix: true,
-                          locale: id,
-                        })}
-                      </p>
-                    </div>
-                    {user?.id === post.forum_users.user_id && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deletePost(post.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                       <p className="text-xs text-muted-foreground">
+                         {formatPostDate(post.created_at)}
+                       </p>
+                     </div>
+                     {user?.id === post.forum_users.user_id && (
+                       <DropdownMenu>
+                         <DropdownMenuTrigger asChild>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             className="h-8 w-8 p-0"
+                           >
+                             <MoreHorizontal className="h-4 w-4" />
+                           </Button>
+                         </DropdownMenuTrigger>
+                         <DropdownMenuContent align="end">
+                           <DropdownMenuItem
+                             onClick={() => deletePost(post.id)}
+                             className="text-destructive"
+                           >
+                             <Trash2 className="h-4 w-4 mr-2" />
+                             Hapus Postingan
+                           </DropdownMenuItem>
+                         </DropdownMenuContent>
+                       </DropdownMenu>
+                     )}
                   </div>
                   <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
                   <div className="flex items-center gap-4">
@@ -484,41 +577,59 @@ const ForumMind = () => {
                             <p className="whitespace-pre-wrap">{post.content}</p>
                           </div>
 
-                          {/* Comments */}
-                          <div className="space-y-3 max-h-60 overflow-y-auto">
-                            {comments.map((comment) => (
-                              <div key={comment.id} className="border-l-2 border-muted pl-4">
-                                <div className="flex justify-between items-start mb-2">
-                                  <p className="font-semibold text-primary text-sm">
-                                    @{comment.forum_users.username}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {formatDistanceToNow(new Date(comment.created_at), {
-                                      addSuffix: true,
-                                      locale: id,
-                                    })}
-                                  </p>
+                           {/* Comments */}
+                            <div className="space-y-3 max-h-60 overflow-y-auto">
+                              {isLoadingComments ? (
+                                <div className="text-center py-4">
+                                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
+                                  <p className="text-sm text-muted-foreground">Memuat komentar...</p>
                                 </div>
-                                <p className="text-sm whitespace-pre-wrap mb-2">
-                                  {comment.content}
-                                </p>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className={`text-xs ${
-                                    comment.is_liked ? "text-red-500" : ""
-                                  }`}
-                                >
-                                  <Heart
-                                    className={`h-3 w-3 mr-1 ${
-                                      comment.is_liked ? "fill-current" : ""
-                                    }`}
-                                  />
-                                  {comment.likes_count}
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
+                              ) : comments.length === 0 ? (
+                                <div className="text-center py-4">
+                                  <p className="text-sm text-muted-foreground">Belum ada komentar</p>
+                                </div>
+                              ) : (
+                                comments.map((comment) => (
+                                <div key={comment.id} className="border-l-2 border-muted pl-4">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-primary text-sm">
+                                        @{comment.forum_users.username}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {formatPostDate(comment.created_at)}
+                                      </p>
+                                    </div>
+                                    {user?.id === comment.forum_users.user_id && (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0"
+                                          >
+                                            <MoreHorizontal className="h-3 w-3" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem
+                                            onClick={() => deleteComment(comment.id)}
+                                            className="text-destructive"
+                                          >
+                                            <Trash2 className="h-3 w-3 mr-2" />
+                                            Hapus Komentar
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    )}
+                                  </div>
+                           <p className="text-sm whitespace-pre-wrap mb-2">
+                             {comment.content}
+                           </p>
+                                 </div>
+                               ))
+                              )}
+                            </div>
 
                           {/* Add Comment */}
                           <div className="border-t pt-4 space-y-2">
@@ -552,7 +663,7 @@ const ForumMind = () => {
               </div>
             )}
 
-            {posts.length === 0 && !isLoading && (
+            {posts.length === 0 && !isLoading && !isLoadingMore && !showSkeletonTimer && (
               <Card>
                 <CardContent className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -561,6 +672,10 @@ const ForumMind = () => {
                   </p>
                 </CardContent>
               </Card>
+            )}
+
+            {(isLoading || showSkeletonTimer) && posts.length === 0 && (
+              <ForumPostSkeletonList />
             )}
 
             {!hasMorePosts && posts.length > 0 && (
