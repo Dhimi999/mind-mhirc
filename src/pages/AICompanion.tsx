@@ -8,7 +8,9 @@ import {
   Plus,
   MoreVertical,
   Trash2,
-  Edit3
+  Edit3,
+  Menu,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +34,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger
+} from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { InitialDialog } from "@/components/ai/InitialDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Message {
   id: string;
@@ -64,6 +75,9 @@ const AICompanion = () => {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showInitialDialog, setShowInitialDialog] = useState(false);
+  const isMobile = useIsMobile();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -73,6 +87,13 @@ const AICompanion = () => {
       fetchConversations();
     }
   }, [user]);
+
+  useEffect(() => {
+    // Auto-start new conversation when component mounts
+    if (!isLoadingConversations && user && conversations.length === 0) {
+      createNewConversation();
+    }
+  }, [isLoadingConversations, user, conversations.length]);
 
   // --- PERUBAHAN KUNCI ---
   // useEffect ini sekarang hanya fokus untuk memuat pesan,
@@ -519,10 +540,17 @@ const AICompanion = () => {
     setNewTitle("");
   };
 
+  const handleContinueLastChat = () => {
+    if (conversations.length > 0) {
+      setCurrentConversation(conversations[0]);
+    }
+  };
+
   return (
     <div className="h-screen max-h-screen flex overflow-hidden">
       {/* Sidebar */}
-      <div className="w-80 border-r flex flex-col">
+      <div className="w-80 md:flex hidden border-r flex-col">
+        {/* Hide on mobile */}
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Riwayat Obrolan</h2>
@@ -662,6 +690,137 @@ const AICompanion = () => {
         </ScrollArea>
       </div>
 
+      {/* Mobile Chat History Sheet */}
+      <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
+        <SheetContent side="left" className="w-80 p-0">
+          <SheetHeader className="p-4 border-b">
+            <SheetTitle className="text-left">Riwayat Obrolan</SheetTitle>
+            <Button
+              onClick={createNewConversation}
+              size="sm"
+              className="gap-2 w-full"
+            >
+              <Plus className="h-4 w-4" />
+              Obrolan Baru
+            </Button>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1 h-[calc(100vh-120px)]">
+            {isLoadingConversations ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            ) : conversations.length === 0 ? (
+              <div className="text-center py-8 px-4">
+                <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Belum ada obrolan
+                </p>
+                <Button
+                  onClick={createNewConversation}
+                  size="sm"
+                  className="mt-2"
+                >
+                  Mulai Obrolan
+                </Button>
+              </div>
+            ) : (
+              <div className="p-2 space-y-2">
+                {conversations.map((conversation) => (
+                  <Card
+                    key={conversation.id}
+                    className={`cursor-pointer transition-colors ${
+                      currentConversation?.id === conversation.id
+                        ? "bg-muted"
+                        : "hover:bg-muted/50"
+                    }`}
+                    onClick={() => {
+                      setCurrentConversation(conversation);
+                      setShowMobileMenu(false); // Close mobile menu when conversation is selected
+                    }}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm truncate">
+                            {conversation.summary || conversation.title}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(
+                              conversation.updated_at
+                            ).toLocaleDateString("id-ID")}
+                          </p>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTitleEdit(
+                                  conversation.id,
+                                  conversation.title
+                                );
+                              }}
+                            >
+                              <Edit3 className="h-4 w-4 mr-2" />
+                              Edit Judul
+                            </DropdownMenuItem>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem
+                                  onSelect={(e) => e.preventDefault()}
+                                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Hapus
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Hapus Obrolan
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Apakah Anda yakin ingin menghapus obrolan
+                                    ini? Tindakan ini tidak dapat dibatalkan.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() =>
+                                      deleteConversation(conversation.id)
+                                    }
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Hapus
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col max-h-screen">
         {currentConversation ? (
@@ -669,6 +828,16 @@ const AICompanion = () => {
             {/* Chat Header */}
             <div className="p-4 border-b">
               <div className="flex items-center gap-3">
+                {/* Mobile menu button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:hidden"
+                  onClick={() => setShowMobileMenu(true)}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+
                 <div className="relative">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src="/ai-avatar.png" />
@@ -680,10 +849,71 @@ const AICompanion = () => {
                     <Sparkles className="h-2 w-2 text-white" />
                   </div>
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-foreground">
-                    {currentConversation.summary || currentConversation.title}
-                  </h1>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-xl font-bold text-foreground truncate">
+                      {currentConversation.summary || currentConversation.title}
+                    </h1>
+                    {isMobile && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleTitleEdit(
+                                currentConversation.id,
+                                currentConversation.title
+                              )
+                            }
+                          >
+                            <Edit3 className="h-4 w-4 mr-2" />
+                            Edit Judul
+                          </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem
+                                onSelect={(e) => e.preventDefault()}
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Hapus Obrolan
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Hapus Obrolan
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Apakah Anda yakin ingin menghapus obrolan ini?
+                                  Tindakan ini tidak dapat dibatalkan.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() =>
+                                    deleteConversation(currentConversation.id)
+                                  }
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Hapus
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Selalu siap mendengarkan dan membantu Anda
                   </p>

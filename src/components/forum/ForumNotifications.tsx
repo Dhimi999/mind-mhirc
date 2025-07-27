@@ -127,14 +127,16 @@ export const ForumNotifications = ({ forumUser, isOpen, onClose }: ForumNotifica
 
       // Create comment notifications
       for (const comment of commentNotifications || []) {
-        processedNotifications.push({
-          id: `comment-${comment.id}`,
-          type: 'comment',
-          created_at: comment.created_at,
-          content: comment.content,
-          post_content: comment.forum_posts.content,
-          actor_username: comment.forum_users.username
-        });
+        if (comment.forum_posts && comment.forum_users) {
+          processedNotifications.push({
+            id: `comment-${comment.id}`,
+            type: 'comment',
+            created_at: comment.created_at,
+            content: comment.content,
+            post_content: comment.forum_posts.content,
+            actor_username: comment.forum_users.username
+          });
+        }
       }
 
       // Sort by created_at

@@ -4,8 +4,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart, MessageCircle, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
+import { formatPostDate } from "@/utils/dateFormat";
+import { MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -103,6 +112,54 @@ export const ForumProfile = ({ forumUser, isOpen, onClose }: ForumProfileProps) 
     }
   };
 
+  const deletePost = async (postId: string) => {
+    try {
+      const { error } = await supabase
+        .from("forum_posts")
+        .delete()
+        .eq("id", postId);
+
+      if (error) throw error;
+
+      setUserPosts(prev => prev.filter(post => post.id !== postId));
+      toast({
+        title: "Berhasil",
+        description: "Postingan berhasil dihapus",
+      });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus postingan",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    try {
+      const { error } = await supabase
+        .from("forum_comments")
+        .delete()
+        .eq("id", commentId);
+
+      if (error) throw error;
+
+      setUserComments(prev => prev.filter(comment => comment.id !== commentId));
+      toast({
+        title: "Berhasil",
+        description: "Komentar berhasil dihapus",
+      });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus komentar",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -126,7 +183,29 @@ export const ForumProfile = ({ forumUser, isOpen, onClose }: ForumProfileProps) 
               userPosts.map((post) => (
                 <Card key={post.id}>
                   <CardContent className="pt-6">
-                    <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
+                    <div className="flex justify-between items-start mb-4">
+                      <p className="flex-1 whitespace-pre-wrap">{post.content}</p>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => deletePost(post.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Hapus Postingan
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Heart className="h-4 w-4" />
@@ -137,10 +216,7 @@ export const ForumProfile = ({ forumUser, isOpen, onClose }: ForumProfileProps) 
                         {post.comments_count}
                       </span>
                       <span>
-                        {formatDistanceToNow(new Date(post.created_at), {
-                          addSuffix: true,
-                          locale: id,
-                        })}
+                        {formatPostDate(post.created_at)}
                       </span>
                     </div>
                   </CardContent>
@@ -162,19 +238,43 @@ export const ForumProfile = ({ forumUser, isOpen, onClose }: ForumProfileProps) 
               userComments.map((comment) => (
                 <Card key={comment.id}>
                   <CardContent className="pt-6">
-                    <div className="mb-3 p-3 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Komentar pada postingan @{comment.forum_posts.forum_users.username}:
-                      </p>
-                      <p className="text-sm italic">"{comment.forum_posts.content.substring(0, 100)}..."</p>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <div className="mb-3 p-3 bg-muted rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Komentar pada postingan @{comment.forum_posts.forum_users.username}:
+                          </p>
+                          <p className="text-sm italic">"{comment.forum_posts.content.substring(0, 100)}..."</p>
+                        </div>
+                        <p className="mb-2 whitespace-pre-wrap">{comment.content}</p>
+                        <span className="text-sm text-muted-foreground">
+                          {formatDistanceToNow(new Date(comment.created_at), {
+                            addSuffix: true,
+                            locale: id,
+                          })}
+                        </span>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => deleteComment(comment.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Hapus Komentar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <p className="mb-2 whitespace-pre-wrap">{comment.content}</p>
-                    <span className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(comment.created_at), {
-                        addSuffix: true,
-                        locale: id,
-                      })}
-                    </span>
                   </CardContent>
                 </Card>
               ))
