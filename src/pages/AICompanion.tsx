@@ -49,7 +49,8 @@ interface Conversation {
   title: string;
   created_at: string;
   updated_at: string;
-  summary?: string | null; // Tambahkan kolom ini
+  summary?: string | null;
+  full_summary?: string | null;
 }
 
 const AICompanion = () => {
@@ -73,24 +74,13 @@ const AICompanion = () => {
     }
   }, [user]);
 
+  // --- PERUBAHAN KUNCI ---
+  // useEffect ini sekarang hanya fokus untuk memuat pesan,
+  // logika rangkuman dipindahkan ke `handleConversationSwitch` untuk menghindari bug.
   useEffect(() => {
-    const conversationToSummarize = currentConversation;
-    const messagesToSummarize = messages;
-
-    if (conversationToSummarize) {
-      fetchMessages(conversationToSummarize.id);
+    if (currentConversation) {
+      fetchMessages(currentConversation.id);
     }
-
-    // Fungsi cleanup ini akan dijalankan saat 'currentConversation' BERUBAH
-    return () => {
-      // Pastikan ada percakapan sebelumnya dan ada pesan di dalamnya
-      if (conversationToSummarize && messagesToSummarize.length > 1) {
-        updateConversationSummaryIfNeeded(
-          conversationToSummarize,
-          messagesToSummarize
-        );
-      }
-    };
   }, [currentConversation]);
 
   useEffect(() => {
@@ -158,45 +148,9 @@ const AICompanion = () => {
     }
   };
 
-  // const createNewConversation = async () => {
-  //   if (!user) return;
-  //   try {
-  //     const { data, error } = await supabase
-  //       .from("ai_conversations")
-  //       .insert({
-  //         user_id: user.id,
-  //         title: `Obrolan ${new Date().toLocaleDateString("id-ID")}`
-  //       })
-  //       .select()
-  //       .single();
-  //     if (error) throw error;
-  //     await supabase.from("ai_messages").insert({
-  //       conversation_id: data.id,
-  //       user_id: user.id,
-  //       content:
-  //         "Halo! Saya adalah teman AI Anda. Saya di sini untuk mendengarkan dan membantu Anda. Bagaimana kabar Anda hari ini?",
-  //       sender: "ai"
-  //     });
-  //     fetchConversations();
-  //     setCurrentConversation(data);
-  //     toast({
-  //       title: "Obrolan Baru Dibuat",
-  //       description: "Obrolan baru berhasil dibuat"
-  //     });
-  //   } catch (error) {
-  //     console.error("Error creating conversation:", error);
-  //     toast({
-  //       title: "Gagal Membuat Obrolan",
-  //       description: "Terjadi kesalahan saat membuat obrolan baru",
-  //       variant: "destructive"
-  //     });
-  //   }
-  // };
   const createNewConversation = async () => {
     if (!user) return;
-
     try {
-      // 1. Buat percakapan baru di database dan dapatkan datanya kembali
       const { data: newConversation, error: conversationError } = await supabase
         .from("ai_conversations")
         .insert({
@@ -208,7 +162,6 @@ const AICompanion = () => {
 
       if (conversationError) throw conversationError;
 
-      // 2. Siapkan pesan AI pertama secara lokal
       const initialAiMessage: Message = {
         id: `temp-ai-${Date.now()}`,
         content:
@@ -218,7 +171,6 @@ const AICompanion = () => {
         conversation_id: newConversation.id
       };
 
-      // 3. Masukkan pesan AI pertama ke database (tanpa perlu menunggu selesai)
       supabase
         .from("ai_messages")
         .insert({
@@ -231,10 +183,9 @@ const AICompanion = () => {
           if (error) console.error("Gagal menyimpan pesan AI pertama:", error);
         });
 
-      // 4. Perbarui state lokal secara langsung (Optimistic UI)
-      setConversations((prev) => [newConversation, ...prev]); // Tambahkan ke paling atas
+      setConversations((prev) => [newConversation, ...prev]);
       setCurrentConversation(newConversation);
-      setMessages([initialAiMessage]); // Atur pesan pertama untuk UI
+      setMessages([initialAiMessage]);
 
       toast({
         title: "Obrolan Baru Dibuat",
@@ -249,6 +200,7 @@ const AICompanion = () => {
       });
     }
   };
+
   const deleteConversation = async (conversationId: string) => {
     const originalConversations = [...conversations];
     const conversationToDelete = conversations.find(
@@ -333,40 +285,30 @@ const AICompanion = () => {
     conversation: Conversation,
     allMessages: Message[]
   ) => {
-    // 1. Ambil 10 pesan terakhir untuk dijadikan konteks
     const recentMessages = allMessages.slice(-10);
-    if (recentMessages.length < 4) return; // Jangan rangkum jika percakapan terlalu pendek
+    if (recentMessages.length < 4) return;
 
-    // 2. Format pesan menjadi satu string
     const conversationContext = recentMessages
       .map((msg) => `${msg.sender === "user" ? "User" : "AI"}: ${msg.content}`)
       .join("\n");
 
-    // 3. Buat prompt khusus untuk merangkum
     const summarizationPrompt = `
     Berdasarkan percakapan berikut, buatlah sebuah rangkuman singkat (sekitar 5-7 kata) dalam Bahasa Indonesia yang menggambarkan topik utama.
-
     Percakapan:
     ---
     ${conversationContext}
     ---
-
     Contoh output: "Rencana Liburan ke Bali" atau "Diskusi Proyek Supabase".
-
     Rangkuman:
   `;
 
     try {
-      // Panggil AI untuk mendapatkan rangkuman
       const { data, error } = await supabase.functions.invoke("chat-ai", {
         body: { message: summarizationPrompt }
       });
-
       if (error) throw error;
-
       const newSummary = data.text.trim();
 
-      // LANGKAH 1: Perbarui state lokal secara optimis untuk UI yang responsif
       setConversations((prev) =>
         prev.map((c) =>
           c.id === conversation.id ? { ...c, summary: newSummary } : c
@@ -378,20 +320,70 @@ const AICompanion = () => {
         );
       }
 
-      // LANGKAH 2: Simpan perubahan ke database di latar belakang
-      // Jika ini gagal, UI sudah terlanjur update, namun untuk fitur non-kritis seperti ini tidak masalah.
       await supabase
         .from("ai_conversations")
         .update({ summary: newSummary, updated_at: new Date().toISOString() })
         .eq("id", conversation.id);
     } catch (error) {
       console.error("Gagal membuat rangkuman:", error);
-      // Tidak perlu menampilkan toast error ke pengguna agar tidak mengganggu
     }
   };
 
+  const updateFullSummaryIfNeeded = async (
+    conversation: Conversation,
+    allMessages: Message[]
+  ) => {
+    const recentMessages = allMessages.slice(-20);
+    if (recentMessages.length < 10) return;
+
+    const conversationContext = recentMessages
+      .map((msg) => `${msg.sender === "user" ? "User" : "AI"}: ${msg.content}`)
+      .join("\n");
+
+    const summarizationPrompt = `
+    Analisis dan rangkum percakapan berikut dalam beberapa poin utama. Fokus pada:
+    1.  Topik utama yang sedang dibahas.
+    2.  Informasi penting, keputusan, atau kesimpulan yang telah dibuat.
+    3.  Pertanyaan terakhir atau niat pengguna yang belum terselesaikan.
+    
+    Tulis rangkuman dalam format naratif yang jelas untuk digunakan sebagai konteks di masa mendatang.
+    Percakapan:
+    ---
+    ${conversationContext}
+    ---
+    Ringkasan Lengkap:
+  `;
+
+    try {
+      const { data, error } = await supabase.functions.invoke("chat-ai", {
+        body: { message: summarizationPrompt }
+      });
+      if (error) throw error;
+      const newFullSummary = data.text.trim();
+
+      await supabase
+        .from("ai_conversations")
+        .update({ full_summary: newFullSummary })
+        .eq("id", conversation.id);
+    } catch (error) {
+      console.error("Gagal membuat rangkuman lengkap:", error);
+    }
+  };
+
+  // --- PERUBAHAN KUNCI ---
+  // Fungsi handler baru untuk mengelola perpindahan percakapan dan memicu rangkuman.
+  const handleConversationSwitch = (nextConversation: Conversation) => {
+    if (currentConversation?.id === nextConversation.id) return;
+
+    if (currentConversation && messages.length > 1) {
+      updateConversationSummaryIfNeeded(currentConversation, messages);
+      updateFullSummaryIfNeeded(currentConversation, messages);
+    }
+
+    setCurrentConversation(nextConversation);
+  };
+
   const sendMessage = async () => {
-    // =================== 1. Validasi & Persiapan Data ===================
     if (!inputMessage.trim() || !currentConversation || !user) return;
 
     const userMessageContent = inputMessage;
@@ -405,32 +397,50 @@ const AICompanion = () => {
       conversation_id: conversationId
     };
 
-    // Ambil beberapa pesan terakhir
+    let historyForAI = [];
     const recentMessages = messages.slice(-10);
-    // Cari indeks pesan 'user' pertama sebagai titik awal riwayat yang valid
-    const firstUserIndex = recentMessages.findIndex(
-      (msg) => msg.sender === "user"
-    );
-    // Buat riwayat yang valid
-    const validHistory =
-      firstUserIndex !== -1
-        ? recentMessages.slice(firstUserIndex).map((msg) => ({
-            role: msg.sender === "user" ? "user" : "model",
-            parts: [{ text: msg.content }]
-          }))
-        : [];
 
-    // =================== 2. Update UI Secara Optimis ===================
+    if (currentConversation?.full_summary && messages.length <= 1) {
+      historyForAI = [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `Ini adalah ringkasan percakapan kita sebelumnya: "${currentConversation.full_summary}". Mari kita lanjutkan.`
+            }
+          ]
+        },
+        {
+          role: "model",
+          parts: [
+            {
+              text: "Tentu, saya mengingatnya. Apa yang bisa saya bantu selanjutnya?"
+            }
+          ]
+        }
+      ];
+    } else {
+      const firstUserIndex = recentMessages.findIndex(
+        (msg) => msg.sender === "user"
+      );
+      historyForAI =
+        firstUserIndex !== -1
+          ? recentMessages.slice(firstUserIndex).map((msg) => ({
+              role: msg.sender === "user" ? "user" : "model",
+              parts: [{ text: msg.content }]
+            }))
+          : [];
+    }
+
     setInputMessage("");
     setMessages((prev) => [...prev, tempUserMessage]);
     setIsTyping(true);
 
-    // =================== 3. Proses Asynchronous (API & DB) ===================
     try {
       const { data: aiData, error: functionError } =
         await supabase.functions.invoke("chat-ai", {
           body: {
-            history: validHistory, // Gunakan riwayat yang sudah divalidasi
+            history: historyForAI,
             message: userMessageContent
           }
         });
@@ -446,28 +456,23 @@ const AICompanion = () => {
         conversation_id: conversationId
       };
 
-      // Update state AI dan pemicu rangkuman
-      setMessages((prevMessages) => {
-        const finalMessages = [...prevMessages, tempAiMessage];
-
-        return finalMessages;
-      });
-
+      setMessages((prevMessages) => [...prevMessages, tempAiMessage]);
       setIsTyping(false);
 
-      // Simpan pesan ke database
       await Promise.all([
         supabase.from("ai_messages").insert({
           conversation_id: conversationId,
           user_id: user.id,
           content: userMessageContent,
-          sender: "user"
+          sender: "user",
+          created_at: tempUserMessage.created_at
         }),
         supabase.from("ai_messages").insert({
           conversation_id: conversationId,
           user_id: user.id,
           content: aiResponseContent,
-          sender: "ai"
+          sender: "ai",
+          created_at: tempAiMessage.created_at
         })
       ]);
     } catch (error) {
@@ -555,7 +560,9 @@ const AICompanion = () => {
                       ? "bg-muted"
                       : "hover:bg-muted/50"
                   }`}
-                  onClick={() => setCurrentConversation(conversation)}
+                  // --- PERUBAHAN KUNCI ---
+                  // onClick sekarang memanggil handler baru yang lebih aman.
+                  onClick={() => handleConversationSwitch(conversation)}
                 >
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">
@@ -576,6 +583,8 @@ const AICompanion = () => {
                       ) : (
                         <>
                           <div className="flex-1 min-w-0">
+                            {/* --- PERUBAHAN KUNCI --- */}
+                            {/* Menampilkan summary sebagai fallback judul. */}
                             <h3 className="font-medium text-sm truncate">
                               {conversation.summary || conversation.title}
                             </h3>
