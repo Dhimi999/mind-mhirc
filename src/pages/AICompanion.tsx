@@ -104,6 +104,13 @@ const AICompanion = () => {
     }
   }, [currentConversation]);
 
+  // Fitur baru dari branch lain: membuat obrolan otomatis jika kosong
+  useEffect(() => {
+    if (!isLoadingConversations && user && conversations.length === 0) {
+      createNewConversation();
+    }
+  }, [isLoadingConversations, user, conversations.length]);
+
   useEffect(() => {
     if (scrollAreaRef.current) {
       const scrollElement = scrollAreaRef.current.querySelector(
