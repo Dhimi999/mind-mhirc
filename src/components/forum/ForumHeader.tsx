@@ -13,6 +13,7 @@ interface ForumUser {
   username: string;
   user_id: string;
   subtypes?: string[];
+  account_type?: string; // [MODIFIKASI] Menambahkan account_type
 }
 
 interface ForumHeaderProps {
@@ -34,6 +35,9 @@ export const ForumHeader = ({
   notificationCount = 0,
   isLoadingPosts = false
 }: ForumHeaderProps) => {
+  // [MODIFIKASI] Tentukan apakah pengguna adalah professional
+  const isProfessional = forumUser?.account_type === "professional";
+
   return (
     <div className="mb-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 py-4 border-b">
       <div className="space-y-4">
@@ -92,7 +96,9 @@ export const ForumHeader = ({
             >
               Forum Umum
             </Button>
-            {forumUser.subtypes?.includes("parent") && (
+
+            {/* [MODIFIKASI] Tampilkan tab jika pengguna adalah professional ATAU memiliki subtype yang sesuai */}
+            {(isProfessional || forumUser.subtypes?.includes("parent")) && (
               <Button
                 variant={activeForum === "parent" ? "default" : "ghost"}
                 onClick={() => onForumChange("parent")}
@@ -102,7 +108,8 @@ export const ForumHeader = ({
                 Forum Orang Tua
               </Button>
             )}
-            {forumUser.subtypes?.includes("child") && (
+
+            {(isProfessional || forumUser.subtypes?.includes("child")) && (
               <Button
                 variant={activeForum === "child" ? "default" : "ghost"}
                 onClick={() => onForumChange("child")}

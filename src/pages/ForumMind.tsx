@@ -47,6 +47,7 @@ interface ForumUser {
   username: string;
   user_id: string;
   subtypes?: string[];
+  account_type?: string; // [MODIFIKASI] Menambahkan account_type
 }
 
 interface ForumPost {
@@ -104,10 +105,6 @@ const ForumMind = () => {
 
   useEffect(() => {
     if (forumUser) {
-      console.log(
-        `%cREFRESH PENUH: Memuat postingan untuk forum '${activeForum}'`,
-        "color: orange; font-weight: bold;"
-      );
       fetchPosts(true);
     }
   }, [forumUser, activeForum]);
@@ -149,17 +146,23 @@ const ForumMind = () => {
         return;
       }
 
+      // [MODIFIKASI] Ambil subtypes DAN account_type dari tabel profiles
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("subtypes")
+        .select("subtypes, account_type")
         .eq("id", user.id)
         .single();
 
       if (profileError) {
-        console.warn("Gagal mengambil subtypes profil:", profileError.message);
+        console.warn("Gagal mengambil data profil:", profileError.message);
       }
 
-      setForumUser({ ...forumUserData, subtypes: profileData?.subtypes || [] });
+      // [MODIFIKASI] Gabungkan semua data ke dalam state forumUser
+      setForumUser({
+        ...forumUserData,
+        subtypes: profileData?.subtypes || [],
+        account_type: profileData?.account_type || undefined
+      });
     } catch (error) {
       console.error("Error saat memeriksa user forum:", error);
       toast({
@@ -191,7 +194,7 @@ const ForumMind = () => {
         }
         throw error;
       }
-      setForumUser({ ...data, subtypes: [] });
+      setForumUser({ ...data, subtypes: [], account_type: "general" }); // Asumsi default account_type adalah 'user'
       setShowUsernameDialog(false);
       setUsername("");
     } catch (error) {
@@ -253,14 +256,12 @@ const ForumMind = () => {
 
   const loadMorePosts = useCallback(async () => {
     if (isLoadingMore || !hasMorePosts) return;
-    console.log("REFRESH SEBAGIAN: Memuat postingan selanjutnya...");
     setIsLoadingMore(true);
     await fetchPosts(false);
     setIsLoadingMore(false);
   }, [isLoadingMore, hasMorePosts, page, activeForum]);
 
   const handlePostCreated = (newPost: ForumPost) => {
-    console.log("UPDATE LOKAL: Postingan baru ditambahkan.", newPost);
     const postWithLikeStatus = { ...newPost, is_liked: false };
     setPosts((prevPosts) => [postWithLikeStatus, ...prevPosts]);
   };
@@ -268,7 +269,6 @@ const ForumMind = () => {
   const toggleLike = async (postId: string, isLiked: boolean) => {
     if (!user) return;
 
-    console.log(`UPDATE LOKAL: Status like diubah untuk post ID: ${postId}`);
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
         post.id === postId
@@ -312,7 +312,6 @@ const ForumMind = () => {
 
   const deletePost = async (postId: string) => {
     const originalPosts = posts;
-    console.log(`UPDATE LOKAL: Postingan dihapus untuk post ID: ${postId}`);
     setPosts(originalPosts.filter((p) => p.id !== postId));
 
     try {
@@ -371,7 +370,6 @@ const ForumMind = () => {
     if (!user || !forumUser || !selectedPost || !newCommentContent.trim())
       return;
 
-    console.log("UPDATE LOKAL: Komentar baru ditambahkan.");
     const tempId = `temp-${Date.now()}`;
     const newComment: ForumComment = {
       id: tempId,
@@ -429,9 +427,6 @@ const ForumMind = () => {
   };
 
   const deleteComment = async (commentId: string) => {
-    console.log(
-      `UPDATE LOKAL: Komentar dihapus untuk comment ID: ${commentId}`
-    );
     const originalComments = comments;
     setComments(originalComments.filter((c) => c.id !== commentId));
     if (selectedPost) {
