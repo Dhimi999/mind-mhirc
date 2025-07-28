@@ -10,6 +10,9 @@ export interface SignUpData {
   profession?: string;
   account_type: "general" | "professional";
   forwarding?: string;
+  // Tambahkan baris ini
+  subtypes?: ("parent" | "child")[];
+  parent_id?: string;
 }
 
 export interface SignInData {
@@ -27,6 +30,9 @@ export interface AuthUser {
   birth_date?: string | null;
   city?: string | null;
   profession?: string | null;
+  // Tambahkan baris ini
+  subtypes?: ("parent" | "child")[] | null;
+  parent_id?: string | null;
 }
 
 export interface OAuthProfileData {
@@ -34,6 +40,9 @@ export interface OAuthProfileData {
   city: string;
   profession?: string;
   account_type: "general" | "professional";
+  // Tambahkan baris ini
+  subtypes: ("parent" | "child")[];
+  parent_id?: string;
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
@@ -60,7 +69,10 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     birth_date: data?.birth_date,
     city: data?.city,
     profession: data?.profession,
-    is_admin: data?.is_admin
+    is_admin: data?.is_admin,
+    // Perbarui baris ini
+    subtypes: data?.subtypes as ("parent" | "child")[] | null,
+    parent_id: data?.parent_id
   };
 };
 
@@ -68,8 +80,11 @@ export const signUp = async (
   userData: SignUpData
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const redirectUrl = new URL('/email-confirmed', window.location.origin).toString();
-    
+    const redirectUrl = new URL(
+      "/email-confirmed",
+      window.location.origin
+    ).toString();
+
     const { data, error } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
@@ -80,7 +95,10 @@ export const signUp = async (
           city: userData.city,
           profession: userData.profession,
           account_type: userData.account_type,
-          forwarding: userData.forwarding
+          forwarding: userData.forwarding,
+          // Tambahkan baris ini
+          subtypes: userData.subtypes,
+          parent_id: userData.parent_id
         },
         emailRedirectTo: redirectUrl
       }
@@ -119,23 +137,29 @@ export const signIn = async (
   }
 };
 
-export const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+export const signInWithGoogle = async (): Promise<{
+  success: boolean;
+  error?: string;
+}> => {
   try {
-    const redirectTo = new URL('/auth/callback', window.location.origin).toString();
-    
+    const redirectTo = new URL(
+      "/auth/callback",
+      window.location.origin
+    ).toString();
+
     const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
         redirectTo: redirectTo,
         queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+          access_type: "offline",
+          prompt: "consent"
+        }
       }
     });
 
     if (error) throw error;
-    
+
     return { success: true };
   } catch (error: any) {
     console.error("Google login error:", error);
@@ -146,38 +170,48 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; error?: st
   }
 };
 
-export const checkOAuthProfileCompletion = async (): Promise<{ complete: boolean; userData?: Partial<AuthUser> }> => {
+export const checkOAuthProfileCompletion = async (): Promise<{
+  complete: boolean;
+  userData?: Partial<AuthUser>;
+}> => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
     if (!session) {
       return { complete: false };
     }
-    
+
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", session.user.id)
       .single();
-    
+
     if (error) throw error;
-    
+
     const userMetadata = session.user.user_metadata || {};
-    
-    const isProfileComplete = data && data.birth_date && data.city ? true : false;
-    
-    return { 
+
+    const isProfileComplete =
+      data && data.birth_date && data.city ? true : false;
+
+    return {
       complete: isProfileComplete,
       userData: {
         id: session.user.id,
         email: session.user.email,
         full_name: userMetadata.full_name || data?.full_name,
         avatar_url: userMetadata.avatar_url || data?.avatar_url,
-        account_type: data?.account_type as "general" | "professional" || "general",
+        account_type:
+          (data?.account_type as "general" | "professional") || "general",
         birth_date: data?.birth_date,
         city: data?.city,
         profession: data?.profession,
-        is_admin: data?.is_admin
+        is_admin: data?.is_admin,
+        // Tambahkan baris ini dengan type assertion
+        subtypes: data?.subtypes as ("parent" | "child")[] | null,
+        parent_id: data?.parent_id
       }
     };
   } catch (error) {
@@ -190,32 +224,38 @@ export const completeOAuthProfile = async (
   profileData: OAuthProfileData
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
     if (!session) {
-      return { 
-        success: false, 
-        error: "Sesi login tidak valid" 
+      return {
+        success: false,
+        error: "Sesi login tidak valid"
       };
     }
-    
+
     const userMetadata = session.user.user_metadata || {};
-    
+
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: userMetadata.full_name || session.user.user_metadata?.name,
-        avatar_url: userMetadata.avatar_url || session.user.user_metadata?.avatar_url,
+        avatar_url:
+          userMetadata.avatar_url || session.user.user_metadata?.avatar_url,
         birth_date: profileData.birth_date,
         city: profileData.city,
         profession: profileData.profession,
         account_type: profileData.account_type,
+        // Tambahkan baris ini
+        subtypes: profileData.subtypes,
+        parent_id: profileData.parent_id,
         forwarding: session.user.email
       })
       .eq("id", session.user.id);
-    
+
     if (error) throw error;
-    
+
     return { success: true };
   } catch (error: any) {
     console.error("Profile completion error:", error);
@@ -257,6 +297,9 @@ export const updateProfile = async (
     city: string;
     profession: string;
     avatar_url: string;
+    // Tambahkan baris ini
+    subtypes: ("parent" | "child")[];
+    parent_id: string;
   }>
 ): Promise<{ success: boolean; error?: string }> => {
   try {
@@ -336,10 +379,13 @@ export const resendConfirmationEmail = async (
   email: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const redirectUrl = new URL('/email-confirmed', window.location.origin).toString();
-    
+    const redirectUrl = new URL(
+      "/email-confirmed",
+      window.location.origin
+    ).toString();
+
     const { error } = await supabase.auth.resend({
-      type: 'signup',
+      type: "signup",
       email,
       options: {
         emailRedirectTo: redirectUrl
@@ -353,7 +399,8 @@ export const resendConfirmationEmail = async (
     console.error("Resend confirmation email error:", error);
     return {
       success: false,
-      error: error.message || "Gagal mengirim email konfirmasi. Silakan coba lagi."
+      error:
+        error.message || "Gagal mengirim email konfirmasi. Silakan coba lagi."
     };
   }
 };
@@ -362,10 +409,13 @@ export const sendPasswordResetEmail = async (
   email: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const redirectUrl = new URL('/set-new-password-forget', window.location.origin).toString();
-    
+    const redirectUrl = new URL(
+      "/set-new-password-forget",
+      window.location.origin
+    ).toString();
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
+      redirectTo: redirectUrl
     });
 
     if (error) throw error;
@@ -375,12 +425,17 @@ export const sendPasswordResetEmail = async (
     console.error("Password reset email error:", error);
     return {
       success: false,
-      error: error.message || "Gagal mengirim email reset password. Silakan coba lagi."
+      error:
+        error.message ||
+        "Gagal mengirim email reset password. Silakan coba lagi."
     };
   }
 };
 
-export const deactivateAccount = async (): Promise<{ success: boolean; error?: string }> => {
+export const deactivateAccount = async (): Promise<{
+  success: boolean;
+  error?: string;
+}> => {
   try {
     const {
       data: { session }
@@ -413,7 +468,9 @@ export const deactivateAccount = async (): Promise<{ success: boolean; error?: s
   }
 };
 
-export const reactivateAccount = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+export const reactivateAccount = async (
+  userId: string
+): Promise<{ success: boolean; error?: string }> => {
   try {
     const { error } = await supabase
       .from("profiles")
@@ -430,18 +487,24 @@ export const reactivateAccount = async (userId: string): Promise<{ success: bool
     console.error("Account reactivation error:", error);
     return {
       success: false,
-      error: error.message || "Gagal mengaktifkan kembali akun. Silakan coba lagi."
+      error:
+        error.message || "Gagal mengaktifkan kembali akun. Silakan coba lagi."
     };
   }
 };
 
-export const sendReauthenticationToken = async (email: string): Promise<{ success: boolean; error?: string }> => {
+export const sendReauthenticationToken = async (
+  email: string
+): Promise<{ success: boolean; error?: string }> => {
   try {
     const { error } = await supabase.auth.resend({
-      type: 'signup',
+      type: "signup",
       email,
       options: {
-        emailRedirectTo: new URL('/email-confirmed', window.location.origin).toString()
+        emailRedirectTo: new URL(
+          "/email-confirmed",
+          window.location.origin
+        ).toString()
       }
     });
 
@@ -452,7 +515,8 @@ export const sendReauthenticationToken = async (email: string): Promise<{ succes
     console.error("Reauthentication token error:", error);
     return {
       success: false,
-      error: error.message || "Gagal mengirim token autentikasi. Silakan coba lagi."
+      error:
+        error.message || "Gagal mengirim token autentikasi. Silakan coba lagi."
     };
   }
 };

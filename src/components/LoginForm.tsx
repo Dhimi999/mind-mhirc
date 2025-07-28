@@ -5,6 +5,8 @@ import Button from "./Button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+// Import the Checkbox component
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -39,7 +41,14 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [accountType, setAccountType] = useState<"general" | "professional">("general");
+  const [accountType, setAccountType] = useState<"general" | "professional">(
+    "general"
+  );
+
+  // --- START: New State for Subtypes ---
+  const [subtypes, setSubtypes] = useState<("parent" | "child")[]>([]);
+  // --- END: New State for Subtypes ---
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -47,10 +56,31 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
     confirmPassword: "",
     birthdate: "",
     city: "",
-    profession: ""
+    profession: "",
+    // Add parentId to the form data state
+    parentId: ""
   });
   const location = useLocation();
   const navigate = useNavigate();
+
+  // --- START: New Handler for Subtype Checkboxes ---
+  const handleSubtypeChange = (subtype: "parent" | "child") => {
+    setSubtypes((prev) => {
+      const newSubtypes = new Set(prev);
+      if (newSubtypes.has(subtype)) {
+        newSubtypes.delete(subtype);
+      } else {
+        newSubtypes.add(subtype);
+      }
+
+      // If user is no longer a 'child', clear the parentId field
+      if (subtype === "child" && !newSubtypes.has("child")) {
+        setFormData((prevData) => ({ ...prevData, parentId: "" }));
+      }
+      return Array.from(newSubtypes);
+    });
+  };
+  // --- END: New Handler for Subtype Checkboxes ---
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
 
@@ -71,7 +101,6 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
 
     try {
       if (isRegister) {
-        // Validasi password dan konfirmasi password
         if (formData.password !== formData.confirmPassword) {
           toast({
             title: "Pendaftaran Gagal",
@@ -82,16 +111,25 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           return;
         }
 
+        // --- START: Update User Data Payload ---
         const userData: SignUpData = {
           email: formData.email,
           password: formData.password,
           full_name: formData.name,
           birth_date: formData.birthdate,
           city: formData.city,
-          profession: accountType === "professional" ? formData.profession : undefined,
+          profession:
+            accountType === "professional" ? formData.profession : undefined,
           account_type: accountType,
+          // Conditionally add subtypes and parent_id
+          subtypes: accountType === "general" ? subtypes : undefined,
+          parent_id:
+            accountType === "general" && subtypes.includes("child")
+              ? formData.parentId
+              : undefined,
           forwarding: formData.email
         };
+        // --- END: Update User Data Payload ---
 
         const { success, error } = await signUp(userData);
 
@@ -160,10 +198,10 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    
+
     try {
       const { success, error } = await signInWithGoogle();
-      
+
       if (!success) {
         toast({
           title: "Login dengan Google Gagal",
@@ -171,7 +209,6 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           variant: "destructive"
         });
       }
-      // Jika sukses, pengguna akan diarahkan ke callback URL oleh Supabase
     } catch (error) {
       console.error("Google sign-in error:", error);
       toast({
@@ -270,6 +307,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
               />
             </div>
 
+            {/* --- START: UI for Professional Account Type --- */}
             {accountType === "professional" && (
               <div className="space-y-2">
                 <Label htmlFor="profession">Jenis Profesi</Label>
@@ -287,6 +325,60 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
                 </Select>
               </div>
             )}
+            {/* --- END: UI for Professional Account Type --- */}
+
+            {/* --- START: UI for General Account Type Subtypes --- */}
+            {accountType === "general" && (
+              <div className="space-y-4 rounded-md border bg-card p-4 shadow-sm">
+                <Label className="font-medium text-sm text-foreground">
+                  Peran dalam Keluarga (Opsional)
+                </Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isParent"
+                    onCheckedChange={() => handleSubtypeChange("parent")}
+                    checked={subtypes.includes("parent")}
+                  />
+                  <Label
+                    htmlFor="isParent"
+                    className="cursor-pointer text-sm font-normal"
+                  >
+                    Saya adalah Orang Tua
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isChild"
+                    onCheckedChange={() => handleSubtypeChange("child")}
+                    checked={subtypes.includes("child")}
+                  />
+                  <Label
+                    htmlFor="isChild"
+                    className="cursor-pointer text-sm font-normal"
+                  >
+                    Saya adalah Anak
+                  </Label>
+                </div>
+
+                {/* Input for Parent ID, appears if 'isChild' is checked */}
+                {subtypes.includes("child") && (
+                  <div className="space-y-2 pl-6 pt-2 animate-in fade-in-50">
+                    <Label htmlFor="parentId" className="text-xs">
+                      ID Akun Orang Tua
+                    </Label>
+                    <Input
+                      id="parentId"
+                      type="text"
+                      placeholder="Masukkan ID yang diberikan orang tua"
+                      value={formData.parentId}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            {/* --- END: UI for General Account Type Subtypes --- */}
           </>
         )}
 
@@ -395,7 +487,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           Atau lanjutkan dengan
         </p>
         <div className="grid grid-cols-2 gap-3">
-          <button 
+          <button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading}

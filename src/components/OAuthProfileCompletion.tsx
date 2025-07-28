@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { OAuthProfileData, completeOAuthProfile } from "@/services/authService";
@@ -6,12 +5,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue 
+  SelectValue
 } from "@/components/ui/select";
 import Button from "./Button";
 import { Briefcase, User } from "lucide-react";
@@ -34,16 +34,48 @@ const professions = [
   "Lainnya"
 ];
 
-const OAuthProfileCompletion = ({ email, fullName, avatarUrl }: OAuthProfileCompletionProps) => {
+const OAuthProfileCompletion = ({
+  email,
+  fullName,
+  avatarUrl
+}: OAuthProfileCompletionProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [accountType, setAccountType] = useState<"general" | "professional">("general");
+  const [accountType, setAccountType] = useState<"general" | "professional">(
+    "general"
+  );
+
+  // --- START: New State for Subtypes ---
+  const [subtypes, setSubtypes] = useState<("parent" | "child")[]>([]);
+  // --- END: New State for Subtypes ---
+
   const [formData, setFormData] = useState({
     birthdate: "",
     city: "",
-    profession: ""
+    profession: "",
+    // Add parentId to the form data state
+    parentId: ""
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // --- START: New Handler for Subtype Checkboxes ---
+  const handleSubtypeChange = (subtype: "parent" | "child") => {
+    setSubtypes((prev) => {
+      const newSubtypes = new Set(prev);
+      if (newSubtypes.has(subtype)) {
+        newSubtypes.delete(subtype);
+      } else {
+        newSubtypes.add(subtype);
+      }
+
+      // If user is no longer a 'child', clear the parentId field
+      if (subtype === "child" && !newSubtypes.has("child")) {
+        setFormData((prevData) => ({ ...prevData, parentId: "" }));
+      }
+      return Array.from(newSubtypes);
+    });
+  };
+  // --- END: New Handler for Subtype Checkboxes ---
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -59,12 +91,21 @@ const OAuthProfileCompletion = ({ email, fullName, avatarUrl }: OAuthProfileComp
     setIsLoading(true);
 
     try {
+      // --- START: Update Profile Data Payload ---
       const profileData: OAuthProfileData = {
         birth_date: formData.birthdate,
         city: formData.city,
-        profession: accountType === "professional" ? formData.profession : undefined,
-        account_type: accountType
+        profession:
+          accountType === "professional" ? formData.profession : undefined,
+        account_type: accountType,
+        // Add subtypes and parent_id
+        subtypes: accountType === "general" ? subtypes : [],
+        parent_id:
+          accountType === "general" && subtypes.includes("child")
+            ? formData.parentId
+            : undefined
       };
+      // --- END: Update Profile Data Payload ---
 
       const { success, error } = await completeOAuthProfile(profileData);
 
@@ -98,16 +139,17 @@ const OAuthProfileCompletion = ({ email, fullName, avatarUrl }: OAuthProfileComp
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold">Lengkapi Profil Anda</h2>
         <p className="text-muted-foreground mt-2">
-          Selamat datang di Mind MHIRC! Silakan lengkapi beberapa informasi tambahan untuk melanjutkan.
+          Selamat datang di Mind MHIRC! Silakan lengkapi beberapa informasi
+          tambahan untuk melanjutkan.
         </p>
       </div>
 
       <div className="flex items-center mb-6 gap-4">
         {avatarUrl && (
           <div className="w-16 h-16 rounded-full overflow-hidden">
-            <img 
-              src={avatarUrl} 
-              alt="Profile" 
+            <img
+              src={avatarUrl}
+              alt="Profile"
               className="w-full h-full object-cover"
             />
           </div>
@@ -121,7 +163,9 @@ const OAuthProfileCompletion = ({ email, fullName, avatarUrl }: OAuthProfileComp
       <Tabs
         defaultValue="general"
         className="mb-6"
-        onValueChange={(value) => setAccountType(value as "general" | "professional")}
+        onValueChange={(value) =>
+          setAccountType(value as "general" | "professional")
+        }
       >
         <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="general" className="flex items-center">
@@ -159,7 +203,8 @@ const OAuthProfileCompletion = ({ email, fullName, avatarUrl }: OAuthProfileComp
           />
         </div>
 
-        {accountType === "professional" && (
+        {/* --- START: UI for Account Type Options --- */}
+        {accountType === "professional" ? (
           <div className="space-y-2">
             <Label htmlFor="profession">Jenis Profesi</Label>
             <Select onValueChange={handleSelectChange} required>
@@ -175,7 +220,56 @@ const OAuthProfileCompletion = ({ email, fullName, avatarUrl }: OAuthProfileComp
               </SelectContent>
             </Select>
           </div>
+        ) : (
+          <div className="space-y-4 rounded-md border bg-card p-4 shadow-sm">
+            <Label className="font-medium text-sm text-foreground">
+              Peran dalam Keluarga (Opsional)
+            </Label>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isParent"
+                onCheckedChange={() => handleSubtypeChange("parent")}
+                checked={subtypes.includes("parent")}
+              />
+              <Label
+                htmlFor="isParent"
+                className="cursor-pointer text-sm font-normal"
+              >
+                Saya adalah Orang Tua
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isChild"
+                onCheckedChange={() => handleSubtypeChange("child")}
+                checked={subtypes.includes("child")}
+              />
+              <Label
+                htmlFor="isChild"
+                className="cursor-pointer text-sm font-normal"
+              >
+                Saya adalah Anak
+              </Label>
+            </div>
+
+            {subtypes.includes("child") && (
+              <div className="space-y-2 pl-6 pt-2 animate-in fade-in-50">
+                <Label htmlFor="parentId" className="text-xs">
+                  ID Akun Orang Tua
+                </Label>
+                <Input
+                  id="parentId"
+                  type="text"
+                  placeholder="Masukkan ID yang diberikan orang tua"
+                  value={formData.parentId}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            )}
+          </div>
         )}
+        {/* --- END: UI for Account Type Options --- */}
 
         <Button
           type="submit"
