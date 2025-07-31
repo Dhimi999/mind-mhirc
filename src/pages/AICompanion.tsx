@@ -44,8 +44,9 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { InitialDialog } from "@/components/ai/InitialDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+// ... (interface Message dan Conversation tidak berubah)
 
 interface Message {
   id: string;
@@ -65,6 +66,7 @@ interface Conversation {
 }
 
 const AICompanion = () => {
+  // ... (semua state tidak berubah)
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] =
     useState<Conversation | null>(null);
@@ -76,12 +78,12 @@ const AICompanion = () => {
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showInitialDialog, setShowInitialDialog] = useState(false);
   const isMobile = useIsMobile();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // ... (semua useEffect tidak berubah)
   useEffect(() => {
     if (user) {
       fetchConversations();
@@ -89,15 +91,11 @@ const AICompanion = () => {
   }, [user]);
 
   useEffect(() => {
-    // Auto-start new conversation when component mounts
     if (!isLoadingConversations && user && conversations.length === 0) {
       createNewConversation();
     }
   }, [isLoadingConversations, user, conversations.length]);
 
-  // --- PERUBAHAN KUNCI ---
-  // useEffect ini sekarang hanya fokus untuk memuat pesan,
-  // logika rangkuman dipindahkan ke `handleConversationSwitch` untuk menghindari bug.
   useEffect(() => {
     if (currentConversation) {
       fetchMessages(currentConversation.id);
@@ -115,6 +113,7 @@ const AICompanion = () => {
     }
   }, [messages]);
 
+  // ... (fetchConversations, fetchMessages, createNewConversation, deleteConversation, updateConversationTitle tidak berubah)
   const fetchConversations = async () => {
     if (!user) return;
     try {
@@ -302,104 +301,93 @@ const AICompanion = () => {
     }
   };
 
-  const updateConversationSummaryIfNeeded = async (
-    conversation: Conversation,
-    allMessages: Message[]
-  ) => {
-    const recentMessages = allMessages.slice(-10);
-    if (recentMessages.length < 4) return;
+  // const updateConversationSummaryIfNeeded = async (
+  //   conversation: Conversation,
+  //   allMessages: Message[]
+  // ) => {
+  //   const recentMessages = allMessages.slice(-10);
+  //   if (recentMessages.length < 4 || conversation.summary) return; // Jangan rangkum jika sudah ada
 
-    const conversationContext = recentMessages
-      .map((msg) => `${msg.sender === "user" ? "User" : "AI"}: ${msg.content}`)
-      .join("\n");
+  //   const conversationContext = recentMessages
+  //     .map((msg) => `${msg.sender === "user" ? "User" : "AI"}: ${msg.content}`)
+  //     .join("\n");
 
-    const summarizationPrompt = `
-    Berdasarkan percakapan berikut, buatlah sebuah rangkuman singkat (sekitar 5-7 kata) dalam Bahasa Indonesia yang menggambarkan topik utama.
-    Percakapan:
-    ---
-    ${conversationContext}
-    ---
-    Contoh output: "Rencana Liburan ke Bali" atau "Diskusi Proyek Supabase".
-    Rangkuman:
-  `;
+  //   try {
+  //     // Panggil fungsi 'chat-ai' untuk membuat dan menyimpan rangkuman.
+  //     // Kita tidak perlu menunggu (await) hasilnya untuk update UI, tapi kita ambil hasilnya
+  //     // untuk memperbarui state lokal secara instan.
+  //     const { data, error } = await supabase.functions.invoke("chat-ai", {
+  //       body: {
+  //         task: "summarize",
+  //         message: conversationContext,
+  //         conversation_id: conversation.id,
+  //         user_id: user.id // Kirim ID agar fungsi bisa menyimpan
+  //       }
+  //     });
 
-    try {
-      const { data, error } = await supabase.functions.invoke("chat-ai", {
-        body: { message: summarizationPrompt }
-      });
-      if (error) throw error;
-      const newSummary = data.text.trim();
+  //     if (error) throw error;
 
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === conversation.id ? { ...c, summary: newSummary } : c
-        )
-      );
-      if (currentConversation?.id === conversation.id) {
-        setCurrentConversation((prev) =>
-          prev ? { ...prev, summary: newSummary } : null
-        );
-      }
+  //     // Perbarui state lokal untuk responsivitas UI
+  //     const newSummary = data.text.trim();
+  //     setConversations((prev) =>
+  //       prev.map((c) =>
+  //         c.id === conversation.id ? { ...c, summary: newSummary } : c
+  //       )
+  //     );
+  //   } catch (error) {
+  //     console.error("Gagal membuat rangkuman:", error);
+  //   }
+  // };
 
-      await supabase
-        .from("ai_conversations")
-        .update({ summary: newSummary, updated_at: new Date().toISOString() })
-        .eq("id", conversation.id);
-    } catch (error) {
-      console.error("Gagal membuat rangkuman:", error);
-    }
-  };
+  // const updateFullSummaryIfNeeded = async (
+  //   conversation: Conversation,
+  //   allMessages: Message[]
+  // ) => {
+  //   const recentMessages = allMessages.slice(-20);
+  //   if (recentMessages.length < 10 || conversation.full_summary) return; // Jangan rangkum jika sudah ada
 
-  const updateFullSummaryIfNeeded = async (
-    conversation: Conversation,
-    allMessages: Message[]
-  ) => {
-    const recentMessages = allMessages.slice(-20);
-    if (recentMessages.length < 10) return;
+  //   const conversationContext = recentMessages
+  //     .map((msg) => `${msg.sender === "user" ? "User" : "AI"}: ${msg.content}`)
+  //     .join("\n");
 
-    const conversationContext = recentMessages
-      .map((msg) => `${msg.sender === "user" ? "User" : "AI"}: ${msg.content}`)
-      .join("\n");
+  //   try {
+  //     // Panggil fungsi 'chat-ai' untuk membuat dan menyimpan rangkuman penuh.
+  //     const { data, error } = await supabase.functions.invoke("chat-ai", {
+  //       body: {
+  //         task: "full_summarize",
+  //         message: conversationContext,
+  //         conversation_id: conversation.id,
+  //         user_id: user.id // Kirim ID agar fungsi bisa menyimpan
+  //       }
+  //     });
 
-    const summarizationPrompt = `
-    Analisis dan rangkum percakapan berikut dalam beberapa poin utama. Fokus pada:
-    1.  Topik utama yang sedang dibahas.
-    2.  Informasi penting, keputusan, atau kesimpulan yang telah dibuat.
-    3.  Pertanyaan terakhir atau niat pengguna yang belum terselesaikan.
-    
-    Tulis rangkuman dalam format naratif yang jelas untuk digunakan sebagai konteks di masa mendatang.
-    Percakapan:
-    ---
-    ${conversationContext}
-    ---
-    Ringkasan Lengkap:
-  `;
+  //     if (error) throw error;
 
-    try {
-      const { data, error } = await supabase.functions.invoke("chat-ai", {
-        body: { message: summarizationPrompt }
-      });
-      if (error) throw error;
-      const newFullSummary = data.text.trim();
+  //     // Perbarui state lokal untuk konsistensi data
+  //     const newFullSummary = data.text.trim();
+  //     setConversations((prev) =>
+  //       prev.map((c) =>
+  //         c.id === conversation.id ? { ...c, full_summary: newFullSummary } : c
+  //       )
+  //     );
+  //   } catch (error) {
+  //     console.error("Gagal membuat rangkuman lengkap:", error);
+  //   }
+  // };
 
-      await supabase
-        .from("ai_conversations")
-        .update({ full_summary: newFullSummary })
-        .eq("id", conversation.id);
-    } catch (error) {
-      console.error("Gagal membuat rangkuman lengkap:", error);
-    }
-  };
+  // ... (handleConversationSwitch, sendMessage, dan sisa kode tidak berubah)
+  // const handleConversationSwitch = (nextConversation: Conversation) => {
+  //   if (currentConversation?.id === nextConversation.id) return;
 
-  // --- PERUBAHAN KUNCI ---
-  // Fungsi handler baru untuk mengelola perpindahan percakapan dan memicu rangkuman.
+  //   if (currentConversation && messages.length > 1) {
+  //     updateConversationSummaryIfNeeded(currentConversation, messages);
+  //     updateFullSummaryIfNeeded(currentConversation, messages);
+  //   }
+
+  //   setCurrentConversation(nextConversation);
+  // };
   const handleConversationSwitch = (nextConversation: Conversation) => {
-    if (currentConversation?.id === nextConversation.id) return;
-
-    if (currentConversation && messages.length > 1) {
-      updateConversationSummaryIfNeeded(currentConversation, messages);
-      updateFullSummaryIfNeeded(currentConversation, messages);
-    }
+    if (currentConversation?.id === nextConversation.id) return; // Langsung ganti state, tidak ada lagi pemicu summary di sini
 
     setCurrentConversation(nextConversation);
   };
@@ -461,8 +449,11 @@ const AICompanion = () => {
       const { data: aiData, error: functionError } =
         await supabase.functions.invoke("chat-ai", {
           body: {
+            // Pastikan tiga properti ini ada
             history: historyForAI,
-            message: userMessageContent
+            message: userMessageContent,
+            conversation_id: conversationId,
+            user_id: user.id // <-- TAMBAHAN PENTING
           }
         });
 
@@ -480,22 +471,22 @@ const AICompanion = () => {
       setMessages((prevMessages) => [...prevMessages, tempAiMessage]);
       setIsTyping(false);
 
-      await Promise.all([
-        supabase.from("ai_messages").insert({
-          conversation_id: conversationId,
-          user_id: user.id,
-          content: userMessageContent,
-          sender: "user",
-          created_at: tempUserMessage.created_at
-        }),
-        supabase.from("ai_messages").insert({
-          conversation_id: conversationId,
-          user_id: user.id,
-          content: aiResponseContent,
-          sender: "ai",
-          created_at: tempAiMessage.created_at
-        })
-      ]);
+      // await Promise.all([
+      //   supabase.from("ai_messages").insert({
+      //     conversation_id: conversationId,
+      //     user_id: user.id,
+      //     content: userMessageContent,
+      //     sender: "user",
+      //     created_at: tempUserMessage.created_at
+      //   }),
+      //   supabase.from("ai_messages").insert({
+      //     conversation_id: conversationId,
+      //     user_id: user.id,
+      //     content: aiResponseContent,
+      //     sender: "ai",
+      //     created_at: tempAiMessage.created_at
+      //   })
+      // ]);
     } catch (error) {
       console.error("Error invoking function or sending message:", error);
       toast({
@@ -540,12 +531,6 @@ const AICompanion = () => {
     setNewTitle("");
   };
 
-  const handleContinueLastChat = () => {
-    if (conversations.length > 0) {
-      setCurrentConversation(conversations[0]);
-    }
-  };
-
   return (
     <div className="h-screen max-h-screen flex overflow-hidden">
       {/* Sidebar */}
@@ -588,8 +573,6 @@ const AICompanion = () => {
                       ? "bg-muted"
                       : "hover:bg-muted/50"
                   }`}
-                  // --- PERUBAHAN KUNCI ---
-                  // onClick sekarang memanggil handler baru yang lebih aman.
                   onClick={() => handleConversationSwitch(conversation)}
                 >
                   <CardContent className="p-3">
@@ -611,8 +594,6 @@ const AICompanion = () => {
                       ) : (
                         <>
                           <div className="flex-1 min-w-0">
-                            {/* --- PERUBAHAN KUNCI --- */}
-                            {/* Menampilkan summary sebagai fallback judul. */}
                             <h3 className="font-medium text-sm truncate">
                               {conversation.summary || conversation.title}
                             </h3>
@@ -736,7 +717,7 @@ const AICompanion = () => {
                     }`}
                     onClick={() => {
                       handleConversationSwitch(conversation);
-                      setShowMobileMenu(false); // Close mobile menu when conversation is selected
+                      setShowMobileMenu(false);
                     }}
                   >
                     <CardContent className="p-3">
