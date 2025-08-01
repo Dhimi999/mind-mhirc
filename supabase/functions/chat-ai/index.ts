@@ -10,38 +10,46 @@ const corsHeaders = {
 
 // --- PROMPT HELPERS ---
 
-// Prompt untuk moderasi pesan pengguna
 const createSafetyCheckPrompt = (userMessage: string) => {
   return `
 Kamu adalah chatbot pendamping yang bersifat empatik, suportif, dan tidak menghakimi. 
 Tugasmu adalah menganalisis pesan dari pengguna dan memberikan dua respons dalam format JSON yang valid:
 1. "jawaban": Respons kamu yang hangat, empatik, dan suportif untuk ditampilkan kepada pengguna.
-2. "flag": Status boolean (true/false) yang menandakan jika pesan pengguna mengandung indikasi bahaya seperti ingin menyakiti diri sendiri, bunuh diri, kekerasan, atau tindakan berbahaya lainnya.
-
-Kamu TIDAK PERLU memberi tahu pengguna bahwa kamu sedang menandai flag ini. Flag ini hanya untuk sistem.
-
+2. "flag": Status boolean (true/false) yang menandakan jika pesan pengguna mengandung indikasi bahaya.
 Berikut adalah pesan dari pengguna:
 ---
 ${userMessage}
 ---
-
-Hasilkan jawaban HANYA dalam format JSON yang valid seperti ini:
-{
-  "jawaban": "Teks jawaban empatikmu di sini...",
-  "flag": true
-}`;
+Hasilkan jawaban HANYA dalam format JSON: { "jawaban": "...", "flag": true/false }`;
 };
 
-// Prompt untuk membuat rangkuman (judul dan isi)
 const createOptimizedSummaryPrompt = (
   newMessagesContext: string,
   existingSummary: string | null
 ) => {
   const intro = existingSummary
-    ? `Rangkuman saat ini adalah:\n"${existingSummary}"\n\nPesan-pesan terbaru adalah:\n---\n${newMessagesContext}\n---`
+    ? `Rangkuman saat ini:\n"${existingSummary}"\n\nPesan terbaru:\n---\n${newMessagesContext}\n---`
     : `Analisis percakapan awal ini:\n---\n${newMessagesContext}\n---`;
 
-  return `${intro}\n\nBerdasarkan pesan terbaru, perbarui/buat rangkuman dan buatlah judul yang paling relevan (1-5 kata). Hasilkan HANYA dalam format JSON:\n{\n  "title": "Judul baru/relevan",\n  "summary": "Rangkuman lengkap yang baru."\n}`;
+  return `${intro}\n\nBerdasarkan pesan terbaru, perbarui/buat rangkuman dan judul relevan (1-5 kata). Hasilkan HANYA dalam format JSON:\n{\n  "title": "Judul baru/relevan",\n  "summary": "Rangkuman lengkap yang baru."\n}`;
+};
+
+const createConsultationPrompt = (
+  userMessage: string,
+  consultationSummary: string
+) => {
+  return `
+Anda adalah seorang konselor AI yang membantu orang tua memahami situasi yang dialami anak mereka.
+Fokus utama Anda adalah memberikan panduan, saran, dan dukungan.
+Berikut adalah rangkuman masalah yang sedang dihadapi anak:
+---
+${consultationSummary}
+---
+Dan ini adalah pertanyaan dari orang tua:
+---
+${userMessage}
+---
+Tolong berikan jawaban Anda sebagai seorang konselor ahli.`;
 };
 
 // --- FUNGSI RETRY ---
@@ -78,7 +86,7 @@ serve(async (req) => {
 
   try {
     const requestTimestamp = new Date();
-    const { history, message, conversation_id, user_id } = await req.json();
+    const { message, conversation_id, user_id } = await req.json();
 
     if (!message || !conversation_id || !user_id) {
       throw new Error("Message, conversation_id, and user_id are required.");
@@ -89,106 +97,170 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
     const genAI = new GoogleGenerativeAI(Deno.env.get("GEMINI_API_KEY")!);
-    // PENTING: Gunakan nama model resmi untuk stabilitas
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite"
+      model: "gemini-1.5-flash-latest"
     });
 
-    // 1. Dapatkan Respons AI yang sudah dimoderasi
-    const moderationResult = await retryWithBackoff(() =>
-      model.generateContent(createSafetyCheckPrompt(message), {
-        responseMimeType: "application/json"
-      })
-    );
-
-    const rawResponseText = moderationResult.response.text();
-    const jsonMatch = rawResponseText.match(/{[\s\S]*}/);
-    if (!jsonMatch) {
-      throw new Error("Invalid JSON response from moderation AI.");
-    }
-
-    const { jawaban, flag } = JSON.parse(jsonMatch[0]);
-    const aiResponseText = jawaban;
-    const isUrgent = flag === true || flag === "true";
-
-    // 2. Simpan Pesan dengan flag_urgent
-    const aiTimestamp = new Date(requestTimestamp.getTime() + 1);
-    await supabaseAdmin.from("ai_messages").insert([
-      {
-        conversation_id,
-        user_id,
-        content: message,
-        sender: "user",
-        created_at: requestTimestamp.toISOString(),
-        flag_urgent: isUrgent
-      },
-      {
-        conversation_id,
-        user_id,
-        content: aiResponseText,
-        sender: "ai",
-        created_at: aiTimestamp.toISOString(),
-        flag_urgent: "false"
-      }
-    ]);
-    console.log(
-      `[DB] Messages saved. User message flagged as urgent: ${isUrgent}`
-    );
-
-    // Panggil fungsi notifikasi jika urgent (tanpa menunggu)
-    if (isUrgent) {
-      supabaseAdmin.functions
-        .invoke("notify-parent", {
-          body: {
-            messageContent: message,
-            flaggedByUserId: user_id,
-            conversationId: conversation_id
-          }
-        })
-        .catch((err) => {
-          console.error("Error invoking notify-admin function:", err);
-        });
-    }
-
-    // 3. Proses Perangkuman Otomatis
-    const { data: convData } = await supabaseAdmin
+    const { data: conversationData, error: convError } = await supabaseAdmin
       .from("ai_conversations")
-      .select("full_summary, messages_count")
+      .select("conversation_type, full_summary, messages_count")
       .eq("id", conversation_id)
       .single();
 
-    if (convData) {
-      const { full_summary: existingSummary, messages_count: oldCount } =
-        convData;
-      const newMessagesCount = oldCount + 2;
+    if (convError)
+      throw new Error(
+        `Could not fetch conversation data: ${convError.message}`
+      );
 
+    let aiResponseText;
+
+    // --- ALUR 1: PERCAKAPAN KONSULTASI ---
+    if (conversationData?.conversation_type === "consultation") {
+      console.log(
+        `[AI] Generating CONSULTATION response for: ${conversation_id}`
+      );
+      const consultationSummary =
+        conversationData.full_summary || "Tidak ada rangkuman detail.";
+      const consultationPrompt = createConsultationPrompt(
+        message,
+        consultationSummary
+      );
+      const result = await retryWithBackoff(() =>
+        model.generateContent(consultationPrompt)
+      );
+      aiResponseText = result.response.text();
+
+      await supabaseAdmin.from("ai_messages").insert([
+        {
+          conversation_id,
+          user_id,
+          content: message,
+          sender: "user",
+          created_at: requestTimestamp.toISOString()
+        },
+        {
+          conversation_id,
+          user_id,
+          content: aiResponseText,
+          sender: "ai",
+          created_at: new Date(requestTimestamp.getTime() + 1).toISOString()
+        }
+      ]);
+      console.log(`[DB] Consultation messages saved.`);
+    } else {
+      // --- ALUR 2: PERCAKAPAN BIASA (DENGAN MODERASI & SUMMARY) ---
+      console.log(`[AI] Generating GENERAL response for: ${conversation_id}`);
+
+      const moderationResult = await retryWithBackoff(() =>
+        model.generateContent(createSafetyCheckPrompt(message), {
+          responseMimeType: "application/json"
+        })
+      );
+      const rawResponseText = moderationResult.response.text();
+      const jsonMatch = rawResponseText.match(/{[\s\S]*}/);
+      if (!jsonMatch)
+        throw new Error("Invalid JSON response from moderation AI.");
+
+      const { jawaban, flag } = JSON.parse(jsonMatch[0]);
+      aiResponseText = jawaban;
+      const isUrgent = flag === true || flag === "true";
+
+      await supabaseAdmin.from("ai_messages").insert([
+        {
+          conversation_id,
+          user_id,
+          content: message,
+          sender: "user",
+          created_at: requestTimestamp.toISOString(),
+          flag_urgent: isUrgent
+        },
+        {
+          conversation_id,
+          user_id,
+          content: aiResponseText,
+          sender: "ai",
+          created_at: new Date(requestTimestamp.getTime() + 1).toISOString(),
+          flag_urgent: "false"
+        }
+      ]);
+      console.log(`[DB] Messages saved. Urgent: ${isUrgent}`);
+
+      if (isUrgent) {
+        const { data: existingCase } = await supabaseAdmin
+          .from("urgent_cases")
+          .select("id")
+          .eq("source_conversation_id", conversation_id)
+          .eq("is_resolved", false)
+          .maybeSingle();
+        if (!existingCase) {
+          const { data: childProfile } = await supabaseAdmin
+            .from("profiles")
+            .select("parent_id")
+            .eq("id", user_id)
+            .single();
+          if (childProfile?.parent_id) {
+            const { data: userMessage } = await supabaseAdmin
+              .from("ai_messages")
+              .select("id")
+              .eq("conversation_id", conversation_id)
+              .eq("sender", "user")
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single();
+            if (userMessage) {
+              await supabaseAdmin.from("urgent_cases").insert({
+                child_user_id: user_id,
+                parent_user_id: childProfile.parent_id,
+                source_conversation_id: conversation_id,
+                source_message_id: userMessage.id
+              });
+              console.log(
+                `[CASE CREATED] New urgent case for conversation ${conversation_id}`
+              );
+              supabaseAdmin.functions
+                .invoke("notify-parent", {
+                  body: {
+                    messageContent: message,
+                    flaggedByUserId: user_id,
+                    conversationId: conversation_id
+                  }
+                })
+                .catch((err) =>
+                  console.error("Error invoking notify-parent:", err)
+                );
+            }
+          }
+        }
+      }
+
+      const { full_summary: existingSummary, messages_count: oldCount } =
+        conversationData;
+      const newMessagesCount = (oldCount || 0) + 2;
       let contextForSummary: string | null = null;
       let summaryMode: "INITIAL" | "UPDATE" | null = null;
 
       if (newMessagesCount >= 4 && !existingSummary) {
         summaryMode = "INITIAL";
-        const { data: initialMessages } = await supabaseAdmin
+        const { data: msgs } = await supabaseAdmin
           .from("ai_messages")
           .select("content, sender")
           .eq("conversation_id", conversation_id)
           .order("created_at", { ascending: true })
           .limit(4);
         contextForSummary =
-          initialMessages
-            ?.map((msg) => `${msg.sender}: ${msg.content}`)
-            .join("\n") || null;
+          msgs?.map((m) => `${m.sender}: ${m.content}`).join("\n") || null;
       } else if (newMessagesCount > 4 && existingSummary) {
         summaryMode = "UPDATE";
-        const { data: recentMessages } = await supabaseAdmin
+        const { data: msgs } = await supabaseAdmin
           .from("ai_messages")
           .select("content, sender")
           .eq("conversation_id", conversation_id)
           .order("created_at", { ascending: false })
           .limit(2);
         contextForSummary =
-          recentMessages
+          msgs
             ?.reverse()
-            .map((msg) => `${msg.sender}: ${msg.content}`)
+            .map((m) => `${m.sender}: ${m.content}`)
             .join("\n") || null;
       }
 
@@ -200,11 +272,9 @@ serve(async (req) => {
             { responseMimeType: "application/json" }
           )
         );
-
         const summaryJsonMatch = summaryResponse.response
           .text()
           .match(/{[\s\S]*}/);
-
         if (summaryJsonMatch) {
           const { title, summary } = JSON.parse(summaryJsonMatch[0]);
           await supabaseAdmin
@@ -215,16 +285,11 @@ serve(async (req) => {
               updated_at: new Date().toISOString()
             })
             .eq("id", conversation_id);
-          console.log(`[SUCCESS] Summary updated for ${conversation_id}`);
-        } else {
-          console.error(
-            `[ERROR] Failed to parse JSON summary for ${conversation_id}.`
-          );
+          console.log(`[SUCCESS] Summary updated.`);
         }
       }
     }
 
-    // 4. Kembalikan Respons Teks AI ke Frontend
     return new Response(JSON.stringify({ text: aiResponseText }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200

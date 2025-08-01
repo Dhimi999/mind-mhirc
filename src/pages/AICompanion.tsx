@@ -45,6 +45,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Database } from "@/integrations/supabase/types"; // <-- Impor tipe dari file yang digenerate
 
 // ... (interface Message dan Conversation tidak berubah)
 
@@ -64,7 +65,11 @@ interface Conversation {
   summary?: string | null;
   full_summary?: string | null;
 }
-
+type UrgentCase = Database["public"]["Tables"]["urgent_cases"]["Row"] & {
+  source_conversation: {
+    title: string | null;
+  } | null;
+};
 const AICompanion = () => {
   // ... (semua state tidak berubah)
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -82,6 +87,7 @@ const AICompanion = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [urgentCases, setUrgentCases] = useState<UrgentCase[]>([]);
 
   // ... (semua useEffect tidak berubah)
   useEffect(() => {
@@ -113,20 +119,93 @@ const AICompanion = () => {
     }
   }, [messages]);
 
+  useEffect(() => {
+    console.log("===== FRONTEND STATE UPDATE =====");
+    console.log("User ID:", user ? user.id : "Not logged in");
+    console.log("Urgent Cases in State:", urgentCases);
+    console.log("Total Conversations in State:", conversations.length);
+    console.log("===============================");
+  }, [user, urgentCases, conversations]);
+  // Tambahkan useEffect ini di komponen Anda
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel("ai_conversations_update")
+      .on<Conversation>(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "ai_conversations",
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log(
+            "Realtime update received for a conversation:",
+            payload.new
+          );
+          // Perbarui state conversations dengan data baru
+          setConversations((prevConvos) =>
+            prevConvos.map((convo) =>
+              convo.id === payload.new.id ? { ...convo, ...payload.new } : convo
+            )
+          );
+          // Perbarui juga currentConversation jika itu yang sedang aktif
+          if (currentConversation?.id === payload.new.id) {
+            setCurrentConversation((prev) =>
+              prev ? { ...prev, ...payload.new } : null
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    // Bersihkan channel saat komponen di-unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, currentConversation?.id]); // Tambahkan currentConversation.id agar bisa update state-nya
+
   // ... (fetchConversations, fetchMessages, createNewConversation, deleteConversation, updateConversationTitle tidak berubah)
   const fetchConversations = async () => {
     if (!user) return;
     try {
       setIsLoadingConversations(true);
-      const { data, error } = await supabase
-        .from("ai_conversations")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      setConversations(data || []);
-      if (data && data.length > 0 && !currentConversation) {
-        setCurrentConversation(data[0]);
+      const [convResponse, casesResponse] = await Promise.all([
+        supabase
+          .from("ai_conversations")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false }),
+        supabase
+          .from("urgent_cases")
+          .select("*, source_conversation:source_conversation_id(title)")
+          .eq("parent_user_id", user.id)
+          .eq("is_resolved", false)
+      ]);
+
+      // --- LOG UNTUK DEBUGGING ---
+      // Log ini menunjukkan data mentah langsung dari Supabase
+      console.log("===== DATA RAW DARI SUPABASE =====");
+      console.log("Raw Conversations Response:", convResponse.data);
+      console.log("Raw Urgent Cases Response:", casesResponse.data);
+      console.log("=================================");
+      // -----------------------------
+
+      if (convResponse.error) throw convResponse.error;
+      if (casesResponse.error) throw casesResponse.error;
+
+      setConversations(convResponse.data || []);
+      setUrgentCases((casesResponse.data as any[]) || []);
+
+      if (
+        convResponse.data &&
+        convResponse.data.length > 0 &&
+        !currentConversation
+      ) {
+        setCurrentConversation(convResponse.data[0]);
       }
     } catch (error) {
       console.error("Error fetching conversations:", error);
@@ -301,91 +380,30 @@ const AICompanion = () => {
     }
   };
 
-  // const updateConversationSummaryIfNeeded = async (
-  //   conversation: Conversation,
-  //   allMessages: Message[]
-  // ) => {
-  //   const recentMessages = allMessages.slice(-10);
-  //   if (recentMessages.length < 4 || conversation.summary) return; // Jangan rangkum jika sudah ada
+  const handleStartConsultation = async (caseItem: UrgentCase) => {
+    if (!user) return;
+    try {
+      toast({ title: "Mempersiapkan Ruang Konsultasi..." });
+      const { data: newConsultation, error } = await supabase.functions.invoke(
+        "start-consultation",
+        {
+          body: { case_id: caseItem.id, parent_user_id: user.id }
+        }
+      );
 
-  //   const conversationContext = recentMessages
-  //     .map((msg) => `${msg.sender === "user" ? "User" : "AI"}: ${msg.content}`)
-  //     .join("\n");
+      if (error) throw error;
 
-  //   try {
-  //     // Panggil fungsi 'chat-ai' untuk membuat dan menyimpan rangkuman.
-  //     // Kita tidak perlu menunggu (await) hasilnya untuk update UI, tapi kita ambil hasilnya
-  //     // untuk memperbarui state lokal secara instan.
-  //     const { data, error } = await supabase.functions.invoke("chat-ai", {
-  //       body: {
-  //         task: "summarize",
-  //         message: conversationContext,
-  //         conversation_id: conversation.id,
-  //         user_id: user.id // Kirim ID agar fungsi bisa menyimpan
-  //       }
-  //     });
+      // Tambahkan percakapan baru ke daftar dan langsung beralih
+      setConversations((prev) => [newConsultation, ...prev]);
+      setCurrentConversation(newConsultation);
+      // Hapus notifikasi dari UI secara optimis
+      setUrgentCases((prev) => prev.filter((c) => c.id !== caseItem.id));
+    } catch (error) {
+      toast({ title: "Gagal memulai konsultasi", variant: "destructive" });
+      console.error("Error starting consultation:", error);
+    }
+  };
 
-  //     if (error) throw error;
-
-  //     // Perbarui state lokal untuk responsivitas UI
-  //     const newSummary = data.text.trim();
-  //     setConversations((prev) =>
-  //       prev.map((c) =>
-  //         c.id === conversation.id ? { ...c, summary: newSummary } : c
-  //       )
-  //     );
-  //   } catch (error) {
-  //     console.error("Gagal membuat rangkuman:", error);
-  //   }
-  // };
-
-  // const updateFullSummaryIfNeeded = async (
-  //   conversation: Conversation,
-  //   allMessages: Message[]
-  // ) => {
-  //   const recentMessages = allMessages.slice(-20);
-  //   if (recentMessages.length < 10 || conversation.full_summary) return; // Jangan rangkum jika sudah ada
-
-  //   const conversationContext = recentMessages
-  //     .map((msg) => `${msg.sender === "user" ? "User" : "AI"}: ${msg.content}`)
-  //     .join("\n");
-
-  //   try {
-  //     // Panggil fungsi 'chat-ai' untuk membuat dan menyimpan rangkuman penuh.
-  //     const { data, error } = await supabase.functions.invoke("chat-ai", {
-  //       body: {
-  //         task: "full_summarize",
-  //         message: conversationContext,
-  //         conversation_id: conversation.id,
-  //         user_id: user.id // Kirim ID agar fungsi bisa menyimpan
-  //       }
-  //     });
-
-  //     if (error) throw error;
-
-  //     // Perbarui state lokal untuk konsistensi data
-  //     const newFullSummary = data.text.trim();
-  //     setConversations((prev) =>
-  //       prev.map((c) =>
-  //         c.id === conversation.id ? { ...c, full_summary: newFullSummary } : c
-  //       )
-  //     );
-  //   } catch (error) {
-  //     console.error("Gagal membuat rangkuman lengkap:", error);
-  //   }
-  // };
-
-  // ... (handleConversationSwitch, sendMessage, dan sisa kode tidak berubah)
-  // const handleConversationSwitch = (nextConversation: Conversation) => {
-  //   if (currentConversation?.id === nextConversation.id) return;
-
-  //   if (currentConversation && messages.length > 1) {
-  //     updateConversationSummaryIfNeeded(currentConversation, messages);
-  //     updateFullSummaryIfNeeded(currentConversation, messages);
-  //   }
-
-  //   setCurrentConversation(nextConversation);
-  // };
   const handleConversationSwitch = (nextConversation: Conversation) => {
     if (currentConversation?.id === nextConversation.id) return; // Langsung ganti state, tidak ada lagi pemicu summary di sini
 
@@ -565,6 +583,29 @@ const AICompanion = () => {
             </div>
           ) : (
             <div className="p-2 space-y-2">
+              {urgentCases.map((caseItem) => (
+                <Card
+                  key={caseItem.id}
+                  className="cursor-pointer bg-destructive/10 border-destructive hover:bg-destructive/20 m-2"
+                  onClick={() => handleStartConsultation(caseItem)}
+                >
+                  <CardContent className="p-3">
+                    <h3 className="font-bold text-sm text-destructive">
+                      🚨 PERLU PERHATIAN
+                    </h3>
+                    <p className="text-xs text-destructive/80">
+                      Membahas percakapan anak: "
+                      {/* [PERBAIKAN DI SINI] 
+          Gunakan optional chaining (?.) untuk mengakses title dengan aman.
+          Gunakan (||) untuk memberikan teks alternatif jika title tidak ada.
+        */}
+                      {caseItem.source_conversation?.title ||
+                        "Percakapan Telah Dihapus"}
+                      "
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
               {conversations.map((conversation) => (
                 <Card
                   key={conversation.id}
