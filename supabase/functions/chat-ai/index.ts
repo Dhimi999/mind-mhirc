@@ -15,7 +15,7 @@ const createSafetyCheckPrompt = (userMessage: string) => {
 Kamu adalah chatbot pendamping yang bersifat empatik, suportif, dan tidak menghakimi. 
 Tugasmu adalah menganalisis pesan dari pengguna dan memberikan dua respons dalam format JSON yang valid:
 1. "jawaban": Respons kamu yang hangat, empatik, dan suportif untuk ditampilkan kepada pengguna.
-2. "flag": Status boolean (true/false) yang menandakan jika pesan pengguna mengandung indikasi bahaya.
+2. "flag": Status boolean (true/false) yang menandakan jika pesan pengguna mengandung indikasi bahaya atau dalam kondisi sedih dan frustasi.
 Berikut adalah pesan dari pengguna:
 ---
 ${userMessage}
