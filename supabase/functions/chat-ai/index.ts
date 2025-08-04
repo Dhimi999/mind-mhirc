@@ -98,7 +98,7 @@ serve(async (req) => {
     );
     const genAI = new GoogleGenerativeAI(Deno.env.get("GEMINI_API_KEY")!);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest"
+      model: "gemini-2.5-flash-lite"
     });
 
     const { data: conversationData, error: convError } = await supabaseAdmin
