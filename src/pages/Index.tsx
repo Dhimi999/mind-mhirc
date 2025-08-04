@@ -209,17 +209,22 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
+        {/* Judul Halaman Utama (Penting untuk SEO) */}
         <title>
           MIND MHIRC: Tes Psikologi, Konsultasi & Edukasi Kesehatan Mental
         </title>
+
+        {/* Deskripsi Halaman yang Lebih Spesifik */}
         <meta
           name="description"
-          content="Ini adalah halaman beranda dari Situs Keren yang membahas banyak hal."
+          content="Pusat riset dan layanan kesehatan mental di Indonesia. Temukan tes psikologi online, layanan konsultasi, dan artikel tepercaya untuk kesejahteraan mental Anda di MIND MHIRC."
         />
-        {/* Canonical URL (Memberitahu Google URL utama halaman ini) */}
-        <link rel="canonical" href="https://www.mind-mhirc.com/" />{" "}
-        {/* Ganti dengan URL asli situs Anda */}
-        {/* --- Open Graph Tags (untuk Berbagi di Media Sosial seperti Facebook, LinkedIn) --- */}
+
+        {/* --- URL Konsisten --- */}
+        <link rel="canonical" href="https://mind-mhirc.my.id/" />
+        <meta property="og:url" content="https://mind-mhirc.my.id/" />
+
+        {/* --- Open Graph Tags (untuk Media Sosial) --- */}
         <meta
           property="og:title"
           content="MIND MHIRC: Tes Psikologi, Konsultasi & Edukasi Kesehatan Mental"
@@ -229,14 +234,13 @@ const Index = () => {
           content="Mulai perjalanan kesehatan mental Anda dengan tes, konsultasi, dan edukasi berbasis bukti dari MIND MHIRC."
         />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.mind-mhirc.my.id/" />{" "}
-        {/* Ganti dengan URL asli situs Anda */}
         <meta
           property="og:image"
-          content="https://www.mind-mhirc.com/logo-hero.jpg"
-        />{" "}
-        {/* Ganti dengan URL gambar utama situs Anda */}
-        {/* --- Twitter Card Tags (untuk Berbagi di Twitter) --- */}
+          content="https://mind-mhirc.my.id/hero-image.jpg"
+        />
+        {/* Ganti 'hero-image.jpg' dengan nama file gambar utama Anda */}
+
+        {/* --- Twitter Card Tags (untuk Twitter) --- */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
@@ -248,9 +252,9 @@ const Index = () => {
         />
         <meta
           name="twitter:image"
-          content="https://www.mind-mhirc.com/logo-hero.jpg"
-        />{" "}
-        {/* Ganti dengan URL gambar utama situs Anda */}
+          content="https://mind-mhirc.my.id/hero-image.jpg"
+        />
+        {/* Ganti 'hero-image.jpg' dengan nama file gambar utama Anda */}
       </Helmet>
       <Navbar />
 

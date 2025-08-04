@@ -23,6 +23,7 @@ import {
   AccordionItem,
   AccordionTrigger
 } from "@/components/ui/accordion";
+import { Helmet } from "react-helmet-async"; // <-- Anda menambahkan import
 
 const About = () => {
   const [activeTab, setActiveTab] = useState<"visi" | "misi" | "nilai">("visi");
@@ -83,6 +84,53 @@ const About = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        {/* Judul yang Jelas dan Spesifik */}
+        <title>
+          Tentang Mind MHIRC - Pusat Riset Inovatif Kesehatan Mental
+        </title>
+
+        {/* Deskripsi yang Menjelaskan Siapa Anda */}
+        <meta
+          name="description"
+          content="Kenali Mind MHIRC, pusat riset inovatif kesehatan mental di Indonesia. Pelajari visi, misi, dan tim ahli kami yang berdedikasi untuk solusi kesehatan mental berbasis bukti."
+        />
+
+        {/* --- URL Konsisten untuk Halaman 'About' --- */}
+        <link rel="canonical" href="https://mind-mhirc.my.id/about" />
+        <meta property="og:url" content="https://mind-mhirc.my.id/about" />
+
+        {/* --- Open Graph Tags (untuk Media Sosial) --- */}
+        <meta
+          property="og:title"
+          content="Tentang Mind MHIRC - Visi, Misi, dan Tim Kami"
+        />
+        <meta
+          property="og:description"
+          content="Kenali tim ahli dan tujuan kami di Mind MHIRC dalam mengembangkan solusi kesehatan mental yang inklusif dan berbasis bukti untuk Indonesia."
+        />
+        <meta property="og:type" content="website" />
+        {/* Gunakan gambar logo atau tim yang representatif */}
+        <meta
+          property="og:image"
+          content="https://mind-mhirc.my.id/lovable-uploads/f1e145af-f219-4e03-adfb-d4d892faee8a.png"
+        />
+
+        {/* --- Twitter Card Tags (untuk Twitter) --- */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="Tentang Mind MHIRC - Visi, Misi, dan Tim Kami"
+        />
+        <meta
+          name="twitter:description"
+          content="Kenali tim ahli dan tujuan kami di Mind MHIRC dalam mengembangkan solusi kesehatan mental yang inklusif dan berbasis bukti untuk Indonesia."
+        />
+        <meta
+          name="twitter:image"
+          content="https://mind-mhirc.my.id/lovable-uploads/f1e145af-f219-4e03-adfb-d4d892faee8a.png"
+        />
+      </Helmet>
       <Navbar />
 
       <main className="flex-1">
