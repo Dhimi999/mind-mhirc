@@ -1,9 +1,14 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useLocation,
+  Navigate
+} from "react-router-dom";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
@@ -26,6 +31,7 @@ import EmailConfirmed from "./pages/EmailConfirmed";
 import TokenExpired from "./pages/TokenExpired";
 import CompleteOAuthProfile from "./pages/CompleteOAuthProfile";
 import UnderMaintanance from "./pages/UnderMaintenance";
+import { HelmetProvider } from "react-helmet-async";
 
 const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }) => {
@@ -38,7 +44,7 @@ const ProtectedRoute = ({ children }) => {
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
         <p className="text-muted-foreground">Memuat Data...</p>
       </div>
-    )
+    );
   }
 
   if (!user) {
@@ -47,7 +53,9 @@ const ProtectedRoute = ({ children }) => {
 
   // Redirect to complete profile if needed
   if (isOAuthProfileIncomplete) {
-    return <Navigate to="/complete-profile" state={{ from: location }} replace />;
+    return (
+      <Navigate to="/complete-profile" state={{ from: location }} replace />
+    );
   }
 
   return children;
@@ -55,7 +63,8 @@ const ProtectedRoute = ({ children }) => {
 
 // Auth callback handler
 const AuthCallback = () => {
-  const { refreshUser, isLoading, isAuthenticated, isOAuthProfileIncomplete } = useAuth();
+  const { refreshUser, isLoading, isAuthenticated, isOAuthProfileIncomplete } =
+    useAuth();
   const navigate = useLocation();
 
   useEffect(() => {
@@ -105,7 +114,7 @@ const AppRoutes = () => {
         <Route path="/tests" element={<UnderMaintanance />} />
         <Route path="/tests/:id" element={<UnderMaintanance />} />
         <Route path="/services" element={<Services />} />
-        <Route path="/services/:id" element={<ServiceDetail />} /> 
+        <Route path="/services/:id" element={<ServiceDetail />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />
@@ -135,21 +144,23 @@ const AppRoutes = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    {/* 1. Tambahkan HelmetProvider sebagai pembungkus terluar */}
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
-
 
 // Tests
 // TestDetail
