@@ -13,17 +13,18 @@ import {
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationPrevious,
+  PaginationPrevious
 } from "@/components/ui/pagination";
+import { Helmet } from "react-helmet-async"; // Jangan lupa import
 
-type BlogPostType = Tables<'blog_posts'>;
+type BlogPostType = Tables<"blog_posts">;
 
 const Blog = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [allPosts, setAllPosts] = useState<BlogPostType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 10;
@@ -57,9 +58,10 @@ const Blog = () => {
   }, []);
 
   // Filter posts berdasarkan search query
-  const filteredPosts = allPosts.filter((post) =>
-    post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPosts = allPosts.filter(
+    (post) =>
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Pisahkan postingan berdasarkan kategori
@@ -101,6 +103,54 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        {/* Judul yang menargetkan keyword pencarian umum */}
+        <title>
+          Blog Kesehatan Mental: Artikel, Berita & Tips | Mind MHIRC
+        </title>
+
+        {/* Deskripsi yang menarik dan kaya kata kunci */}
+        <meta
+          name="description"
+          content="Temukan koleksi artikel, berita terbaru, dan tips praktis seputar kesehatan mental dari para ahli di blog Mind MHIRC. Jelajahi topik seperti anxietas, depresi, dan cara menjaga kesejahteraan mental."
+        />
+
+        {/* --- URL Konsisten untuk Halaman 'Blog' --- */}
+        <link rel="canonical" href="https://mind-mhirc.my.id/blog" />
+        <meta property="og:url" content="https://mind-mhirc.my.id/blog" />
+
+        {/* --- Open Graph Tags (untuk Media Sosial) --- */}
+        <meta
+          property="og:title"
+          content="Kumpulan Artikel Kesehatan Mental Terbaru dari Mind MHIRC"
+        />
+        <meta
+          property="og:description"
+          content="Baca wawasan mendalam, berita, dan tips praktis untuk meningkatkan kesejahteraan mental Anda dari para ahli kami."
+        />
+        <meta property="og:type" content="website" />
+        {/* Ganti dengan URL gambar yang merepresentasikan blog Anda */}
+        <meta
+          property="og:image"
+          content="https://mind-mhirc.my.id/image-blog-hero.jpg"
+        />
+
+        {/* --- Twitter Card Tags (untuk Twitter) --- */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="Kumpulan Artikel Kesehatan Mental Terbaru dari Mind MHIRC"
+        />
+        <meta
+          name="twitter:description"
+          content="Baca wawasan mendalam, berita, dan tips praktis untuk meningkatkan kesejahteraan mental Anda dari para ahli kami."
+        />
+        <meta
+          name="twitter:image"
+          content="https://mind-mhirc.my.id/image-blog-hero.jpg"
+        />
+      </Helmet>
+
       <Navbar />
 
       <main className="flex-1 pt-12 md:pt-24 lg:pt-24 xl:pt-24 xxl:pt-24">
@@ -108,7 +158,8 @@ const Blog = () => {
           <div className="max-w-4xl mx-auto mb-12">
             <h1 className="text-4xl font-bold mb-4">Blog Mind MHIRC</h1>
             <p className="text-lg text-muted-foreground mb-8">
-              Jelajahi artikel, berita, dan tips tentang kesehatan mental dari para ahli dan peneliti kami.
+              Jelajahi artikel, berita, dan tips tentang kesehatan mental dari
+              para ahli dan peneliti kami.
             </p>
 
             {/* Search Box */}
@@ -149,7 +200,11 @@ const Blog = () => {
             {/* Tabs dan Pagination */}
             {!loading && !error && (
               <>
-                <Tabs defaultValue="all" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
+                <Tabs
+                  defaultValue="all"
+                  value={activeTab}
+                  onValueChange={(value) => setActiveTab(value)}
+                >
                   <TabsList className="mb-8 w-full flex justify-start border-b">
                     <TabsTrigger value="all" className="px-6">
                       Semua
@@ -165,11 +220,14 @@ const Blog = () => {
                   <TabsContent value="all">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                       {currentPosts.length > 0 ? (
-                        currentPosts.map((post) => <BlogPost key={post.id} post={post} />)
+                        currentPosts.map((post) => (
+                          <BlogPost key={post.id} post={post} />
+                        ))
                       ) : (
                         <div className="col-span-2 text-center py-12">
                           <p className="text-muted-foreground">
-                            Tidak ada artikel yang ditemukan. Silakan coba dengan kata kunci lain.
+                            Tidak ada artikel yang ditemukan. Silakan coba
+                            dengan kata kunci lain.
                           </p>
                         </div>
                       )}
@@ -182,9 +240,14 @@ const Blog = () => {
                               href="#"
                               onClick={(e) => {
                                 e.preventDefault();
-                                if (currentPage > 1) setCurrentPage(currentPage - 1);
+                                if (currentPage > 1)
+                                  setCurrentPage(currentPage - 1);
                               }}
-                              className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                              className={
+                                currentPage === 1
+                                  ? "pointer-events-none opacity-50"
+                                  : ""
+                              }
                             />
                           </PaginationItem>
                           {[...Array(totalPages)].map((_, index) => (
@@ -206,9 +269,14 @@ const Blog = () => {
                               href="#"
                               onClick={(e) => {
                                 e.preventDefault();
-                                if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                                if (currentPage < totalPages)
+                                  setCurrentPage(currentPage + 1);
                               }}
-                              className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                              className={
+                                currentPage === totalPages
+                                  ? "pointer-events-none opacity-50"
+                                  : ""
+                              }
                             />
                           </PaginationItem>
                         </PaginationContent>
@@ -222,19 +290,32 @@ const Blog = () => {
                         const postsNews = newsPosts.filter(
                           (post) =>
                             searchQuery === "" ||
-                            post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
+                            post.title
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase()) ||
+                            post.excerpt
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase())
                         );
-                        const totalPagesNews = Math.ceil(postsNews.length / postsPerPage);
+                        const totalPagesNews = Math.ceil(
+                          postsNews.length / postsPerPage
+                        );
                         const indexOfLastPostNews = currentPage * postsPerPage;
-                        const indexOfFirstPostNews = indexOfLastPostNews - postsPerPage;
-                        const currentPostsNews = postsNews.slice(indexOfFirstPostNews, indexOfLastPostNews);
+                        const indexOfFirstPostNews =
+                          indexOfLastPostNews - postsPerPage;
+                        const currentPostsNews = postsNews.slice(
+                          indexOfFirstPostNews,
+                          indexOfLastPostNews
+                        );
                         return currentPostsNews.length > 0 ? (
-                          currentPostsNews.map((post) => <BlogPost key={post.id} post={post} />)
+                          currentPostsNews.map((post) => (
+                            <BlogPost key={post.id} post={post} />
+                          ))
                         ) : (
                           <div className="col-span-2 text-center py-12">
                             <p className="text-muted-foreground">
-                              Tidak ada berita yang ditemukan. Silakan coba dengan kata kunci lain.
+                              Tidak ada berita yang ditemukan. Silakan coba
+                              dengan kata kunci lain.
                             </p>
                           </div>
                         );
@@ -244,10 +325,16 @@ const Blog = () => {
                       const postsNews = newsPosts.filter(
                         (post) =>
                           searchQuery === "" ||
-                          post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
+                          post.title
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase()) ||
+                          post.excerpt
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
                       );
-                      const totalPagesNews = Math.ceil(postsNews.length / postsPerPage);
+                      const totalPagesNews = Math.ceil(
+                        postsNews.length / postsPerPage
+                      );
                       return totalPagesNews > 1 ? (
                         <Pagination className="mt-6">
                           <PaginationContent>
@@ -256,9 +343,14 @@ const Blog = () => {
                                 href="#"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  if (currentPage > 1) setCurrentPage(currentPage - 1);
+                                  if (currentPage > 1)
+                                    setCurrentPage(currentPage - 1);
                                 }}
-                                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                                className={
+                                  currentPage === 1
+                                    ? "pointer-events-none opacity-50"
+                                    : ""
+                                }
                               />
                             </PaginationItem>
                             {[...Array(totalPagesNews)].map((_, index) => (
@@ -280,9 +372,14 @@ const Blog = () => {
                                 href="#"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  if (currentPage < totalPagesNews) setCurrentPage(currentPage + 1);
+                                  if (currentPage < totalPagesNews)
+                                    setCurrentPage(currentPage + 1);
                                 }}
-                                className={currentPage === totalPagesNews ? "pointer-events-none opacity-50" : ""}
+                                className={
+                                  currentPage === totalPagesNews
+                                    ? "pointer-events-none opacity-50"
+                                    : ""
+                                }
                               />
                             </PaginationItem>
                           </PaginationContent>
@@ -297,19 +394,32 @@ const Blog = () => {
                         const postsEdu = eduPosts.filter(
                           (post) =>
                             searchQuery === "" ||
-                            post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
+                            post.title
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase()) ||
+                            post.excerpt
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase())
                         );
-                        const totalPagesEdu = Math.ceil(postsEdu.length / postsPerPage);
+                        const totalPagesEdu = Math.ceil(
+                          postsEdu.length / postsPerPage
+                        );
                         const indexOfLastPostEdu = currentPage * postsPerPage;
-                        const indexOfFirstPostEdu = indexOfLastPostEdu - postsPerPage;
-                        const currentPostsEdu = postsEdu.slice(indexOfFirstPostEdu, indexOfLastPostEdu);
+                        const indexOfFirstPostEdu =
+                          indexOfLastPostEdu - postsPerPage;
+                        const currentPostsEdu = postsEdu.slice(
+                          indexOfFirstPostEdu,
+                          indexOfLastPostEdu
+                        );
                         return currentPostsEdu.length > 0 ? (
-                          currentPostsEdu.map((post) => <BlogPost key={post.id} post={post} />)
+                          currentPostsEdu.map((post) => (
+                            <BlogPost key={post.id} post={post} />
+                          ))
                         ) : (
                           <div className="col-span-2 text-center py-12">
                             <p className="text-muted-foreground">
-                              Tidak ada artikel edukasi yang ditemukan. Silakan coba dengan kata kunci lain.
+                              Tidak ada artikel edukasi yang ditemukan. Silakan
+                              coba dengan kata kunci lain.
                             </p>
                           </div>
                         );
@@ -319,10 +429,16 @@ const Blog = () => {
                       const postsEdu = eduPosts.filter(
                         (post) =>
                           searchQuery === "" ||
-                          post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
+                          post.title
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase()) ||
+                          post.excerpt
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
                       );
-                      const totalPagesEdu = Math.ceil(postsEdu.length / postsPerPage);
+                      const totalPagesEdu = Math.ceil(
+                        postsEdu.length / postsPerPage
+                      );
                       return totalPagesEdu > 1 ? (
                         <Pagination className="mt-6">
                           <PaginationContent>
@@ -331,9 +447,14 @@ const Blog = () => {
                                 href="#"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  if (currentPage > 1) setCurrentPage(currentPage - 1);
+                                  if (currentPage > 1)
+                                    setCurrentPage(currentPage - 1);
                                 }}
-                                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                                className={
+                                  currentPage === 1
+                                    ? "pointer-events-none opacity-50"
+                                    : ""
+                                }
                               />
                             </PaginationItem>
                             {[...Array(totalPagesEdu)].map((_, index) => (
@@ -355,9 +476,14 @@ const Blog = () => {
                                 href="#"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  if (currentPage < totalPagesEdu) setCurrentPage(currentPage + 1);
+                                  if (currentPage < totalPagesEdu)
+                                    setCurrentPage(currentPage + 1);
                                 }}
-                                className={currentPage === totalPagesEdu ? "pointer-events-none opacity-50" : ""}
+                                className={
+                                  currentPage === totalPagesEdu
+                                    ? "pointer-events-none opacity-50"
+                                    : ""
+                                }
                               />
                             </PaginationItem>
                           </PaginationContent>
