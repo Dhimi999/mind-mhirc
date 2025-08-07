@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "/sitemap.xml"
+      "destination": "/api/sitemap"
     },
     {
       "source": "/robots.txt",
@@ -11,6 +11,10 @@
     {
       "source": "/favicon.ico",
       "destination": "/favicon.ico"
+    },
+    {
+      "source": "/api/:match*",
+      "destination": "/api/:match*"
     },
     {
       "source": "/(.*)",
