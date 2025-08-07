@@ -2,8 +2,7 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap",
-      "permanent": true
+      "destination": "/api/sitemap"
     },
     {
       "source": "/robots.txt",
@@ -18,7 +17,7 @@
       "destination": "/api/:match*"
     },
     {
-      "source": "/(.*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]

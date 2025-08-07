@@ -1,5 +1,6 @@
+// File: /api/sitemap.js
 import { createClient } from '@supabase/supabase-js';
-import { generateSitemap } from '../src/utils/sitemap.js'; // pakai .js karena ini ESM
+import { generateSitemap } from '../src/utils/sitemap.js';
 
 const baseUrl = 'https://mind-mhirc.my.id';
 
@@ -21,12 +22,13 @@ export default async function handler(req, res) {
 
     const { data: blogPosts, error } = await supabase
       .from('blog_posts')
-      .select('slug, updated_date')
-      .eq('published', true);
+      .select('slug, updated_date');
 
-    if (error) console.error('Supabase error:', error);
+    if (error) {
+      console.error('Supabase error:', error);
+    }
 
-    const blogUrls = (blogPosts || []).map((post) => ({
+    const blogUrls = (blogPosts || []).map(post => ({
       loc: `${baseUrl}/blog/${post.slug}`,
       lastmod: post.updated_date?.split('T')[0],
       changefreq: 'weekly',
