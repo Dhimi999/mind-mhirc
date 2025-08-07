@@ -1,4 +1,4 @@
-function generateSitemap(urls) {
+export function generateSitemap(urls) {
   const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
   const urlsetOpen = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
   const urlsetClose = '</urlset>';
@@ -14,5 +14,3 @@ function generateSitemap(urls) {
 
   return `${xmlHeader}\n${urlsetOpen}\n${urlElements}\n${urlsetClose}`;
 }
-
-module.exports = { generateSitemap };

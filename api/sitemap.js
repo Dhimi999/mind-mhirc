@@ -1,6 +1,5 @@
-// File: /api/sitemap.js (CommonJS, NOT TypeScript)
-const { createClient } = require('@supabase/supabase-js');
-const { generateSitemap } = require('../src/utils/sitemap.js');
+import { createClient } from '@supabase/supabase-js';
+import { generateSitemap } from '../src/utils/sitemap.js'; // pakai .js karena ini ESM
 
 const baseUrl = 'https://mind-mhirc.my.id';
 
@@ -9,7 +8,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   try {
     const staticUrls = [
       { loc: `${baseUrl}/`, changefreq: 'weekly', priority: '1.0' },
@@ -25,12 +24,9 @@ module.exports = async function handler(req, res) {
       .select('slug, updated_date')
       .eq('published', true);
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).send('Failed to fetch blog posts');
-    }
+    if (error) console.error('Supabase error:', error);
 
-    const blogUrls = (blogPosts || []).map(post => ({
+    const blogUrls = (blogPosts || []).map((post) => ({
       loc: `${baseUrl}/blog/${post.slug}`,
       lastmod: post.updated_date?.split('T')[0],
       changefreq: 'weekly',
@@ -42,7 +38,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Content-Type', 'application/xml');
     res.status(200).send(xml);
   } catch (err) {
-    console.error('Sitemap generation error:', err);
+    console.error('Error generating sitemap:', err);
     res.status(500).send('Internal Server Error');
   }
-};
+}
