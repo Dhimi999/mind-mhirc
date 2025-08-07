@@ -1,13 +1,4 @@
-// File: /src/utils/sitemap.ts
-
-export interface SitemapUrl {
-  loc: string;
-  lastmod?: string;
-  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
-  priority?: string;
-}
-
-export function generateSitemap(urls: SitemapUrl[]): string {
+function generateSitemap(urls) {
   const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
   const urlsetOpen = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
   const urlsetClose = '</urlset>';
@@ -23,3 +14,5 @@ export function generateSitemap(urls: SitemapUrl[]): string {
 
   return `${xmlHeader}\n${urlsetOpen}\n${urlElements}\n${urlsetClose}`;
 }
+
+module.exports = { generateSitemap };

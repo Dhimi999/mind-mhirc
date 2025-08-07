@@ -1,25 +1,17 @@
-// File: api/sitemap.ts
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-import { generateSitemap, type SitemapUrl } from '../src/utils/sitemap';
+// File: /api/sitemap.js (CommonJS, NOT TypeScript)
+const { createClient } = require('@supabase/supabase-js');
+const { generateSitemap } = require('../src/utils/sitemap.js');
 
 const baseUrl = 'https://mind-mhirc.my.id';
 
-// Pastikan ENV ini sudah disetel di Vercel (Settings > Environment Variables)
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-// Fallback & Validasi ENV
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error('Missing Supabase environment variables.');
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async function handler(req, res) {
   try {
-    // Static pages
-    const staticUrls: SitemapUrl[] = [
+    const staticUrls = [
       { loc: `${baseUrl}/`, changefreq: 'weekly', priority: '1.0' },
       { loc: `${baseUrl}/about`, changefreq: 'monthly', priority: '0.8' },
       { loc: `${baseUrl}/services`, changefreq: 'monthly', priority: '0.8' },
@@ -28,18 +20,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { loc: `${baseUrl}/blog`, changefreq: 'weekly', priority: '0.9' },
     ];
 
-    // Dynamic blog posts
     const { data: blogPosts, error } = await supabase
       .from('blog_posts')
       .select('slug, updated_date')
       .eq('published', true);
 
     if (error) {
-      console.error('Supabase fetch error:', error);
+      console.error('Supabase error:', error);
       return res.status(500).send('Failed to fetch blog posts');
     }
 
-    const blogUrls: SitemapUrl[] = (blogPosts || []).map((post) => ({
+    const blogUrls = (blogPosts || []).map(post => ({
       loc: `${baseUrl}/blog/${post.slug}`,
       lastmod: post.updated_date?.split('T')[0],
       changefreq: 'weekly',
@@ -54,4 +45,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Sitemap generation error:', err);
     res.status(500).send('Internal Server Error');
   }
-}
+};
