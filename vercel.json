@@ -2,7 +2,8 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
+      "destination": "/api/sitemap",
+      "permanent": true
     },
     {
       "source": "/robots.txt",
