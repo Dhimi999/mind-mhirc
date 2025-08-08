@@ -11,6 +11,7 @@ import {
 } from "react-router-dom";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import Tests from "./pages/Tests";
 import TestDetail from "./pages/TestDetail";
@@ -154,6 +155,7 @@ const App = () => (
           <BrowserRouter>
             <AppRoutes />
           </BrowserRouter>
+          <Analytics />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
