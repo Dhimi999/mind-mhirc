@@ -264,7 +264,7 @@ const AICompanion = () => {
       const initialAiMessage: Message = {
         id: `temp-ai-${Date.now()}`,
         content:
-          "Halo! Saya adalah teman AI Anda. Saya di sini untuk mendengarkan dan membantu Anda. Bagaimana kabar Anda hari ini?",
+          "Hai! Namaku Eva. Aku akan menjadi temanmu untuk mendengarkan dan membantumu. Bagaimana kabar kamu hari ini?",
         sender: "ai",
         created_at: new Date().toISOString(),
         conversation_id: newConversation.id
