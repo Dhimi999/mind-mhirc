@@ -21,7 +21,9 @@ import TestimonialCarousel from "@/components/TestimonialCarousel";
 import testsData from "@/data/testsData";
 import { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
-import { Helmet } from "react-helmet-async"; // <-- Anda menambahkan import
+import { Helmet } from "react-helmet-async";
+import WebVitals from "@/components/seo/WebVitals";
+import { RelatedContent } from "@/components/seo/InternalLinking";
 
 const Index = () => {
   const [blogPosts, setBlogPosts] = useState<Tables<"blog_posts">[]>([]);
@@ -591,9 +593,55 @@ const Index = () => {
             </div>
           </div>
         </section>
+        
+        {/* Internal linking section for SEO */}
+        <section className="container mx-auto px-4 py-16">
+          <RelatedContent
+            title="Mulai Perjalanan Kesehatan Mental Anda"
+            links={[
+              {
+                to: "/tests",
+                text: "Tes Kesehatan Mental",
+                description: "Evaluasi kondisi kesehatan mental Anda dengan berbagai tes yang telah tervalidasi"
+              },
+              {
+                to: "/about",
+                text: "Tentang Mind MHIRC",
+                description: "Pelajari lebih lanjut tentang misi dan visi kami dalam kesehatan mental"
+              },
+              {
+                to: "/services",
+                text: "Layanan Kami",
+                description: "Temukan berbagai layanan kesehatan mental yang kami tawarkan"
+              },
+              {
+                to: "/blog",
+                text: "Artikel Kesehatan Mental",
+                description: "Baca artikel terbaru tentang tips dan informasi kesehatan mental"
+              }
+            ]}
+          />
+        </section>
       </main>
 
       <Footer />
+      <WebVitals />
+      
+      {/* SEO Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Mind MHIRC",
+          "description": "Pusat riset dan layanan kesehatan mental berbasis bukti di Indonesia",
+          "url": "https://mind-mhirc.my.id",
+          "logo": "https://mind-mhirc.my.id/logo.png",
+          "sameAs": [
+            "https://www.facebook.com/mindmhirc",
+            "https://www.instagram.com/mindmhirc"
+          ]
+        })}
+      </script>
     </div>
   );
 };

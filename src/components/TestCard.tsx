@@ -34,8 +34,11 @@ const TestCard = ({
       <div className="relative h-48 overflow-hidden">
         <img 
           src={image} 
-          alt={title} 
-          className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'}`} 
+          alt={`Tes ${title} - Mental health assessment untuk ${category}`} 
+          className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'}`}
+          loading="lazy"
+          width="400"
+          height="200"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         <div className="absolute top-4 left-4">

@@ -6,7 +6,14 @@ const HeroSection = () => {
       {/* Background with nature image and overlay */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/90"></div>
-        <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80" alt="Pemandangan yang menenangkan" className="w-full h-full object-cover" />
+        <img 
+          src="https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80&w=1920" 
+          alt="Pemandangan alam yang menenangkan untuk kesehatan mental" 
+          className="w-full h-full object-cover" 
+          loading="lazy"
+          width="1920"
+          height="1080"
+        />
       </div>
       
       {/* Floating shapes for visual interest */}
@@ -24,7 +31,14 @@ const HeroSection = () => {
         animationDelay: '0.3s'
       }}>
           <div className="relative z-10 glass-effect p-6 rounded-2xl shadow-highlight max-w-lg md:max-w-lg sm:max-w-md xs:max-w-sm mx-auto h-auto">
-            <img alt="Bahagia" src="/web_tumbnail/36e79f4a-9ed2-4581-99ff-a37630ac88e8.png" className="w-full h-auto rounded-xl object-cover xl:max-h-[66.67vh] lg:max-h-[66.67vh] max-h-[50vh]" loading="lazy" />
+            <img 
+              alt="Ilustrasi kebahagiaan dan kesehatan mental yang positif" 
+              src="/web_tumbnail/36e79f4a-9ed2-4581-99ff-a37630ac88e8.png" 
+              className="w-full h-auto rounded-xl object-cover xl:max-h-[66.67vh] lg:max-h-[66.67vh] max-h-[50vh]" 
+              loading="lazy"
+              width="600"
+              height="400"
+            />
             
             <div className="absolute -bottom-6 -right-6 glass-effect p-4 rounded-xl shadow-soft animate-float">
               <div className="flex items-center space-x-3">
