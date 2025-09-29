@@ -62,6 +62,12 @@ import SpiritualMeetingManagement from "../components/dashboard/spiritual-budaya
 import HibridaAccountManagement from "@/components/dashboard/hibrida-cbt/HibridaAccountManagement";
 import HibridaAssignmentManagement from "@/components/dashboard/hibrida-cbt/HibridaAssignmentManagement";
 import HibridaMeetingManagement from "@/components/dashboard/hibrida-cbt/HibridaMeetingManagement";
+import SaveMotherAccountManagement from "@/components/dashboard/save-mother/SaveMotherAccountManagement";
+import SaveMotherAssignmentManagement from "@/components/dashboard/save-mother/SaveMotherAssignmentManagement";
+import SaveMotherMeetingManagement from "@/components/dashboard/save-mother/SaveMotherMeetingManagement";
+import CbtUserList from "@/components/dashboard/save-mother/CbtUserList";
+import CbtModuleReview from "@/components/dashboard/save-mother/CbtModuleReview";
+import CbtAnswerDetail from "@/components/dashboard/save-mother/CbtAnswerDetail";
 
 // Variabel global untuk menentukan role user
 let id = "";
@@ -420,6 +426,35 @@ const Dashboard = () => {
                         </Link>
                       </>
                     )}
+                    {/* Save Mother & Budaya submenu - hanya admin/professional */}
+                    {(isAdmin || isProfessional) && (
+                      <>
+                        <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
+                          Save Mother
+                        </div>
+                        <Link
+                          to="/dashboard/save-mother/account"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <Users className="mr-3 h-5 w-5" />
+                          Manajemen Akun
+                        </Link>
+                        <Link
+                          to="/dashboard/save-mother/assignments"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <ClipboardList className="mr-3 h-5 w-5" />
+                          Manajemen Penugasan
+                        </Link>
+                        <Link
+                          to="/dashboard/save-mother/meetings"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <Calendar className="mr-3 h-5 w-5" />
+                          Manajemen Pertemuan
+                        </Link>
+                      </>
+                    )}
                   </div>
                   {(isAdmin || mockUser.role === "Teacher") && (
                     <div>
@@ -579,24 +614,68 @@ const Dashboard = () => {
                   path="appointments/*"
                   element={<DashboardAppointments user={mockUser} />}
                 />
-                <Route path="diary/*" element={<DashboardDiary user={mockUser} />} />
-                <Route path="ai-companion/*" element={<DashboardAICompanion user={mockUser} />} />
-                <Route path="mindforum/*" element={<DashboardForumMind user={mockUser} />} />
+                <Route
+                  path="diary/*"
+                  element={<DashboardDiary user={mockUser} />}
+                />
+                <Route
+                  path="ai-companion/*"
+                  element={<DashboardAICompanion user={mockUser} />}
+                />
+                <Route
+                  path="mindforum/*"
+                  element={<DashboardForumMind user={mockUser} />}
+                />
                 <Route path="messages/*" element={<MessageManagement />} />
                 {/* Spiritual & Budaya - hanya admin/professional */}
                 {(isAdmin || isProfessional) && (
                   <>
-                    <Route path="spiritual-budaya/account/*" element={<SpiritualAccountManagement />} />
-                    <Route path="spiritual-budaya/assignments/*" element={<SpiritualAssignmentManagement />} />
-                    <Route path="spiritual-budaya/meetings/*" element={<SpiritualMeetingManagement />} />
+                    <Route
+                      path="spiritual-budaya/account/*"
+                      element={<SpiritualAccountManagement />}
+                    />
+                    <Route
+                      path="spiritual-budaya/assignments/*"
+                      element={<SpiritualAssignmentManagement />}
+                    />
+                    <Route
+                      path="spiritual-budaya/meetings/*"
+                      element={<SpiritualMeetingManagement />}
+                    />
                   </>
                 )}
+
                 {/* Hibrida Naratif CBT - hanya admin/professional */}
                 {(isAdmin || isProfessional) && (
                   <>
-                    <Route path="hibrida-cbt/account/*" element={<HibridaAccountManagement />} />
-                    <Route path="hibrida-cbt/assignments/*" element={<HibridaAssignmentManagement />} />
-                    <Route path="hibrida-cbt/meetings/*" element={<HibridaMeetingManagement />} />
+                    <Route
+                      path="hibrida-cbt/account/*"
+                      element={<HibridaAccountManagement />}
+                    />
+                    <Route
+                      path="hibrida-cbt/assignments/*"
+                      element={<HibridaAssignmentManagement />}
+                    />
+                    <Route
+                      path="hibrida-cbt/meetings/*"
+                      element={<HibridaMeetingManagement />}
+                    />
+                  </>
+                )}
+                {(isAdmin || isProfessional) && (
+                  <>
+                    <Route
+                      path="save-mother/account/*"
+                      element={<SaveMotherAccountManagement />}
+                    />
+                    <Route
+                      path="save-mother/assignments/*"
+                      element={<SaveMotherAssignmentManagement />}
+                    />
+                    <Route
+                      path="save-mother/meetings/*"
+                      element={<SaveMotherMeetingManagement />}
+                    />
                   </>
                 )}
                 {mockUser.role === "Teacher" && (
@@ -634,6 +713,23 @@ const Dashboard = () => {
                     />
                   </>
                 )}
+                {isAdmin && (
+                  <>
+                    <Route
+                      path="save-mother/assignments/cbt/users"
+                      element={<CbtUserList />}
+                    />
+                    <Route
+                      path="save-mother/assignments/cbt/review/:userId"
+                      element={<CbtModuleReview />}
+                    />
+                    <Route
+                      path="save-mother/assignments/cbt/review/:userId/module/:moduleId"
+                      element={<CbtAnswerDetail />}
+                    />
+                  </>
+                )}
+
                 <Route
                   path="settings/*"
                   element={<DashboardSettings user={mockUser} />}
@@ -1038,7 +1134,13 @@ const DashboardHelp = ({ user }: { user: any }) => (
 const DashboardDiary = ({ user }: { user: any }) => {
   const Diary = React.lazy(() => import("./Diary"));
   return (
-    <React.Suspense fallback={<div className="flex justify-center items-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+    <React.Suspense
+      fallback={
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      }
+    >
       <Diary />
     </React.Suspense>
   );
@@ -1047,7 +1149,13 @@ const DashboardDiary = ({ user }: { user: any }) => {
 const DashboardAICompanion = ({ user }: { user: any }) => {
   const AICompanion = React.lazy(() => import("./AICompanion"));
   return (
-    <React.Suspense fallback={<div className="flex justify-center items-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+    <React.Suspense
+      fallback={
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      }
+    >
       <AICompanion />
     </React.Suspense>
   );
@@ -1056,7 +1164,13 @@ const DashboardAICompanion = ({ user }: { user: any }) => {
 const DashboardForumMind = ({ user }: { user: any }) => {
   const ForumMind = React.lazy(() => import("./ForumMind"));
   return (
-    <React.Suspense fallback={<div className="flex justify-center items-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+    <React.Suspense
+      fallback={
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      }
+    >
       <ForumMind />
     </React.Suspense>
   );
@@ -1076,5 +1190,20 @@ const DashboardNotFound = () => (
     </Link>
   </div>
 );
+// const SaveMother = ({ user }: { user: any }) => (
+//   <div>
+//     <CbtUserList />
+//   </div>
+// );
+// const DashboardHelp = ({ user }: { user: any }) => (
+//   <div>
+//     <CbtModuleReview />
+//   </div>
+// );
+// const DashboardHelp = ({ user }: { user: any }) => (
+//   <div>
+//     <CbtAnswerDetail />
+//   </div>
+// );
 
 export default Dashboard;
