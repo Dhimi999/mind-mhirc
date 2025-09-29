@@ -125,10 +125,33 @@ const ForumKonsultasi = () => {
                     </ul>
 
                     <div className="flex items-center justify-between">
-                      <button onClick={() => window.location.href = option.href} className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors flex items-center space-x-2">
-                        <span>Mulai Sekarang</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
+                      {(() => {
+                        const isComingSoon =
+                          option.id === "konsultasi-kesehatan" ||
+                          option.id === "grup-support";
+                        const classActive =
+                          "bg-pink-600 hover:bg-pink-700 text-white";
+                        const classDisabled =
+                          "bg-gray-200 text-gray-600 cursor-not-allowed";
+                        return (
+                          <button
+                            disabled={isComingSoon}
+                            onClick={
+                              isComingSoon
+                                ? undefined
+                                : () => (window.location.href = option.href)
+                            }
+                            className={`${
+                              isComingSoon ? classDisabled : classActive
+                            } px-6 py-2 rounded-full text-sm font-medium transition-colors flex items-center space-x-2`}
+                          >
+                            <span>{isComingSoon ? "Segera Datang" : "Mulai Sekarang"}</span>
+                            {!isComingSoon && (
+                              <ArrowRight className="w-4 h-4" />
+                            )}
+                          </button>
+                        );
+                      })()}
                       <span className="text-xs text-gray-500">Gratis</span>
                     </div>
                   </div>
