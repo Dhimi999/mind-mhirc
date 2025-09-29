@@ -62,6 +62,7 @@ import SpiritualMeetingManagement from "../components/dashboard/spiritual-budaya
 import HibridaAccountManagement from "@/components/dashboard/hibrida-cbt/HibridaAccountManagement";
 import HibridaAssignmentManagement from "@/components/dashboard/hibrida-cbt/HibridaAssignmentManagement";
 import HibridaMeetingManagement from "@/components/dashboard/hibrida-cbt/HibridaMeetingManagement";
+import PsikoedukasiManagement from "@/components/dashboard/safe-mother/PsikoedukasiManagement";
 
 // Variabel global untuk menentukan role user
 let id = "";
@@ -420,6 +421,21 @@ const Dashboard = () => {
                         </Link>
                       </>
                     )}
+                    {/* Safe Mother submenu - hanya admin */}
+                    {(isAdmin) && (
+                      <>
+                        <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
+                          Safe Mother
+                        </div>
+                        <Link
+                          to="/dashboard/safe-mother/psikoedukasi"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <FileText className="mr-3 h-5 w-5" />
+                          Manajemen Psikoedukasi
+                        </Link>
+                      </>
+                    )}
                   </div>
                   {(isAdmin || mockUser.role === "Teacher") && (
                     <div>
@@ -597,6 +613,12 @@ const Dashboard = () => {
                     <Route path="hibrida-cbt/account/*" element={<HibridaAccountManagement />} />
                     <Route path="hibrida-cbt/assignments/*" element={<HibridaAssignmentManagement />} />
                     <Route path="hibrida-cbt/meetings/*" element={<HibridaMeetingManagement />} />
+                  </>
+                )}
+                {/* Safe Mother - hanya admin */}
+                {(isAdmin) && (
+                  <>
+                    <Route path="safe-mother/psikoedukasi" element={<PsikoedukasiManagement />} />
                   </>
                 )}
                 {mockUser.role === "Teacher" && (
