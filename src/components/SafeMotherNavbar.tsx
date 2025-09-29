@@ -53,7 +53,7 @@ const SafeMotherNavbar = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Safe Mother</h1>
-              <p className="text-xs text-pink-600 font-medium">MLIPI Program</p>
+              <p className="text-xs text-pink-600 font-medium">MLIPI Program by Mind MHIRC</p>
             </div>
           </Link>
 
