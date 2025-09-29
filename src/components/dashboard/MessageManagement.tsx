@@ -55,7 +55,8 @@ import {
   Trash,
   Search,
   X,
-  RefreshCw
+  RefreshCw,
+  Heart
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -78,6 +79,7 @@ interface ChatRoom {
   last_message_at: string | null;
   participants: Profile[];
   created_by: string;
+  type: string | null; // <-- Tambahkan baris ini
 }
 
 interface ChatMessage {
@@ -122,6 +124,7 @@ const MessageManagement: React.FC = () => {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isDeletingRoom, setIsDeletingRoom] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<ChatRoom | null>(null);
 
   // Filter available users based on search term
   useEffect(() => {
@@ -249,7 +252,9 @@ const MessageManagement: React.FC = () => {
           let convertedReadBy: string[] = [];
           if (message.read_by) {
             if (Array.isArray(message.read_by)) {
-              convertedReadBy = message.read_by.filter((item): item is string => typeof item === "string");
+              convertedReadBy = message.read_by.filter(
+                (item): item is string => typeof item === "string"
+              );
             } else if (typeof message.read_by === "string") {
               try {
                 convertedReadBy = JSON.parse(message.read_by);
@@ -682,10 +687,10 @@ const MessageManagement: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Chat Messages Tab */}
+        {/* ================= CHAT MESSAGES TAB ================= */}
         <TabsContent value="chat" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Chat Rooms List */}
+            {/* === Kolom Daftar Chat === */}
             <div className="lg:col-span-1">
               <Card className="h-full">
                 <CardHeader className="pb-3">
@@ -819,19 +824,32 @@ const MessageManagement: React.FC = () => {
                     </div>
                   ) : (
                     <div className="space-y-2">
+                      {/* === BAGIAN DAFTAR CHAT YANG DIPERBAIKI === */}
                       {chatRooms.map((room) => {
                         const otherParticipant = getOtherParticipant(room);
                         const canDelete = isRoomCreator(room);
+                        const isConsultation = room.type === "consultation";
+
                         return (
                           <div
                             key={room.id}
                             className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors relative ${
                               selectedRoomId === room.id
                                 ? "bg-muted border border-primary/20"
+                                : isConsultation
+                                ? "bg-pink-50/50 dark:bg-pink-900/10"
                                 : "bg-card"
                             }`}
                             onClick={() => setSelectedRoomId(room.id)}
                           >
+                            {/* BADGE UNTUK KONSULTASI (KANAN ATAS) */}
+                            {isConsultation && (
+                              <Badge className="absolute top-2 right-2 bg-pink-100 text-pink-700 border-pink-200 text-xs px-1.5 py-0.5 pointer-events-none">
+                                <Heart className="w-3 h-3 mr-1" />
+                                SM
+                              </Badge>
+                            )}
+
                             <div className="flex items-center">
                               <div className="flex-shrink-0 mr-3">
                                 {otherParticipant?.avatar_url ? (
@@ -847,7 +865,7 @@ const MessageManagement: React.FC = () => {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate">
+                                <p className="font-medium truncate pr-16">
                                   {otherParticipant?.full_name || "Pengguna"}
                                 </p>
                                 <p className="text-sm text-muted-foreground truncate">
@@ -855,65 +873,29 @@ const MessageManagement: React.FC = () => {
                                 </p>
                               </div>
                               {room.last_message_at && (
-                                <div className="text-xs text-muted-foreground ml-2">
+                                <div className="text-xs text-muted-foreground ml-2 self-start mt-1">
                                   {format(
                                     new Date(room.last_message_at),
                                     "HH:mm"
                                   )}
                                 </div>
                               )}
-                              {canDelete && selectedRoomId === room.id && (
-                                <AlertDialog
-                                  open={showConfirmDelete}
-                                  onOpenChange={setShowConfirmDelete}
-                                >
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="absolute top-2 right-2 h-6 w-6 p-0 text-muted-foreground hover:text-destructive hover:bg-transparent"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowConfirmDelete(true);
-                                      }}
-                                    >
-                                      <Trash className="h-4 w-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>
-                                        Hapus Ruang Obrolan
-                                      </AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Apakah Anda yakin ingin menghapus ruang
-                                        obrolan ini? Semua pesan akan terhapus
-                                        secara permanen dan tidak dapat
-                                        dipulihkan.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        Batal
-                                      </AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteChatRoom();
-                                        }}
-                                        className="bg-destructive hover:bg-destructive/90"
-                                      >
-                                        {isDeletingRoom
-                                          ? "Menghapus..."
-                                          : "Hapus"}
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              )}
                             </div>
+
+                            {/* TOMBOL HAPUS (KANAN BAWAH) */}
+                            {canDelete && selectedRoomId === room.id && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute bottom-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRoomToDelete(room);
+                                }}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         );
                       })}
@@ -923,7 +905,7 @@ const MessageManagement: React.FC = () => {
               </Card>
             </div>
 
-            {/* Chat Messages Area */}
+            {/* === Kolom Area Chat === */}
             <div className="lg:col-span-2">
               <Card className="h-full flex flex-col">
                 {selectedRoomId ? (
@@ -1238,7 +1220,7 @@ const MessageManagement: React.FC = () => {
           </div>
         </TabsContent>
 
-        {/* Broadcasts Tab */}
+        {/* ================= BROADCASTS TAB ================= */}
         <TabsContent value="broadcasts" className="space-y-4">
           <Card>
             <CardHeader>
@@ -1325,6 +1307,33 @@ const MessageManagement: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* === DIALOG KONFIRMASI HAPUS (DI LUAR .MAP) === */}
+      <AlertDialog
+        open={!!roomToDelete}
+        onOpenChange={() => setRoomToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Ruang Obrolan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin? Semua pesan akan terhapus secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRoomToDelete(null)}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteChatRoom}
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={isDeletingRoom}
+            >
+              {isDeletingRoom ? "Menghapus..." : "Hapus"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

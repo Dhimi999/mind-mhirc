@@ -34,10 +34,14 @@ import CompleteOAuthProfile from "./pages/CompleteOAuthProfile";
 import SafeMother from "./pages/SafeMother";
 import Psikoedukasi from "./pages/safe-mother/Psikoedukasi";
 import ForumKonsultasi from "./pages/safe-mother/ForumKonsultasi";
+import Konsultasi from "./pages/safe-mother/Konsultasi";
+
 import CBT from "./pages/safe-mother/CBT";
 import Profil from "./pages/safe-mother/Profil";
 import UnderMaintanance from "./pages/UnderMaintenance";
 import { HelmetProvider } from "react-helmet-async";
+import ProtectedLayout from "./pages/safe-mother/ProtectedLayout";
+import ForumIbu from "./pages/safe-mother/ForumIbu";
 
 const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }) => {
@@ -85,7 +89,7 @@ const AuthCallback = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Memuat...</p>
+        <p className="text-muted-foreground">Memuat Data...</p>
       </div>
     );
   }
@@ -121,11 +125,12 @@ const AppRoutes = () => {
         <Route path="/tests/:id" element={<UnderMaintanance />} />
         <Route path="/services" element={<Services />} />
         <Route path="/services/:id" element={<ServiceDetail />} />
-        <Route path="/safe-mother" element={<SafeMother />} />
+        {/* <Route path="/safe-mother" element={<SafeMother />} />
         <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
         <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
+        <Route path="/safe-mother/privatekonsultasi" element={<Konsultasi />} />
         <Route path="/safe-mother/cbt" element={<CBT />} />
-        <Route path="/safe-mother/profil" element={<Profil />} />
+        <Route path="/safe-mother/profil" element={<Profil />} /> */}
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />
@@ -139,6 +144,19 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route element={<ProtectedLayout />}>
+          <Route path="/safe-mother" element={<SafeMother />} />
+          <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
+          <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
+          <Route
+            path="/safe-mother/privatekonsultasi"
+            element={<Konsultasi />}
+          />
+          <Route path="/safe-mother/forumIbu" element={<ForumIbu />} />
+          <Route path="/safe-mother/cbt" element={<CBT />} />
+          <Route path="/safe-mother/profil" element={<Profil />} />
+        </Route>
+
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/cookies" element={<Cookies />} />
