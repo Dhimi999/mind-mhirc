@@ -79,7 +79,8 @@ const ProtectedRoute = ({ children }) => {
 
 // Auth callback handler
 const AuthCallback = () => {
-  const { refreshUser, isLoading, isAuthenticated, isOAuthProfileIncomplete } = useAuth();
+  const { refreshUser, isLoading, isAuthenticated, isOAuthProfileIncomplete } =
+    useAuth();
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
@@ -106,10 +107,14 @@ const AuthCallback = () => {
     }
     let redirect = searchParams.get("redirect");
     if (redirect && redirect.startsWith("/login")) redirect = null;
-    const referrer = document.referrer && new URL(document.referrer).origin === window.location.origin
-      ? new URL(document.referrer).pathname + new URL(document.referrer).search
-      : null;
-    const target = redirect || (location.state as any)?.from?.pathname || referrer || "/";
+    const referrer =
+      document.referrer &&
+      new URL(document.referrer).origin === window.location.origin
+        ? new URL(document.referrer).pathname +
+          new URL(document.referrer).search
+        : null;
+    const target =
+      redirect || (location.state as any)?.from?.pathname || referrer || "/";
     return <Navigate to={target} replace />;
   }
 
@@ -137,17 +142,7 @@ const AppRoutes = () => {
         <Route path="/tests/:id" element={<UnderMaintanance />} />
         <Route path="/services" element={<Services />} />
         <Route path="/services/:id" element={<ServiceDetail />} />
-        {/* <Route path="/safe-mother" element={<SafeMother />} />
-        <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
-        <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
-        <Route path="/safe-mother/privatekonsultasi" element={<Konsultasi />} />
-        <Route path="/safe-mother/cbt" element={<CBT />} />
-        <Route path="/safe-mother/profil" element={<Profil />} />
-  <Route path="/spiritual-budaya" element={<SpiritualBudaya />} />
-  <Route path="/spiritual-budaya/materi/:slug" element={<SpiritualBudayaMateri />} />
-  <Route path="/spiritual-budaya/intervensi/sesi/:sesi" element={<IntervensiPortalSesi />} />
-  <Route path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan" element={<IntervensiPertemuan />} />
-  <Route path="/spiritual-budaya/intervensi/sesi/:sesi/penugasan" element={<IntervensiPenugasan />} />
+
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />
