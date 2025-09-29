@@ -132,13 +132,13 @@ const Psikoedukasi = () => {
 
           {/* Add Material Buttons for Professionals */}
           {isProfessional && (
-            <div className="mb-6 flex gap-3">
+            <div className="mb-6 flex flex-col sm:flex-row flex-wrap gap-3 sm:items-center">
               <Button
                 onClick={() => {
                   setEditMaterialId(undefined);
                   setIsDialogOpen(true);
                 }}
-                className="bg-pink-600 hover:bg-pink-700"
+                className="bg-pink-600 hover:bg-pink-700 w-full sm:w-auto min-w-0"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Tambah Psikoedukasi
@@ -146,7 +146,7 @@ const Psikoedukasi = () => {
               <Button
                 onClick={() => setIsManageDialogOpen(true)}
                 variant="outline"
-                className="border-pink-600 text-pink-600 hover:bg-pink-50"
+                className="border-pink-600 text-pink-600 hover:bg-pink-50 w-full sm:w-auto min-w-0"
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Manajemen Psikoedukasi
