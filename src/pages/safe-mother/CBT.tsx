@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import { Brain, CheckCircle, Clock, Calendar, Target, Award, Heart, Play, ArrowLeft, Lock, Loader2 } from "lucide-react";
+import { Brain, CheckCircle, Clock, Calendar, Target, Award, Heart, Play, ArrowLeft, Lock, Loader2, Video as VideoIcon } from "lucide-react";
 import SafeMotherNavbar from "@/components/SafeMotherNavbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,13 @@ interface CbtTask {
   id: string;
   prompt: string;
 }
+type CbtModuleKind = "task" | "meeting";
+interface CbtMeetingInfo {
+  url: string;
+  label?: string;
+  startsAt?: string; // ISO atau teks jam
+  notes?: string;
+}
 interface CbtModule {
   id: number;
   title: string;
@@ -24,6 +31,9 @@ interface CbtModule {
   status: "available" | "locked" | "completed";
   progress: number;
   objectives: string[];
+  // Tambahan untuk sesi meeting
+  kind?: CbtModuleKind; // default: 'task'
+  meeting?: CbtMeetingInfo;
 }
 interface Achievement {
   id: string;
@@ -80,6 +90,20 @@ const masterModules: Omit<CbtModule, "status" | "progress">[] = [{
   }],
   objectives: ["Memetakan dampak suasana hati pada aktivitas harian", "Mengidentifikasi situasi yang memicu emosi negatif", "Menganalisis hubungan antara perasaan, perilaku, dan pikiran", "Menetapkan tujuan pemulihan yang spesifik dan positif"]
 }, {
+  id: 1001,
+  title: "Pertemuan Daring 1",
+  description: "Evaluasi perkembangan dan konsultasi setelah Sesi 1 & 2.",
+  duration: "30-60 menit",
+  tasks: [],
+  objectives: ["Evaluasi perkembangan awal", "Diskusi dan konsultasi singkat"],
+  kind: "meeting",
+  meeting: {
+    url: "https://meet.google.com/xxxxx",
+    label: "Google Meet",
+    // startsAt: "2025-10-05T09:00:00+07:00",
+    // notes: "Silakan bergabung 5 menit lebih awal."
+  }
+}, {
   id: 3,
   title: "Sesi 3: Reset dan Aktifkan",
   description: "Fokus pada strategi dasar untuk menenangkan tubuh (tidur, makan, relaksasi) dan mengaktifkan kembali rutinitas harian.",
@@ -118,6 +142,18 @@ const masterModules: Omit<CbtModule, "status" | "progress">[] = [{
   }],
   objectives: ["Menangkap dan menguji pikiran otomatis yang tidak membantu", "Membuat pikiran alternatif yang lebih realistis", "Menggunakan teknik 'Pohon Khawatir' dan 'Waktu Khawatir'", "Membuat kontrak dukungan dengan pasangan atau keluarga"]
 }, {
+  id: 1002,
+  title: "Pertemuan Daring 2",
+  description: "Evaluasi perkembangan dan konsultasi setelah Sesi 3 & 4.",
+  duration: "30-60 menit",
+  tasks: [],
+  objectives: ["Evaluasi kemajuan pertengahan", "Diskusi strategi lanjutan"],
+  kind: "meeting",
+  meeting: {
+    url: "https://zoom.us/j/xxxxxxxx",
+    label: "Zoom"
+  }
+}, {
   id: 5,
   title: "Sesi 5: Tetap Pulih, Tetap Kuat",
   description: "Fokus untuk mempertahankan hasil pemulihan, menjaga kebugaran, dan menyiapkan rencana pencegahan jika gejala muncul kembali.",
@@ -136,6 +172,18 @@ const masterModules: Omit<CbtModule, "status" | "progress">[] = [{
     prompt: "Tuliskan 1 orang pendamping utama dan simpan sebagai 'Kontak Darurat' Anda."
   }],
   objectives: ["Merefleksikan dan mempertahankan gaya hidup sehat", "Mengidentifikasi tanda-tanda awal mood menurun", "Membuat rencana darurat pribadi (Jika... maka...)", "Memanfaatkan sumber dukungan sebagai kontak darurat"]
+}, {
+  id: 1003,
+  title: "Pertemuan Daring 3",
+  description: "Evaluasi akhir dan konsultasi penutup setelah Sesi 5.",
+  duration: "30-60 menit",
+  tasks: [],
+  objectives: ["Evaluasi akhir program", "Rekomendasi tindak lanjut"],
+  kind: "meeting",
+  meeting: {
+    url: "https://meet.google.com/yyyyy",
+    label: "Google Meet"
+  }
 }];
 const initialAchievements: Achievement[] = [{
   id: "first_module",
@@ -147,16 +195,19 @@ const initialAchievements: Achievement[] = [{
   id: "halfway",
   icon: Target,
   title: "Setengah Jalan",
-  description: "Menyelesaikan 3 dari 5 modul program.",
+  description: "Menyelesaikan setengah dari total modul program.",
   unlocked: false
 }, {
   id: "master",
   icon: Brain,
   title: "CBT Master",
-  description: "Menyelesaikan seluruh program CBT!",
+  description: "Menyelesaikan seluruh modul program CBT!",
   unlocked: false
 }];
 const CBT = () => {
+  // Workaround for some TS setups that flag Helmet as invalid JSX component
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const HelmetAny = Helmet as unknown as React.FC<any>;
   const {
     user
   } = useAuth();
@@ -241,6 +292,13 @@ const CBT = () => {
   };
 
   // [DB] Save answers and progress to Supabase
+  // Dapatkan module berikutnya berdasarkan urutan array saat ini
+  const getNextModuleId = (currentId: number) => {
+    const idx = modules.findIndex((m) => m.id === currentId);
+    if (idx >= 0 && idx + 1 < modules.length) return modules[idx + 1].id;
+    return null;
+  };
+
   const handleCompleteModule = async (moduleId: number) => {
     if (!user || !activeModuleDetail) return;
     const currentModuleTasks = activeModuleDetail.tasks;
@@ -281,8 +339,8 @@ const CBT = () => {
       if (progressError) throw progressError;
 
       // 3. Unlock next module
-      const nextModuleId = moduleId + 1;
-      if (nextModuleId <= masterModules.length) {
+      const nextModuleId = getNextModuleId(moduleId);
+      if (nextModuleId) {
         const {
           error: unlockError
         } = await supabase.from("cbt_user_progress").upsert({
@@ -305,25 +363,77 @@ const CBT = () => {
       setIsSaving(false);
     }
   };
+  // Statistik terpisah untuk modul tugas vs pertemuan
+  const taskModules = modules.filter((m) => (m.kind ?? "task") === "task");
+  const meetingModules = modules.filter((m) => (m.kind ?? "task") === "meeting");
+  const taskModulesTotal = taskModules.length;
+  const meetingModulesTotal = meetingModules.length;
+  const taskModulesCompleted = taskModules.filter((m) => m.status === "completed").length;
+  const meetingModulesCompleted = meetingModules.filter((m) => m.status === "completed").length;
+
   const modulesCompleted = modules.filter(m => m.status === "completed").length;
   const achievementsUnlocked = achievements.filter(a => a.unlocked).length;
   useEffect(() => {
-    setAchievements(prev => prev.map(ach => {
-      if (ach.id === "first_module" && modulesCompleted >= 1) return {
-        ...ach,
-        unlocked: true
-      };
-      if (ach.id === "halfway" && modulesCompleted >= 3) return {
-        ...ach,
-        unlocked: true
-      };
-      if (ach.id === "master" && modulesCompleted >= 5) return {
-        ...ach,
-        unlocked: true
-      };
-      return ach;
-    }));
-  }, [modulesCompleted]);
+    // Hindari mengaktifkan pencapaian saat data modul belum dimuat
+    if (isLoading || modules.length === 0) return;
+
+    const total = modules.length;
+    const completed = modulesCompleted;
+
+    setAchievements(() =>
+      initialAchievements.map((ach) => {
+        let unlocked = false;
+        if (ach.id === "first_module") unlocked = completed >= 1;
+        else if (ach.id === "halfway") unlocked = total > 0 && completed >= Math.ceil(total / 2);
+        else if (ach.id === "master") unlocked = total > 0 && completed >= total;
+        return { ...ach, unlocked };
+      })
+    );
+  }, [isLoading, modules.length, modulesCompleted]);
+
+  // Menandai selesai untuk modul meeting (tanpa tugas)
+  const handleCompleteMeeting = async (moduleId: number) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const { error: progressError } = await supabase
+        .from("cbt_user_progress")
+        .upsert(
+          {
+            user_id: user.id,
+            module_id: moduleId,
+            status: "completed",
+            progress: 100
+          },
+          { onConflict: "user_id,module_id" }
+        );
+      if (progressError) throw progressError;
+
+      const nextModuleId = getNextModuleId(moduleId);
+      if (nextModuleId) {
+        const { error: unlockError } = await supabase
+          .from("cbt_user_progress")
+          .upsert(
+            {
+              user_id: user.id,
+              module_id: nextModuleId,
+              status: "available",
+              progress: 0
+            },
+            { onConflict: "user_id,module_id" }
+          );
+        if (unlockError) throw unlockError;
+      }
+
+      toast.success("Pertemuan ditandai selesai. Modul berikutnya dibuka.");
+      await loadUserProgress();
+    } catch (error) {
+      console.error("Error completing meeting:", error);
+      toast.error("Terjadi kesalahan saat menandai pertemuan.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // --- Helper Functions (No change) ---
   const getStatusColor = (status: string) => {
@@ -360,9 +470,9 @@ const CBT = () => {
   }
   if (activeModuleDetail) {
     return <div className="min-h-screen flex flex-col bg-white">
-        <Helmet>
+        <HelmetAny>
           <title>{activeModuleDetail.title} - Safe Mother</title>
-        </Helmet>
+        </HelmetAny>
         <SafeMotherNavbar />
         <main className="flex-1 pt-8">
           <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
@@ -402,10 +512,10 @@ const CBT = () => {
   return (
     // ... (Return JSX for the main dashboard remains the same as previous response, just ensure it uses the dynamic progress variables like modulesCompleted) ...
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50/30 via-white to-purple-50/30">
-      <Helmet>
+      <HelmetAny>
         <title>Program CBT - Safe Mother | Mind MHIRC</title>
         <meta name="description" content="Program Cognitive Behavioral Therapy (CBT) khusus untuk ibu dengan berbagai modul terstruktur untuk mendukung kesehatan mental maternal." />
-      </Helmet>
+      </HelmetAny>
 
       <SafeMotherNavbar />
 
@@ -437,13 +547,15 @@ const CBT = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-blue-50 rounded-xl">
                 <div className="text-2xl font-bold text-blue-600">
-                  {modulesCompleted}/{modules.length}
+                  {taskModulesCompleted}/{taskModulesTotal}
                 </div>
                 <div className="text-sm text-gray-600">Modul Selesai</div>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-xl">
                 <div className="text-2xl font-bold text-purple-600">
-                  {(modulesCompleted / modules.length * 100).toFixed(0)}%
+                  {(
+                    (taskModulesCompleted / Math.max(taskModulesTotal || 0, 1)) * 100
+                  ).toFixed(0)}%
                 </div>
                 <div className="text-sm text-gray-600">Penyelesaian</div>
               </div>
@@ -454,8 +566,10 @@ const CBT = () => {
                 <div className="text-sm text-gray-600">Pencapaian</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-xl">
-                <div className="text-2xl font-bold text-green-600">0</div>
-                <div className="text-sm text-gray-600">Hari Berturut-turut</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {meetingModulesCompleted}/{meetingModulesTotal}
+                </div>
+                <div className="text-sm text-gray-600">Pertemuan Selesai</div>
               </div>
             </div>
           </div>
@@ -467,7 +581,11 @@ const CBT = () => {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${module.status === "available" ? "bg-blue-100" : module.status === "completed" ? "bg-green-100" : "bg-gray-100"}`}>
-                        <Brain className={`w-6 h-6 ${module.status === "available" ? "text-blue-600" : module.status === "completed" ? "text-green-600" : "text-gray-400"}`} />
+                        { (module.kind ?? "task") === "meeting" ? (
+                          <VideoIcon className={`w-6 h-6 ${module.status === "available" ? "text-blue-600" : module.status === "completed" ? "text-green-600" : "text-gray-400"}`} />
+                        ) : (
+                          <Brain className={`w-6 h-6 ${module.status === "available" ? "text-blue-600" : module.status === "completed" ? "text-green-600" : "text-gray-400"}`} />
+                        )}
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">
@@ -484,16 +602,29 @@ const CBT = () => {
                     {module.description}
                   </p>
 
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{module.duration}</span>
+                  {(module.kind ?? "task") === "meeting" ? (
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+                      <div className="flex items-center space-x-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>Pertemuan daring • {module.meeting?.label || "Online"}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{module.duration}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>{module.tasks.length} tugas</span>
+                  ) : (
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+                      <div className="flex items-center space-x-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{module.duration}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <CheckCircle className="w-4 h-4" />
+                        <span>{module.tasks.length} tugas</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="mb-6">
                     <h4 className="text-sm font-medium text-gray-900 mb-2">
@@ -507,18 +638,57 @@ const CBT = () => {
                     </ul>
                   </div>
 
-                  <Button onClick={() => handleStartModule(module.id)} disabled={module.status === "locked"} className={`w-full ${module.status === "available" ? "bg-blue-600 hover:bg-blue-700 text-white" : module.status === "completed" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}>
-                    {module.status === "completed" ? <>
+                  {(module.kind ?? "task") === "meeting" ? (
+                    module.status === "completed" ? (
+                      <Button disabled className="w-full bg-green-600 text-white">
                         <CheckCircle className="w-4 h-4 mr-2" />
                         Selesai
-                      </> : module.status === "available" ? <>
-                        <Play className="w-4 h-4 mr-2" />
-                        Mulai Modul
-                      </> : <>
+                      </Button>
+                    ) : module.status === "locked" ? (
+                      <Button disabled className="w-full bg-gray-200 text-gray-500 cursor-not-allowed">
                         <Lock className="w-4 h-4 mr-2" />
                         Terkunci
-                      </>}
-                  </Button>
+                      </Button>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <a
+                          href={module.meeting?.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center w-full sm:w-auto rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                        >
+                          <VideoIcon className="w-4 h-4 mr-2" />
+                          Gabung Pertemuan
+                        </a>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleCompleteMeeting(module.id)}
+                          disabled={isSaving}
+                          className="w-full sm:w-auto"
+                        >
+                          {isSaving ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                          )}
+                          Tandai Selesai
+                        </Button>
+                      </div>
+                    )
+                  ) : (
+                    <Button onClick={() => handleStartModule(module.id)} disabled={module.status === "locked"} className={`w-full ${module.status === "available" ? "bg-blue-600 hover:bg-blue-700 text-white" : module.status === "completed" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}>
+                      {module.status === "completed" ? <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Selesai
+                        </> : module.status === "available" ? <>
+                          <Play className="w-4 h-4 mr-2" />
+                          Mulai Modul
+                        </> : <>
+                          <Lock className="w-4 h-4 mr-2" />
+                          Terkunci
+                        </>}
+                    </Button>
+                  )}
                 </div>
               </div>)}
           </div>

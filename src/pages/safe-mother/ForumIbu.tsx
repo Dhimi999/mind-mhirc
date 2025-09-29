@@ -244,6 +244,9 @@ const ForumNotifications: React.FC<{
 const ForumIbu = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  // Helmet typing workaround
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const HelmetAny = Helmet as unknown as React.FC<any>;
 
   // --- State Management ---
   const [forumUser, setForumUser] = useState<ForumUser | null>(null);
@@ -678,13 +681,13 @@ const ForumIbu = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30">
-      <Helmet>
+      <HelmetAny>
         <title>Forum & Konsultasi - Safe Mother | Mind MHIRC</title>
         <meta
           name="description"
-          content="Platform forum dan konsultasi untuk ibu dengan berbagai pilihan dukungan: forum ibu, konsultasi psikolog, layanan kesehatan, dan grup support khusus."
+          content="Platform forum dan konsultasi untuk ibu dengan berbagai pilihan dukungan: forum ibu, konsultasi profesional/perawat, layanan kesehatan, dan grup support khusus."
         />
-      </Helmet>
+      </HelmetAny>
 
       <SafeMotherNavbar />
       <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -783,13 +786,10 @@ const ForumIbu = () => {
 
                       {/* --- [MODIFIKASI 5] Badge Jawaban Profesional --- */}
                       {post.professional_answer_id && (
-                        <Badge
-                          variant="secondary"
-                          className="mb-3 bg-green-100 text-green-800 hover:bg-green-200"
-                        >
+                        <span className="inline-flex items-center mb-3 rounded px-2 py-1 text-xs font-medium bg-green-100 text-green-800">
                           <CheckCircle2 className="h-3 w-3 mr-1.5" />
                           Dijawab oleh Profesional
-                        </Badge>
+                        </span>
                       )}
                       {/* --- Akhir Modifikasi --- */}
 
@@ -852,12 +852,9 @@ const ForumIbu = () => {
                                         @{comment.forum_users.username}
                                         {comment.forum_users.account_type ===
                                           "professional" && (
-                                          <Badge
-                                            variant="outline"
-                                            className="ml-2 border-green-600 text-green-700"
-                                          >
+                                          <span className="ml-2 inline-flex items-center rounded border border-green-600 px-1.5 py-0.5 text-xs font-medium text-green-700">
                                             Profesional
-                                          </Badge>
+                                          </span>
                                         )}
                                       </p>
                                       {user?.id ===

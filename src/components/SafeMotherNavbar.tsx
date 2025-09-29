@@ -32,6 +32,13 @@ const SafeMotherNavbar = () => {
     if (href === "/safe-mother") {
       return location.pathname === "/safe-mother";
     }
+    // Khusus menu Forum & Konsultasi: aktifkan juga di private konsultasi
+    if (href === "/safe-mother/forum") {
+      return (
+        location.pathname.startsWith("/safe-mother/forum") ||
+        location.pathname.startsWith("/safe-mother/privatekonsultasi")
+      );
+    }
     return location.pathname.startsWith(href);
   };
 

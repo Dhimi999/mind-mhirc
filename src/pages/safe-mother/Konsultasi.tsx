@@ -312,7 +312,7 @@ const Konsultasi = () => {
         <title>Forum & Konsultasi - Safe Mother | Mind MHIRC</title>
         <meta
           name="description"
-          content="Platform forum dan konsultasi untuk ibu dengan berbagai pilihan dukungan: forum ibu, konsultasi psikolog, layanan kesehatan, dan grup support khusus."
+          content="Platform forum dan konsultasi untuk ibu dengan berbagai pilihan dukungan: forum ibu, konsultasi profesional/perawat, layanan kesehatan, dan grup support khusus."
         />
       </HelmetAny>
 

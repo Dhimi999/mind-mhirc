@@ -3,6 +3,9 @@ import { Users, MessageCircle, Stethoscope, UserCheck, Heart, ArrowRight } from 
 import SafeMotherNavbar from "@/components/SafeMotherNavbar";
 import Footer from "@/components/Footer";
 const ForumKonsultasi = () => {
+  // Workaround JSX typing for Helmet in some TS setups
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const HelmetAny = Helmet as unknown as React.FC<any>;
   const consultationOptions = [{
     id: "forum-ibu",
     title: "Forum Ibu",
@@ -16,15 +19,15 @@ const ForumKonsultasi = () => {
     features: ["Diskusi grup dengan sesama ibu", "Berbagi pengalaman kehamilan dan pengasuhan", "Dukungan emosional dari komunitas", "Tips praktis dari ibu berpengalaman"]
   }, {
     id: "konsultasi-professional",
-    title: "Konsultasi Psikolog",
-    description: "Konsultasi dengan psikolog berlisensi yang berpengalaman dalam bidang kesehatan mental maternal.",
+    title: "Konsultasi Profesional",
+    description: "Konsultasi dengan tenaga profesional/perawat (termasuk perawat jiwa) yang berpengalaman dalam kesehatan mental maternal.",
     icon: UserCheck,
     color: "bg-purple-100",
     iconColor: "text-purple-600",
     borderColor: "border-purple-200",
     hoverColor: "hover:bg-purple-50",
     href: "/safe-mother/privatekonsultasi",
-    features: ["Sesi konsultasi individual", "Psikolog bersertifikat dan berpengalaman", "Konsultasi via chat, video call, atau telepon", "Jadwal fleksibel sesuai kebutuhan"]
+  features: ["Sesi konsultasi individual", "Tenaga profesional/perawat berpengalaman", "Konsultasi via chat, video call, atau telepon", "Jadwal fleksibel sesuai kebutuhan"]
   }, {
     id: "konsultasi-kesehatan",
     title: "Konsultasi Layanan Kesehatan",
@@ -53,7 +56,7 @@ const ForumKonsultasi = () => {
     label: "Ibu Bergabung"
   }, {
     number: "50+",
-    label: "Psikolog Berpengalaman"
+    label: "Tenaga Profesional/Perawat"
   }, {
     number: "24/7",
     label: "Dukungan Online"
@@ -62,10 +65,10 @@ const ForumKonsultasi = () => {
     label: "Tingkat Kepuasan"
   }];
   return <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30">
-      <Helmet>
+      <HelmetAny>
         <title>Forum & Konsultasi - Safe Mother | Mind MHIRC</title>
-        <meta name="description" content="Platform forum dan konsultasi untuk ibu dengan berbagai pilihan dukungan: forum ibu, konsultasi psikolog, layanan kesehatan, dan grup support khusus." />
-      </Helmet>
+        <meta name="description" content="Platform forum dan konsultasi untuk ibu dengan berbagai pilihan dukungan: forum ibu, konsultasi profesional/perawat, layanan kesehatan, dan grup support khusus." />
+      </HelmetAny>
 
       <SafeMotherNavbar />
 
