@@ -56,6 +56,12 @@ import ReportsManagement from "@/components/dashboard/ReportsManagement";
 import MessageManagement from "@/components/dashboard/MessageManagement";
 import TestListResults from "@/components/dashboard/TestListResults";
 import TestResultsTable from "@/components/dashboard/TestResultsTable";
+import SpiritualAccountManagement from "../components/dashboard/spiritual-budaya/SpiritualAccountManagement";
+import SpiritualAssignmentManagement from "../components/dashboard/spiritual-budaya/SpiritualAssignmentManagement";
+import SpiritualMeetingManagement from "../components/dashboard/spiritual-budaya/SpiritualMeetingManagement";
+import HibridaAccountManagement from "@/components/dashboard/hibrida-cbt/HibridaAccountManagement";
+import HibridaAssignmentManagement from "@/components/dashboard/hibrida-cbt/HibridaAssignmentManagement";
+import HibridaMeetingManagement from "@/components/dashboard/hibrida-cbt/HibridaMeetingManagement";
 
 // Variabel global untuk menentukan role user
 let id = "";
@@ -356,6 +362,64 @@ const Dashboard = () => {
                         </span>
                       )}
                     </Link>
+                    {/* Spiritual & Budaya submenu - hanya admin/professional */}
+                    {(isAdmin || isProfessional) && (
+                      <>
+                        <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
+                          Spiritual & Budaya
+                        </div>
+                        <Link
+                          to="/dashboard/spiritual-budaya/account"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <Users className="mr-3 h-5 w-5" />
+                          Manajemen Akun
+                        </Link>
+                        <Link
+                          to="/dashboard/spiritual-budaya/assignments"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <ClipboardList className="mr-3 h-5 w-5" />
+                          Manajemen Penugasan
+                        </Link>
+                        <Link
+                          to="/dashboard/spiritual-budaya/meetings"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <Calendar className="mr-3 h-5 w-5" />
+                          Manajemen Pertemuan
+                        </Link>
+                      </>
+                    )}
+                    {/* Hibrida Naratif CBT submenu - hanya admin/professional */}
+                    {(isAdmin || isProfessional) && (
+                      <>
+                        <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
+                          Hibrida Naratif CBT
+                        </div>
+                        <Link
+                          to="/dashboard/hibrida-cbt/account"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <Users className="mr-3 h-5 w-5" />
+                          Manajemen Akun
+                        </Link>
+                        <Link
+                          to="/dashboard/hibrida-cbt/assignments"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <ClipboardList className="mr-3 h-5 w-5" />
+                          Manajemen Penugasan
+                        </Link>
+                        <Link
+                          to="/dashboard/hibrida-cbt/meetings"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <Calendar className="mr-3 h-5 w-5" />
+                          Manajemen Pertemuan
+                        </Link>
+                      </>
+                    )}
                   </div>
                   {(isAdmin || mockUser.role === "Teacher") && (
                     <div>
@@ -519,6 +583,22 @@ const Dashboard = () => {
                 <Route path="ai-companion/*" element={<DashboardAICompanion user={mockUser} />} />
                 <Route path="mindforum/*" element={<DashboardForumMind user={mockUser} />} />
                 <Route path="messages/*" element={<MessageManagement />} />
+                {/* Spiritual & Budaya - hanya admin/professional */}
+                {(isAdmin || isProfessional) && (
+                  <>
+                    <Route path="spiritual-budaya/account/*" element={<SpiritualAccountManagement />} />
+                    <Route path="spiritual-budaya/assignments/*" element={<SpiritualAssignmentManagement />} />
+                    <Route path="spiritual-budaya/meetings/*" element={<SpiritualMeetingManagement />} />
+                  </>
+                )}
+                {/* Hibrida Naratif CBT - hanya admin/professional */}
+                {(isAdmin || isProfessional) && (
+                  <>
+                    <Route path="hibrida-cbt/account/*" element={<HibridaAccountManagement />} />
+                    <Route path="hibrida-cbt/assignments/*" element={<HibridaAssignmentManagement />} />
+                    <Route path="hibrida-cbt/meetings/*" element={<HibridaMeetingManagement />} />
+                  </>
+                )}
                 {mockUser.role === "Teacher" && (
                   <Route
                     path="students/*"
