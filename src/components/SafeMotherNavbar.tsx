@@ -8,7 +8,8 @@ import {
   BookOpen,
   MessageSquare,
   Brain,
-  User
+  User,
+  ArrowLeft
 } from "lucide-react";
 
 const SafeMotherNavbar = () => {
@@ -16,7 +17,6 @@ const SafeMotherNavbar = () => {
   const location = useLocation();
 
   const navigation = [
-    { name: "Homepage", href: "/", icon: Home },
     { name: "Beranda", href: "/safe-mother", icon: Home },
     { name: "Psikoedukasi", href: "/safe-mother/psikoedukasi", icon: BookOpen },
     {
@@ -52,6 +52,15 @@ const SafeMotherNavbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
+            {/* Tombol Kembali ke Halaman Utama */}
+            <Link
+              to="/"
+              className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 mr-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Kembali</span>
+            </Link>
+
             {navigation.map((item) => {
               const Icon = item.icon;
               return (
@@ -90,6 +99,15 @@ const SafeMotherNavbar = () => {
         {isOpen && (
           <div className="md:hidden py-4 border-t border-pink-100">
             <div className="space-y-2">
+              {/* Tombol Kembali untuk Mobile */}
+              <Link
+                to="/"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Kembali ke Halaman Utama</span>
+              </Link>
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
