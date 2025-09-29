@@ -32,6 +32,13 @@ const SafeMotherNavbar = () => {
     if (href === "/safe-mother") {
       return location.pathname === "/safe-mother";
     }
+    // Khusus menu Forum & Konsultasi: aktifkan juga di private konsultasi
+    if (href === "/safe-mother/forum") {
+      return (
+        location.pathname.startsWith("/safe-mother/forum") ||
+        location.pathname.startsWith("/safe-mother/privatekonsultasi")
+      );
+    }
     return location.pathname.startsWith(href);
   };
 
@@ -46,7 +53,7 @@ const SafeMotherNavbar = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Safe Mother</h1>
-              <p className="text-xs text-pink-600 font-medium">MLIPI Program</p>
+              <p className="text-xs text-pink-600 font-medium">MLIPI Program by Mind MHIRC</p>
             </div>
           </Link>
 

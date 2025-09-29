@@ -62,6 +62,7 @@ import SpiritualMeetingManagement from "../components/dashboard/spiritual-budaya
 import HibridaAccountManagement from "@/components/dashboard/hibrida-cbt/HibridaAccountManagement";
 import HibridaAssignmentManagement from "@/components/dashboard/hibrida-cbt/HibridaAssignmentManagement";
 import HibridaMeetingManagement from "@/components/dashboard/hibrida-cbt/HibridaMeetingManagement";
+import PsikoedukasiManagement from "@/components/dashboard/safe-mother/PsikoedukasiManagement";
 import SaveMotherAccountManagement from "@/components/dashboard/save-mother/SaveMotherAccountManagement";
 import SaveMotherAssignmentManagement from "@/components/dashboard/save-mother/SaveMotherAssignmentManagement";
 import SaveMotherMeetingManagement from "@/components/dashboard/save-mother/SaveMotherMeetingManagement";
@@ -426,12 +427,19 @@ const Dashboard = () => {
                         </Link>
                       </>
                     )}
-                    {/* Save Mother & Budaya submenu - hanya admin/professional */}
-                    {(isAdmin || isProfessional) && (
+                    {/* Safe Mother submenu - hanya admin */}
+                    {isAdmin && (
                       <>
                         <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4">
-                          Save Mother
+                          Safe Mother
                         </div>
+                        <Link
+                          to="/dashboard/safe-mother/psikoedukasi"
+                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                        >
+                          <FileText className="mr-3 h-5 w-5" />
+                          Manajemen Psikoedukasi
+                        </Link>
                         <Link
                           to="/dashboard/save-mother/account"
                           className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
@@ -675,6 +683,15 @@ const Dashboard = () => {
                     <Route
                       path="save-mother/meetings/*"
                       element={<SaveMotherMeetingManagement />}
+                    />
+                  </>
+                )}
+                {/* Safe Mother - hanya admin */}
+                {isAdmin && (
+                  <>
+                    <Route
+                      path="safe-mother/psikoedukasi"
+                      element={<PsikoedukasiManagement />}
                     />
                   </>
                 )}

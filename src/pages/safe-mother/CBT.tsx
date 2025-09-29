@@ -18,13 +18,7 @@ import {
 import SafeMotherNavbar from "@/components/SafeMotherNavbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext"; // Asumsi path context yang benar
@@ -35,7 +29,13 @@ interface CbtTask {
   id: string;
   prompt: string;
 }
-
+type CbtModuleKind = "task" | "meeting";
+interface CbtMeetingInfo {
+  url: string;
+  label?: string;
+  startsAt?: string; // ISO atau teks jam
+  notes?: string;
+}
 interface CbtModule {
   id: number;
   title: string;
@@ -49,7 +49,6 @@ interface CbtModule {
   zoomLink?: string;
   professionalComment: string | null; // <-- BARU: Field untuk komentar profesional
 }
-
 interface Achievement {
   id: string;
   icon: React.ElementType;
@@ -57,7 +56,6 @@ interface Achievement {
   description: string;
   unlocked: boolean;
 }
-
 interface UserAnswers {
   [moduleId: number]: {
     [taskId: string]: string;
@@ -330,12 +328,15 @@ const initialAchievements: Achievement[] = [
 ];
 
 const CBT = () => {
-  const { user } = useAuth();
+  // Workaround for some TS setups that flag Helmet as invalid JSX component
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const HelmetAny = Helmet as unknown as React.FC<any>;
+  const {
+    user
+  } = useAuth();
   const [modules, setModules] = useState<CbtModule[]>([]);
-  const [achievements, setAchievements] =
-    useState<Achievement[]>(initialAchievements);
-  const [activeModuleDetail, setActiveModuleDetail] =
-    useState<CbtModule | null>(null);
+  const [achievements, setAchievements] = useState<Achievement[]>(initialAchievements);
+  const [activeModuleDetail, setActiveModuleDetail] = useState<CbtModule | null>(null);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -351,12 +352,8 @@ const CBT = () => {
         .eq("user_id", user.id);
 
       if (error) throw error;
-
-      const mergedModules = masterModules.map((masterModule) => {
-        const userProgress = progressData.find(
-          (p) => p.module_id === masterModule.id
-        );
-
+      const mergedModules = masterModules.map(masterModule => {
+        const userProgress = progressData.find(p => p.module_id === masterModule.id);
         return {
           ...masterModule,
           status:
@@ -371,7 +368,6 @@ const CBT = () => {
       if (progressData.length === 0 && mergedModules.length > 0) {
         mergedModules[0].status = "available";
       }
-
       setModules(mergedModules);
     } catch (error) {
       console.error("Error fetching user progress:", error);
@@ -380,7 +376,6 @@ const CBT = () => {
       setIsLoading(false);
     }
   }, [user]);
-
   useEffect(() => {
     loadUserProgress();
   }, [loadUserProgress]);
@@ -457,36 +452,39 @@ const CBT = () => {
     }
     setActiveModuleDetail(moduleToStart);
   };
-
   const handleGoBack = () => setActiveModuleDetail(null);
-
-  const handleAnswerChange = (
-    moduleId: number,
-    taskId: string,
-    value: string
-  ) => {
-    setUserAnswers((prev) => ({
+  const handleAnswerChange = (moduleId: number, taskId: string, value: string) => {
+    setUserAnswers(prev => ({
       ...prev,
-      [moduleId]: { ...prev[moduleId], [taskId]: value }
+      [moduleId]: {
+        ...prev[moduleId],
+        [taskId]: value
+      }
     }));
   };
 
   // [DB] Save answers and progress to Supabase
+  // Dapatkan module berikutnya berdasarkan urutan array saat ini
+  const getNextModuleId = (currentId: number) => {
+    const idx = modules.findIndex((m) => m.id === currentId);
+    if (idx >= 0 && idx + 1 < modules.length) return modules[idx + 1].id;
+    return null;
+  };
+
   const handleCompleteModule = async (moduleId: number) => {
     if (!user || !activeModuleDetail || activeModuleDetail.type === "zoom")
       return; // Hanya proses modul CBT
 
     const currentModuleTasks = activeModuleDetail.tasks;
     const currentAnswers = userAnswers[moduleId];
-    if (currentModuleTasks.some((task) => !currentAnswers?.[task.id]?.trim())) {
+    if (currentModuleTasks.some(task => !currentAnswers?.[task.id]?.trim())) {
       toast.error("Harap isi semua tugas sebelum menyelesaikan modul.");
       return;
     }
-
     setIsSaving(true);
     try {
       // 1. Save answers
-      const answersToUpsert = currentModuleTasks.map((task) => ({
+      const answersToUpsert = currentModuleTasks.map(task => ({
         user_id: user.id,
         module_id: moduleId,
         task_id: task.id,
@@ -500,6 +498,76 @@ const CBT = () => {
       if (answerError) throw answerError;
 
       // 2. Update current module progress
+      const {
+        error: progressError
+      } = await supabase.from("cbt_user_progress").upsert({
+        user_id: user.id,
+        module_id: moduleId,
+        status: "completed",
+        progress: 100
+      }, {
+        onConflict: "user_id,module_id"
+      }); // Juga ditambahkan di sini untuk konsistensi
+      if (progressError) throw progressError;
+
+      // 3. Unlock next module
+      const nextModuleId = getNextModuleId(moduleId);
+      if (nextModuleId) {
+        const {
+          error: unlockError
+        } = await supabase.from("cbt_user_progress").upsert({
+          user_id: user.id,
+          module_id: nextModuleId,
+          status: "available",
+          progress: 0
+        }, {
+          onConflict: "user_id,module_id"
+        });
+        if (unlockError) throw unlockError;
+      }
+      toast.success(`Selamat! Anda telah menyelesaikan ${activeModuleDetail.title}.`);
+      setActiveModuleDetail(null);
+      await loadUserProgress(); // Reload progress from DB
+    } catch (error) {
+      console.error("Error completing module:", error);
+      toast.error("Terjadi kesalahan saat menyimpan progres Anda.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  // Statistik terpisah untuk modul tugas vs pertemuan
+  const taskModules = modules.filter((m) => (m.kind ?? "task") === "task");
+  const meetingModules = modules.filter((m) => (m.kind ?? "task") === "meeting");
+  const taskModulesTotal = taskModules.length;
+  const meetingModulesTotal = meetingModules.length;
+  const taskModulesCompleted = taskModules.filter((m) => m.status === "completed").length;
+  const meetingModulesCompleted = meetingModules.filter((m) => m.status === "completed").length;
+
+  const modulesCompleted = modules.filter(m => m.status === "completed").length;
+  const achievementsUnlocked = achievements.filter(a => a.unlocked).length;
+  useEffect(() => {
+    // Hindari mengaktifkan pencapaian saat data modul belum dimuat
+    if (isLoading || modules.length === 0) return;
+
+    const total = modules.length;
+    const completed = modulesCompleted;
+
+    setAchievements(() =>
+      initialAchievements.map((ach) => {
+        let unlocked = false;
+        if (ach.id === "first_module") unlocked = completed >= 1;
+        else if (ach.id === "halfway") unlocked = total > 0 && completed >= Math.ceil(total / 2);
+        else if (ach.id === "master") unlocked = total > 0 && completed >= total;
+        return { ...ach, unlocked };
+      })
+    );
+  }, [isLoading, modules.length, modulesCompleted]);
+
+  // Menandai selesai untuk modul meeting (tanpa tugas)
+  const handleCompleteMeeting = async (moduleId: number) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
       const { error: progressError } = await supabase
         .from("cbt_user_progress")
         .upsert(
@@ -511,11 +579,11 @@ const CBT = () => {
           },
           { onConflict: "user_id,module_id" }
         );
+        );
       if (progressError) throw progressError;
 
-      // 3. Unlock next module
-      const nextModuleId = moduleId + 1;
-      if (nextModuleId <= masterModules.length) {
+      const nextModuleId = getNextModuleId(moduleId);
+      if (nextModuleId) {
         const { error: unlockError } = await supabase
           .from("cbt_user_progress")
           .upsert(
@@ -537,8 +605,8 @@ const CBT = () => {
       setActiveModuleDetail(null);
       await loadUserProgress(); // Reload progress from DB
     } catch (error) {
-      console.error("Error completing module:", error);
-      toast.error("Terjadi kesalahan saat menyimpan progres Anda.");
+      console.error("Error completing meeting:", error);
+      toast.error("Terjadi kesalahan saat menandai pertemuan.");
     } finally {
       setIsSaving(false);
     }
@@ -583,7 +651,6 @@ const CBT = () => {
         return "bg-gray-100 text-gray-500 border-gray-200";
     }
   };
-
   const getStatusText = (status: string) => {
     switch (status) {
       case "available":
@@ -607,16 +674,11 @@ const CBT = () => {
       <div className="min-h-screen flex flex-col bg-white">
         <Helmet>
           <title>{activeModuleDetail.title} - Safe Mother</title>
-        </Helmet>
+        </HelmetAny>
         <SafeMotherNavbar />
         <main className="flex-1 pt-8">
           <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
-            <Button
-              variant="ghost"
-              onClick={handleGoBack}
-              className="mb-4"
-              disabled={isSaving}
-            >
+            <Button variant="ghost" onClick={handleGoBack} className="mb-4" disabled={isSaving}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kembali ke Daftar Modul
             </Button>
@@ -647,43 +709,16 @@ const CBT = () => {
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {activeModuleDetail.tasks.map((task, index) => (
-                  <div key={task.id}>
-                    <label
-                      htmlFor={task.id}
-                      className="font-medium text-gray-800 block mb-2"
-                    >
+                {activeModuleDetail.tasks.map((task, index) => <div key={task.id}>
+                    <label htmlFor={task.id} className="font-medium text-gray-800 block mb-2">
                       Tugas {index + 1}: {task.prompt}
                     </label>
-                    <Textarea
-                      id={task.id}
-                      placeholder="Tuliskan jawaban Anda di sini..."
-                      className="min-h-[120px]"
-                      value={
-                        userAnswers[activeModuleDetail.id]?.[task.id] || ""
-                      }
-                      onChange={(e) =>
-                        handleAnswerChange(
-                          activeModuleDetail.id,
-                          task.id,
-                          e.target.value
-                        )
-                      }
-                    />
-                  </div>
-                ))}
+                    <Textarea id={task.id} placeholder="Tuliskan jawaban Anda di sini..." className="min-h-[120px]" value={userAnswers[activeModuleDetail.id]?.[task.id] || ""} onChange={e => handleAnswerChange(activeModuleDetail.id, task.id, e.target.value)} />
+                  </div>)}
               </CardContent>
               <CardFooter>
-                <Button
-                  onClick={() => handleCompleteModule(activeModuleDetail.id)}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                  )}
+                <Button onClick={() => handleCompleteModule(activeModuleDetail.id)} className="w-full bg-blue-600 hover:bg-blue-700" disabled={isSaving}>
+                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                   {isSaving ? "Menyimpan..." : "Selesaikan & Simpan Modul"}
                 </Button>
               </CardFooter>
@@ -691,8 +726,7 @@ const CBT = () => {
           </div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
 
   // --- RENDER LOGIC (Dashboard) ---
@@ -707,18 +741,15 @@ const CBT = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50/30 via-white to-purple-50/30">
-      <Helmet>
+      <HelmetAny>
         <title>Program CBT - Safe Mother | Mind MHIRC</title>
-        <meta
-          name="description"
-          content="Program Cognitive Behavioral Therapy (CBT) khusus untuk ibu dengan berbagai modul terstruktur untuk mendukung kesehatan mental maternal."
-        />
-      </Helmet>
+        <meta name="description" content="Program Cognitive Behavioral Therapy (CBT) khusus untuk ibu dengan berbagai modul terstruktur untuk mendukung kesehatan mental maternal." />
+      </HelmetAny>
 
       <SafeMotherNavbar />
 
       <main className="flex-1 pt-8">
-        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl my-[12px] py-[12px]">
           {/* Header */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center space-x-2 bg-blue-100 rounded-full px-4 py-2 mb-4">
@@ -937,29 +968,11 @@ const CBT = () => {
               Pencapaian
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {achievements.map((achievement) => {
+              {achievements.map(achievement => {
                 const Icon = achievement.icon;
-                return (
-                  <div
-                    key={achievement.id}
-                    className={`flex items-center space-x-4 p-4 rounded-xl transition-opacity ${
-                      achievement.unlocked
-                        ? "bg-green-50 opacity-100"
-                        : "bg-gray-50 opacity-50"
-                    }`}
-                  >
-                    <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        achievement.unlocked ? "bg-green-100" : "bg-gray-200"
-                      }`}
-                    >
-                      <Icon
-                        className={`w-6 h-6 ${
-                          achievement.unlocked
-                            ? "text-green-600"
-                            : "text-gray-400"
-                        }`}
-                      />
+                return <div key={achievement.id} className={`flex items-center space-x-4 p-4 rounded-xl transition-opacity ${achievement.unlocked ? "bg-green-50 opacity-100" : "bg-gray-50 opacity-50"}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${achievement.unlocked ? "bg-green-100" : "bg-gray-200"}`}>
+                      <Icon className={`w-6 h-6 ${achievement.unlocked ? "text-green-600" : "text-gray-400"}`} />
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-700">
@@ -969,8 +982,7 @@ const CBT = () => {
                         {achievement.description}
                       </p>
                     </div>
-                  </div>
-                );
+                  </div>;
               })}
             </div>
           </div>
@@ -980,5 +992,4 @@ const CBT = () => {
     </div>
   );
 };
-
 export default CBT;

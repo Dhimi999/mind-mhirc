@@ -34,7 +34,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshUser = async () => {
     try {
-      setIsLoading(true);
+      // Don't always show global loading for background refresh
+      // Keep existing content visible while we refresh silently
       const currentUser = await getCurrentUser();
       console.log("Current user from refreshUser:", currentUser);
       setUser(currentUser);
@@ -50,7 +51,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error refreshing user:", error);
       setUser(null);
     } finally {
-      setIsLoading(false);
+      // Only turn off loading if it was initial load
+      // If this was a background refresh, isLoading might already be false
+      setIsLoading((prev) => (prev ? false : prev));
     }
   };
 
@@ -88,7 +91,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     // Initial user fetch
-    refreshUser();
+    (async () => {
+      setIsLoading(true);
+      await refreshUser();
+    })();
 
     // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -100,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         );
 
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          // Silent refresh without flipping isLoading to true
           refreshUser();
         } else if (event === "SIGNED_OUT") {
           setUser(null);

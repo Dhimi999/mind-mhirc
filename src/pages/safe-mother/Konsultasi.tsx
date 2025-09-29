@@ -19,7 +19,8 @@ import {
   MessageSquare,
   List,
   Clock,
-  CheckCircle
+  CheckCircle,
+  ArrowLeft
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -56,6 +57,10 @@ interface ChatMessage {
 }
 
 const Konsultasi = () => {
+  // Workaround: Some TS setups flag Helmet as not a valid JSX component due to react type resolution.
+  // Casting it locally avoids false positives while keeping runtime intact.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const HelmetAny = Helmet as unknown as React.FC<any>;
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("professionals");
   const [professionals, setProfessionals] = useState<Profile[]>([]);
@@ -95,13 +100,9 @@ const Konsultasi = () => {
     };
     fetchProfessionals();
   }, []);
-  console.log(professionals);
   // 2. Fetch riwayat konsultasi (chat rooms)
   const fetchConsultationRooms = useCallback(async () => {
-    console.log(`fetch consultation room ${user}`);
-
     if (!user) return;
-    console.log(`fetch consultation room ${selectedRoomId}`);
     setIsLoading((prev) => ({ ...prev, rooms: true }));
     try {
       // Ambil semua room_id dimana user adalah partisipan
@@ -213,29 +214,21 @@ const Konsultasi = () => {
   // 4. Fetch messages untuk room yang dipilih
   useEffect(() => {
     if (!selectedRoomId) {
-      setMessages([]); // Pindahkan ke sini
+      setMessages([]);
       return;
     }
-    console.log(`sebelum fetch message `);
-    // Saat berpindah antar room, kosongkan dulu pesan lama sambil menunggu yang baru
-    setMessages([]); // Kosongkan messages jika tidak ada room dipilih
+    
+    // Kosongkan messages saat berpindah antar room
+    setMessages([]);
 
     const fetchMessages = async () => {
       setIsLoading((prev) => ({ ...prev, messages: true }));
       try {
-        console.log(
-          `[DEBUG] Mulai mengambil pesan untuk room: ${selectedRoomId}`
-        );
-
         const { data, error } = await supabase
           .from("chat_messages")
           .select("*, sender: profiles(*)")
           .eq("chat_room_id", selectedRoomId)
           .order("created_at");
-
-        // -- TAMBAHKAN BLOK DEBUG INI --
-        console.log("[DEBUG] Respon dari Supabase:", { data, error });
-        // -----------------------------
 
         if (error) throw error;
         setMessages(data || []); // Gunakan `data || []` agar lebih aman
@@ -315,13 +308,13 @@ const Konsultasi = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30">
-      <Helmet>
+      <HelmetAny>
         <title>Forum & Konsultasi - Safe Mother | Mind MHIRC</title>
         <meta
           name="description"
-          content="Platform forum dan konsultasi untuk ibu dengan berbagai pilihan dukungan: forum ibu, konsultasi psikolog, layanan kesehatan, dan grup support khusus."
+          content="Platform forum dan konsultasi untuk ibu dengan berbagai pilihan dukungan: forum ibu, konsultasi profesional/perawat, layanan kesehatan, dan grup support khusus."
         />
-      </Helmet>
+      </HelmetAny>
 
       <SafeMotherNavbar />
       <main className="flex-1 w-full">
@@ -414,14 +407,14 @@ const Konsultasi = () => {
             <TabsContent value="history">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Kolom Daftar Riwayat Konsultasi */}
-                <div className="lg:col-span-1">
-                  <Card className="h-full">
+                <div className={`lg:col-span-1 ${selectedRoomId ? "hidden lg:block" : "block"}`}>
+                  <Card className="h-[70svh] lg:h-[80vh] overflow-hidden flex flex-col">
                     <CardHeader>
                       <CardTitle>Riwayat</CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[500px] overflow-y-auto">
+                    <CardContent className="flex-1 overflow-y-auto">
                       {isLoading.rooms ? (
-                        <div className="flex flex-col justify-center items-center h-screen">
+                        <div className="flex flex-col justify-center items-center h-full">
                           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
                           <p className="text-muted-foreground">
                             Memuat Data...
@@ -474,18 +467,30 @@ const Konsultasi = () => {
                 </div>
 
                 {/* Kolom Area Chat */}
-                <div className="lg:col-span-2">
-                  <Card className="h-full flex flex-col">
+                <div className={`lg:col-span-2 ${selectedRoomId ? "block" : "hidden lg:block"}`}>
+                  <Card className="h-[70svh] lg:h-[80vh] overflow-hidden flex flex-col">
                     {selectedRoomId ? (
                       <>
                         <CardHeader className="border-b">
-                          <CardTitle>
-                            {getOtherParticipant(
-                              consultationRooms.find(
-                                (r) => r.id === selectedRoomId
-                              )!
-                            )?.full_name || "Konsultasi"}
-                          </CardTitle>
+                          <div className="flex items-center gap-2">
+                            {/* Tombol kembali hanya tampil di mobile */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="lg:hidden"
+                              onClick={() => setSelectedRoomId(null)}
+                              aria-label="Kembali ke daftar riwayat"
+                            >
+                              <ArrowLeft className="h-5 w-5" />
+                            </Button>
+                            <CardTitle>
+                              {getOtherParticipant(
+                                consultationRooms.find(
+                                  (r) => r.id === selectedRoomId
+                                )!
+                              )?.full_name || "Konsultasi"}
+                            </CardTitle>
+                          </div>
                         </CardHeader>
                         <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
                           {isLoading.messages ? (

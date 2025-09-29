@@ -5,7 +5,6 @@ import SafeMotherNavbar from "@/components/SafeMotherNavbar";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
 const Profil = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -14,32 +13,32 @@ const Profil = () => {
     full_name: "",
     city: "",
     birth_date: "",
-    profession: "",
+    profession: ""
   });
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     loadProfile();
   }, []);
-
   const loadProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
+      const {
+        data: profile
+      } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (profile) {
         setProfile(profile);
         setFormData({
           full_name: profile.full_name || "",
           city: profile.city || "",
           birth_date: profile.birth_date || "",
-          profession: profile.profession || "",
+          profession: profile.profession || ""
         });
       }
     } catch (error) {
@@ -48,24 +47,22 @@ const Profil = () => {
       setLoading(false);
     }
   };
-
   const handleSave = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { error } = await supabase
-        .from("profiles")
-        .update(formData)
-        .eq("id", user.id);
-
+      const {
+        error
+      } = await supabase.from("profiles").update(formData).eq("id", user.id);
       if (error) throw error;
-
       toast({
         title: "Profil berhasil diperbarui",
         description: "Perubahan profil Anda telah disimpan."
       });
-
       setIsEditing(false);
       loadProfile();
     } catch (error) {
@@ -77,7 +74,6 @@ const Profil = () => {
       });
     }
   };
-
   const copyUUID = () => {
     if (profile?.safe_mother_uuid) {
       navigator.clipboard.writeText(profile.safe_mother_uuid);
@@ -87,7 +83,6 @@ const Profil = () => {
       });
     }
   };
-
   const getRoleLabel = (role: string) => {
     const roleLabels = {
       "ibu": "Seorang Ibu (Istri)",
@@ -100,7 +95,6 @@ const Profil = () => {
     };
     return roleLabels[role] || role;
   };
-
   const getStageLabel = (stage: string) => {
     const stageLabels = {
       "rencana_hamil": "Rencana Hamil",
@@ -109,10 +103,8 @@ const Profil = () => {
     };
     return stageLabels[stage] || stage;
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30">
+    return <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30">
         <SafeMotherNavbar />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -121,23 +113,17 @@ const Profil = () => {
           </div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30">
+  return <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30">
       <Helmet>
         <title>Profil Saya - Safe Mother | Mind MHIRC</title>
-        <meta
-          name="description"
-          content="Kelola profil Safe Mother Anda, lihat informasi akun, dan bagikan UUID keluarga dengan anggota keluarga lainnya."
-        />
+        <meta name="description" content="Kelola profil Safe Mother Anda, lihat informasi akun, dan bagikan UUID keluarga dengan anggota keluarga lainnya." />
       </Helmet>
 
       <SafeMotherNavbar />
 
-      <main className="flex-1 pt-8">
+      <main className="flex-1 pt-8 my-[12px] py-[12px]">
         <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
           {/* Header */}
           <div className="text-center mb-8">
@@ -153,16 +139,13 @@ const Profil = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 my-[12px]">
             {/* Profile Card */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-2xl shadow-soft p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-900">Informasi Profil</h2>
-                  <button
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="flex items-center space-x-2 px-4 py-2 text-pink-600 hover:bg-pink-50 rounded-lg transition-colors"
-                  >
+                  <button onClick={() => setIsEditing(!isEditing)} className="flex items-center space-x-2 px-4 py-2 text-pink-600 hover:bg-pink-50 rounded-lg transition-colors">
                     <Edit className="w-4 h-4" />
                     <span>{isEditing ? "Batal" : "Edit"}</span>
                   </button>
@@ -190,93 +173,61 @@ const Profil = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Nama Lengkap
                       </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={formData.full_name}
-                          onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                          className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                        />
-                      ) : (
-                        <p className="p-3 bg-gray-50 rounded-lg text-gray-900">
+                      {isEditing ? <input type="text" value={formData.full_name} onChange={e => setFormData({
+                      ...formData,
+                      full_name: e.target.value
+                    })} className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent" /> : <p className="p-3 bg-gray-50 rounded-lg text-gray-900">
                           {profile?.full_name || "Belum diisi"}
-                        </p>
-                      )}
+                        </p>}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Kota
                       </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={formData.city}
-                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                          className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                        />
-                      ) : (
-                        <p className="p-3 bg-gray-50 rounded-lg text-gray-900 flex items-center">
+                      {isEditing ? <input type="text" value={formData.city} onChange={e => setFormData({
+                      ...formData,
+                      city: e.target.value
+                    })} className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent" /> : <p className="p-3 bg-gray-50 rounded-lg text-gray-900 flex items-center">
                           <MapPin className="w-4 h-4 text-gray-400 mr-2" />
                           {profile?.city || "Belum diisi"}
-                        </p>
-                      )}
+                        </p>}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Tanggal Lahir
                       </label>
-                      {isEditing ? (
-                        <input
-                          type="date"
-                          value={formData.birth_date}
-                          onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                          className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                        />
-                      ) : (
-                        <p className="p-3 bg-gray-50 rounded-lg text-gray-900 flex items-center">
+                      {isEditing ? <input type="date" value={formData.birth_date} onChange={e => setFormData({
+                      ...formData,
+                      birth_date: e.target.value
+                    })} className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent" /> : <p className="p-3 bg-gray-50 rounded-lg text-gray-900 flex items-center">
                           <Calendar className="w-4 h-4 text-gray-400 mr-2" />
                           {profile?.birth_date ? new Date(profile.birth_date).toLocaleDateString('id-ID') : "Belum diisi"}
-                        </p>
-                      )}
+                        </p>}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Profesi
                       </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={formData.profession}
-                          onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
-                          className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                        />
-                      ) : (
-                        <p className="p-3 bg-gray-50 rounded-lg text-gray-900">
+                      {isEditing ? <input type="text" value={formData.profession} onChange={e => setFormData({
+                      ...formData,
+                      profession: e.target.value
+                    })} className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent" /> : <p className="p-3 bg-gray-50 rounded-lg text-gray-900">
                           {profile?.profession || "Belum diisi"}
-                        </p>
-                      )}
+                        </p>}
                     </div>
                   </div>
 
-                  {isEditing && (
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={handleSave}
-                        className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2 rounded-lg transition-colors"
-                      >
+                  {isEditing && <div className="flex space-x-3">
+                      <button onClick={handleSave} className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2 rounded-lg transition-colors">
                         Simpan Perubahan
                       </button>
-                      <button
-                        onClick={() => setIsEditing(false)}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition-colors"
-                      >
+                      <button onClick={() => setIsEditing(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition-colors">
                         Batal
                       </button>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </div>
             </div>
@@ -295,14 +246,12 @@ const Profil = () => {
                     </p>
                   </div>
 
-                  {profile?.safe_mother_stage && (
-                    <div>
+                  {profile?.safe_mother_stage && <div>
                       <label className="text-sm text-gray-600">Tahap saat ini</label>
                       <p className="font-medium text-gray-900">
                         {getStageLabel(profile.safe_mother_stage)}
                       </p>
-                    </div>
-                  )}
+                    </div>}
 
                   <div>
                     <label className="text-sm text-gray-600">Bergabung sejak</label>
@@ -314,8 +263,7 @@ const Profil = () => {
               </div>
 
               {/* UUID Sharing */}
-              {profile?.safe_mother_uuid && (
-                <div className="bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl p-6 text-white">
+              {profile?.safe_mother_uuid && <div className="bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl p-6 text-white">
                   <div className="flex items-center space-x-2 mb-3">
                     <Share2 className="w-5 h-5" />
                     <h3 className="text-lg font-semibold">Kode UUID Keluarga</h3>
@@ -329,15 +277,11 @@ const Profil = () => {
                     <code className="text-sm font-mono break-all">
                       {profile.safe_mother_uuid}
                     </code>
-                    <button
-                      onClick={copyUUID}
-                      className="ml-2 p-2 hover:bg-white/20 rounded-lg transition-colors"
-                    >
+                    <button onClick={copyUUID} className="ml-2 p-2 hover:bg-white/20 rounded-lg transition-colors">
                       <Copy className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
-              )}
+                </div>}
 
               {/* Contact Support */}
               <div className="bg-white rounded-2xl shadow-soft p-6">
@@ -356,8 +300,6 @@ const Profil = () => {
       </main>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Profil;

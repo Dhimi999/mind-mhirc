@@ -34,6 +34,7 @@ import TokenExpired from "./pages/TokenExpired";
 import CompleteOAuthProfile from "./pages/CompleteOAuthProfile";
 import SafeMother from "./pages/SafeMother";
 import Psikoedukasi from "./pages/safe-mother/Psikoedukasi";
+import PsikoedukasiDetail from "./pages/safe-mother/PsikoedukasiDetail";
 import ForumKonsultasi from "./pages/safe-mother/ForumKonsultasi";
 import Konsultasi from "./pages/safe-mother/Konsultasi";
 
@@ -49,7 +50,16 @@ import { HelmetProvider } from "react-helmet-async";
 import ProtectedLayout from "./pages/safe-mother/ProtectedLayout";
 import ForumIbu from "./pages/safe-mother/ForumIbu";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000 // 5 minutes
+    }
+  }
+});
 const ProtectedRoute = ({ children }) => {
   const { user, isLoading, isOAuthProfileIncomplete } = useAuth();
   const location = useLocation();
@@ -176,6 +186,7 @@ const AppRoutes = () => {
         <Route element={<ProtectedLayout />}>
           <Route path="/safe-mother" element={<SafeMother />} />
           <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
+          <Route path="/safe-mother/psikoedukasi/:slug" element={<PsikoedukasiDetail />} />
           <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
           <Route
             path="/safe-mother/privatekonsultasi"
@@ -201,8 +212,12 @@ const AppRoutes = () => {
   );
 };
 
+// Workaround some TS setups complaining about HelmetProvider JSX type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const HelmetProviderAny = HelmetProvider as unknown as React.FC<any>;
+
 const App = () => (
-  <HelmetProvider>
+  <HelmetProviderAny>
     {/* 1. Tambahkan HelmetProvider sebagai pembungkus terluar */}
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -216,7 +231,7 @@ const App = () => (
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
-  </HelmetProvider>
+  </HelmetProviderAny>
 );
 
 export default App;
