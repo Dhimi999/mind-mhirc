@@ -290,7 +290,6 @@ const CBT = () => {
         const userProgress = progressData.find(
           (p) => p.module_id === masterModule.id
         );
-
         return {
           ...masterModule,
           status:
@@ -378,27 +377,20 @@ const CBT = () => {
         task_id: task.id,
         answer: currentAnswers[task.id]
       }));
-      console.log("Data yang akan dikirim ke Supabase:", answersToUpsert);
-
-      // PERBAIKAN: Menambahkan { onConflict: ... } untuk memberi tahu Supabase cara menangani data yang sudah ada.
       const { error: answerError } = await supabase
         .from("cbt_user_answers")
-        .upsert(answersToUpsert, { onConflict: "user_id,module_id,task_id" });
-
+        .upsert(answersToUpsert);
       if (answerError) throw answerError;
 
       // 2. Update current module progress
       const { error: progressError } = await supabase
         .from("cbt_user_progress")
-        .upsert(
-          {
-            user_id: user.id,
-            module_id: moduleId,
-            status: "completed",
-            progress: 100
-          },
-          { onConflict: "user_id,module_id" }
-        ); // Juga ditambahkan di sini untuk konsistensi
+        .upsert({
+          user_id: user.id,
+          module_id: moduleId,
+          status: "completed",
+          progress: 100
+        });
       if (progressError) throw progressError;
 
       // 3. Unlock next module
@@ -406,15 +398,12 @@ const CBT = () => {
       if (nextModuleId <= masterModules.length) {
         const { error: unlockError } = await supabase
           .from("cbt_user_progress")
-          .upsert(
-            {
-              user_id: user.id,
-              module_id: nextModuleId,
-              status: "available",
-              progress: 0
-            },
-            { onConflict: "user_id,module_id" }
-          );
+          .upsert({
+            user_id: user.id,
+            module_id: nextModuleId,
+            status: "available",
+            progress: 0
+          });
         if (unlockError) throw unlockError;
       }
 
