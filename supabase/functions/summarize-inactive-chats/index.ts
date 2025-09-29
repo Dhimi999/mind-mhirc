@@ -115,7 +115,7 @@ serve(async (_req) => {
       } catch (innerError) {
         console.error(
           `Failed to process conversation ${convo.id}:`,
-          innerError.message
+          innerError instanceof Error ? innerError.message : 'Unknown inner error'
         );
       }
     }
@@ -127,8 +127,8 @@ serve(async (_req) => {
       { status: 200 }
     );
   } catch (error) {
-    console.error("Cron job failed:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("Cron job failed:", error instanceof Error ? error.message : 'Unknown error');
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500
     });
   }

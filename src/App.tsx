@@ -31,6 +31,7 @@ import SetNewPassword from "./pages/SetNewPassword";
 import EmailConfirmed from "./pages/EmailConfirmed";
 import TokenExpired from "./pages/TokenExpired";
 import CompleteOAuthProfile from "./pages/CompleteOAuthProfile";
+import SafeMother from "./pages/SafeMother";
 import UnderMaintanance from "./pages/UnderMaintenance";
 import { HelmetProvider } from "react-helmet-async";
 
@@ -116,6 +117,7 @@ const AppRoutes = () => {
         <Route path="/tests/:id" element={<UnderMaintanance />} />
         <Route path="/services" element={<Services />} />
         <Route path="/services/:id" element={<ServiceDetail />} />
+        <Route path="/safe-mother" element={<SafeMother />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />

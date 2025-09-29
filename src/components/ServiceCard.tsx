@@ -29,7 +29,7 @@ const ServiceCard = ({ id, title, description, icon: Icon, color }: ServiceCardP
         </p>
         
         <div className="mt-auto">
-          <Link to={`/services/${id}`}>
+          <Link to={id === "7" ? "/safe-mother" : `/services/${id}`}>
             <Button variant="outline" className="w-full group">
               <span className="mr-auto">Selengkapnya</span>
               <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />

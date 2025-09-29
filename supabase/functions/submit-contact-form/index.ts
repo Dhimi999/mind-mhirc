@@ -114,7 +114,7 @@ serve(async (req: Request) => {
     // Handle general errors
     console.error("Server error:", error);
     return new Response(
-      JSON.stringify({ error: "Server error", details: error.message }),
+      JSON.stringify({ error: "Server error", details: error instanceof Error ? error.message : 'Unknown error' }),
       {
         status: 500,
         headers: {

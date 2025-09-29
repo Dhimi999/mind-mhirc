@@ -61,6 +61,14 @@ const Services = () => {
         "Layanan riset dan evaluasi program kesehatan mental untuk lembaga, organisasi, dan institusi.",
       icon: BarChart,
       color: "bg-blue-500"
+    },
+    {
+      id: "7",
+      title: "Safe Mother",
+      description:
+        "Layanan Maternal Low-Intensity Psychological Intervention (MLIPI) untuk mendampingi Calon Ibu, Ibu Hamil, dan Ibu Pasca Melahirkan dengan layanan komprehensif mulai dari psikoedukasi hingga konsultasi.",
+      icon: Heart,
+      color: "bg-pink-500"
     }
   ];
 

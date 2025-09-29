@@ -193,9 +193,7 @@ serve(async (req) => {
       console.log(`[AI] Generating GENERAL response for: ${conversation_id}`);
 
       const moderationResult = await retryWithBackoff(() =>
-        model.generateContent(createSafetyCheckPrompt(message), {
-          responseMimeType: "application/json"
-        })
+        model.generateContent(createSafetyCheckPrompt(message))
       );
       const rawResponseText = moderationResult.response.text();
       const jsonMatch = rawResponseText.match(/{[\s\S]*}/);
@@ -309,8 +307,7 @@ serve(async (req) => {
         console.log(`[SUMMARY] Triggered: ${summaryMode}.`);
         const summaryResponse = await retryWithBackoff(() =>
           model.generateContent(
-            createOptimizedSummaryPrompt(contextForSummary!, existingSummary),
-            { responseMimeType: "application/json" }
+            createOptimizedSummaryPrompt(contextForSummary!, existingSummary)
           )
         );
         const summaryJsonMatch = summaryResponse.response
@@ -337,7 +334,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("[FATAL]", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500
     });
