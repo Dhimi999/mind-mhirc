@@ -1,17 +1,31 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Heart, Menu, X, Home, BookOpen, MessageSquare, Brain, User } from "lucide-react";
+import {
+  Heart,
+  Menu,
+  X,
+  Home,
+  BookOpen,
+  MessageSquare,
+  Brain,
+  User
+} from "lucide-react";
 
 const SafeMotherNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
   const navigation = [
+    { name: "Homepage", href: "/", icon: Home },
     { name: "Beranda", href: "/safe-mother", icon: Home },
     { name: "Psikoedukasi", href: "/safe-mother/psikoedukasi", icon: BookOpen },
-    { name: "Forum & Konsultasi", href: "/safe-mother/forum", icon: MessageSquare },
+    {
+      name: "Forum & Konsultasi",
+      href: "/safe-mother/forum",
+      icon: MessageSquare
+    },
     { name: "CBT", href: "/safe-mother/cbt", icon: Brain },
-    { name: "Profil", href: "/safe-mother/profil", icon: User },
+    { name: "Profil", href: "/safe-mother/profil", icon: User }
   ];
 
   const isActive = (href: string) => {
@@ -63,7 +77,11 @@ const SafeMotherNavbar = () => {
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 rounded-full text-gray-600 hover:text-pink-600 hover:bg-pink-50 transition-colors"
             >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </button>
           </div>
         </div>
