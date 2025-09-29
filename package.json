@@ -1,8 +1,20 @@
 {
-  "name": "vite_react_shadcn_ts",
-  "private": true,
+  "name": "e",
   "version": "0.0.0",
+  "private": true,
+  "description": "Selamat Datang di Mind MHIRC",
+  "homepage": "https://github.com/Dhimi999/mindcare-innovation-hub-92#readme",
+  "bugs": {
+    "url": "https://github.com/Dhimi999/mindcare-innovation-hub-92/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dhimi999/mindcare-innovation-hub-92.git"
+  },
+  "license": "ISC",
+  "author": "",
   "type": "module",
+  "main": "eslint.config.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

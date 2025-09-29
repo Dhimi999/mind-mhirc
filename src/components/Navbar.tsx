@@ -95,7 +95,7 @@ const Navbar = () => {
                 </Button>
               </>
             ) : (
-              <Link to="/login">
+              <Link to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`}>
                 <Button
                   variant="outline"
                   size="sm"
@@ -151,7 +151,7 @@ const Navbar = () => {
                   </Button>
                 </>
               ) : (
-                <Link to="/login">
+                <Link to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`}>
                   <Button
                     variant="outline"
                     size="sm"

@@ -7,7 +7,8 @@ import {
   Routes,
   Route,
   useLocation,
-  Navigate
+  Navigate,
+  useSearchParams
 } from "react-router-dom";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -36,6 +37,11 @@ import Psikoedukasi from "./pages/safe-mother/Psikoedukasi";
 import ForumKonsultasi from "./pages/safe-mother/ForumKonsultasi";
 import CBT from "./pages/safe-mother/CBT";
 import Profil from "./pages/safe-mother/Profil";
+import SpiritualBudaya from "./pages/SpiritualBudaya";
+import SpiritualBudayaMateri from "./pages/SpiritualBudayaMateri";
+import IntervensiPertemuan from "./pages/IntervensiPertemuan";
+import IntervensiPenugasan from "./pages/IntervensiPenugasan";
+import IntervensiPortalSesi from "./pages/IntervensiPortalSesi";
 import UnderMaintanance from "./pages/UnderMaintenance";
 import { HelmetProvider } from "react-helmet-async";
 
@@ -69,9 +75,9 @@ const ProtectedRoute = ({ children }) => {
 
 // Auth callback handler
 const AuthCallback = () => {
-  const { refreshUser, isLoading, isAuthenticated, isOAuthProfileIncomplete } =
-    useAuth();
-  const navigate = useLocation();
+  const { refreshUser, isLoading, isAuthenticated, isOAuthProfileIncomplete } = useAuth();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -94,7 +100,13 @@ const AuthCallback = () => {
     if (isOAuthProfileIncomplete) {
       return <Navigate to="/complete-profile" replace />;
     }
-    return <Navigate to="/dashboard" replace />;
+    let redirect = searchParams.get("redirect");
+    if (redirect && redirect.startsWith("/login")) redirect = null;
+    const referrer = document.referrer && new URL(document.referrer).origin === window.location.origin
+      ? new URL(document.referrer).pathname + new URL(document.referrer).search
+      : null;
+    const target = redirect || (location.state as any)?.from?.pathname || referrer || "/";
+    return <Navigate to={target} replace />;
   }
 
   return <Navigate to="/login" replace />;
@@ -126,6 +138,11 @@ const AppRoutes = () => {
         <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
         <Route path="/safe-mother/cbt" element={<CBT />} />
         <Route path="/safe-mother/profil" element={<Profil />} />
+  <Route path="/spiritual-budaya" element={<SpiritualBudaya />} />
+  <Route path="/spiritual-budaya/materi/:slug" element={<SpiritualBudayaMateri />} />
+  <Route path="/spiritual-budaya/intervensi/sesi/:sesi" element={<IntervensiPortalSesi />} />
+  <Route path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan" element={<IntervensiPertemuan />} />
+  <Route path="/spiritual-budaya/intervensi/sesi/:sesi/penugasan" element={<IntervensiPenugasan />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />

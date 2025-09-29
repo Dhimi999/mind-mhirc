@@ -4,7 +4,8 @@ import {
   Heart,
   BookOpen,
   MessageSquare,
-  BarChart
+  BarChart,
+  Sparkles
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -69,6 +70,14 @@ const Services = () => {
         "Layanan Maternal Low-Intensity Psychological Intervention (MLIPI) untuk mendampingi Calon Ibu, Ibu Hamil, dan Ibu Pasca Melahirkan dengan layanan komprehensif mulai dari psikoedukasi hingga konsultasi.",
       icon: Heart,
       color: "bg-pink-500"
+    },
+    {
+      id: "8",
+      title: "Spiritual & Budaya",
+      description:
+        "Intervensi self compassion berbasis spiritual dan budaya untuk mendukung kesehatan mental melalui nilai-nilai kearifan lokal dan spiritualitas Indonesia.",
+      icon: Sparkles,
+      color: "bg-amber-600"
     }
   ];
 
