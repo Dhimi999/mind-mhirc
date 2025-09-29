@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { X, ChevronRight, Heart, Users, BookOpen, MessageSquare, User, Home, Brain } from "lucide-react";
+import { Link } from "react-router-dom";
+import { X, ChevronRight, Heart, Users, BookOpen, MessageSquare, User, Brain, ArrowRight, Baby, Shield, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet-async";
+import SafeMotherNavbar from "@/components/SafeMotherNavbar";
+import Footer from "@/components/Footer";
+import Button from "@/components/Button";
 
 interface SafeMotherTutorialProps {
   isOpen: boolean;
@@ -252,20 +255,7 @@ const SafeMotherTutorial = ({ isOpen, onClose, onComplete }: SafeMotherTutorialP
 const SafeMother = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [currentTab, setCurrentTab] = useState("beranda");
-  const [isMobile, setIsMobile] = useState(false);
-  const navigate = useNavigate();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   useEffect(() => {
     checkUserProfile();
@@ -275,7 +265,6 @@ const SafeMother = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/login");
         return;
       }
 
@@ -287,9 +276,6 @@ const SafeMother = () => {
 
       if (profile) {
         setUserProfile(profile);
-        if (!profile.safe_mother_role) {
-          setShowTutorial(true);
-        }
       }
     } catch (error) {
       console.error("Error checking profile:", error);
@@ -301,155 +287,51 @@ const SafeMother = () => {
     checkUserProfile();
   };
 
-  const menuItems = [
-    { id: "beranda", label: "Beranda", icon: Home },
-    { id: "psikoedukasi", label: "Psikoedukasi", icon: BookOpen },
-    { id: "forum", label: "Forum & Konsultasi", icon: MessageSquare },
-    { id: "cbt", label: "CBT", icon: Brain },
-    { id: "profil", label: "Profil", icon: User }
-  ];
-
-  const renderContent = () => {
-    switch (currentTab) {
-      case "beranda":
-        return (
-          <div className="space-y-6">
-            <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-bold mb-2">Selamat Datang di Safe Mother</h2>
-              <p className="text-muted-foreground mb-4">
-                Layanan MLIPI untuk mendampingi perjalanan keibuan Anda
-              </p>
-              {userProfile?.safe_mother_role === "ibu" && userProfile?.safe_mother_uuid && (
-                <div className="bg-white p-4 rounded-lg">
-                  <p className="text-sm font-medium">Kode UUID Anda:</p>
-                  <p className="font-mono text-primary">{userProfile.safe_mother_uuid}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Bagikan kode ini kepada keluarga untuk bergabung
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-card p-6 rounded-xl border">
-                <h3 className="font-semibold mb-2">Materi Terbaru</h3>
-                <p className="text-sm text-muted-foreground">
-                  Akses materi psikoedukasi terbaru seputar kesehatan mental maternal
-                </p>
-              </div>
-              <div className="bg-card p-6 rounded-xl border">
-                <h3 className="font-semibold mb-2">Konsultasi</h3>
-                <p className="text-sm text-muted-foreground">
-                  Terhubung dengan profesional dan komunitas yang mendukung
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-      case "psikoedukasi":
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Materi Psikoedukasi</h2>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="bg-card p-6 rounded-xl border">
-                <h3 className="font-semibold mb-2">Persiapan Menjadi Ibu</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Panduan lengkap mempersiapkan diri secara mental dan emosional
-                </p>
-                <button className="text-primary hover:underline text-sm">Baca Selengkapnya</button>
-              </div>
-              <div className="bg-card p-6 rounded-xl border">
-                <h3 className="font-semibold mb-2">Manajemen Stress Kehamilan</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Teknik-teknik mengelola stress dan kecemasan selama kehamilan
-                </p>
-                <button className="text-primary hover:underline text-sm">Baca Selengkapnya</button>
-              </div>
-            </div>
-          </div>
-        );
-      case "forum":
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Forum & Konsultasi</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-card p-6 rounded-xl border">
-                <h3 className="font-semibold mb-2">Forum Ibu</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Berbagi pengalaman dan saling mendukung dengan ibu lainnya
-                </p>
-                <button className="bg-primary text-white px-4 py-2 rounded-lg text-sm">
-                  Masuk Forum
-                </button>
-              </div>
-              <div className="bg-card p-6 rounded-xl border">
-                <h3 className="font-semibold mb-2">Konsultasi Profesional</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Konsultasi dengan psikolog dan tenaga kesehatan profesional
-                </p>
-                <button className="bg-primary text-white px-4 py-2 rounded-lg text-sm">
-                  Mulai Konsultasi
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      case "cbt":
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">CBT (Cognitive Behavioral Therapy)</h2>
-            <div className="bg-card p-6 rounded-xl border">
-              <h3 className="font-semibold mb-4">Portal Penugasan</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <span className="font-medium">Tugas Minggu 1</span>
-                  <span className="text-sm text-green-600">Selesai</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <span className="font-medium">Tugas Minggu 2</span>
-                  <span className="text-sm text-orange-600">Dalam Progress</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <span className="font-medium">Tugas Minggu 3</span>
-                  <span className="text-sm text-gray-400">Belum Dimulai</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      case "profil":
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Profil Saya</h2>
-            <div className="bg-card p-6 rounded-xl border">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Peran</label>
-                  <p className="font-medium capitalize">{userProfile?.safe_mother_role?.replace("_", " ")}</p>
-                </div>
-                {userProfile?.safe_mother_stage && (
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Tahap</label>
-                    <p className="font-medium capitalize">{userProfile.safe_mother_stage.replace("_", " ")}</p>
-                  </div>
-                )}
-                {userProfile?.safe_mother_uuid && (
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">UUID Keluarga</label>
-                    <p className="font-mono text-sm">{userProfile.safe_mother_uuid}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return null;
+  const handleJoinProgram = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      // Redirect to login if not authenticated
+      window.location.href = '/login?redirect=/safe-mother';
+      return;
+    }
+    
+    if (!userProfile?.safe_mother_role) {
+      setShowTutorial(true);
+    } else {
+      // Already enrolled, scroll to services
+      document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
+  const services = [
+    {
+      id: "psikoedukasi",
+      title: "Psikoedukasi Maternal",
+      description: "Materi edukasi komprehensif tentang kesehatan mental ibu, persiapan kehamilan, dan pengelolaan stres.",
+      icon: BookOpen,
+      color: "bg-primary/10",
+      iconColor: "text-primary"
+    },
+    {
+      id: "konsultasi",
+      title: "Forum & Konsultasi",
+      description: "Platform untuk berbagi pengalaman dengan sesama ibu dan konsultasi dengan profesional kesehatan mental.",
+      icon: MessageSquare,
+      color: "bg-secondary/10", 
+      iconColor: "text-secondary"
+    },
+    {
+      id: "cbt",
+      title: "Program CBT",
+      description: "Terapi Kognitif Perilaku yang dirancang khusus untuk mendukung kesehatan mental maternal.",
+      icon: Brain,
+      color: "bg-accent/10",
+      iconColor: "text-accent"
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col">
       <Helmet>
         <title>Safe Mother - Layanan MLIPI | Mind MHIRC</title>
         <meta
@@ -465,86 +347,217 @@ const SafeMother = () => {
         onComplete={handleTutorialComplete}
       />
 
-      <div className="flex h-screen">
-        {/* Desktop Sidebar */}
-        {!isMobile && (
-          <div className="w-64 bg-card border-r">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-8">
-                <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-pink-500" />
+      <SafeMotherNavbar />
+
+      <main className="flex-1">
+        {/* Hero Section */}
+        <div className="relative min-h-[90vh] flex items-center overflow-hidden pt-16">
+          {/* Background with maternal theme */}
+          <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/90"></div>
+            <img 
+              src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?auto=format&fit=crop&q=80&w=1920" 
+              alt="Ibu dan bayi dalam suasana yang tenang dan bahagia" 
+              className="w-full h-full object-cover" 
+              loading="lazy"
+              width="1920"
+              height="1080"
+            />
+          </div>
+          
+          {/* Floating shapes */}
+          <div className="absolute top-1/4 right-[10%] w-64 h-64 rounded-full bg-pink-100/20 animate-float blur-3xl"></div>
+          <div className="absolute bottom-1/4 left-[5%] w-48 h-48 rounded-full bg-purple-100/20 animate-float blur-3xl" style={{ animationDelay: '2s' }}></div>
+          
+          <div className="container relative z-10 mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Hero Image */}
+            <div className="relative fade-in order-first lg:order-last" style={{ animationDelay: '0.3s' }}>
+              <div className="relative z-10 glass-effect p-6 rounded-2xl shadow-highlight max-w-lg mx-auto">
+                <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Heart className="w-8 h-8 text-pink-500" />
                 </div>
-                <div>
-                  <h1 className="font-bold text-lg">Safe Mother</h1>
-                  <p className="text-xs text-muted-foreground">MLIPI Service</p>
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold mb-2">Safe Mother</h3>
+                  <p className="text-sm text-muted-foreground">Maternal Low-Intensity Psychological Intervention</p>
                 </div>
               </div>
               
-              <nav className="space-y-2">
-                {menuItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setCurrentTab(item.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                      currentTab === item.id
-                        ? "bg-primary text-white"
-                        : "hover:bg-muted/50"
-                    }`}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </nav>
-            </div>
-          </div>
-        )}
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Mobile Header */}
-          {isMobile && (
-            <div className="bg-card border-b p-4">
-              <div className="flex items-center justify-between">
+              <div className="absolute -bottom-6 -right-6 glass-effect p-4 rounded-xl shadow-soft animate-float">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-                    <Heart className="w-4 h-4 text-pink-500" />
-                  </div>
-                  <h1 className="font-bold">Safe Mother</h1>
+                  <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                  <span className="text-sm font-medium">Berbasis Bukti Ilmiah</span>
                 </div>
-                <span className="text-sm text-muted-foreground">MLIPI</span>
+              </div>
+              
+              <div className="absolute -top-8 right-12 glass-effect p-4 rounded-xl shadow-soft animate-float" style={{ animationDelay: '1.5s' }}>
+                <div className="flex items-center space-x-3">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm font-medium">Peka Budaya Indonesia</span>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Content Area */}
-          <div className="flex-1 overflow-y-auto p-6">
-            {renderContent()}
+            {/* Hero Text */}
+            <div className="space-y-6 md:space-y-8 fade-in order-last lg:order-first">
+              <div className="inline-flex items-center space-x-2 bg-pink-100 rounded-full px-4 py-1 text-pink-700 text-sm font-medium">
+                <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse-soft"></span>
+                <span>Kesehatan Mental Maternal</span>
+              </div>
+              
+              <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
+                Mendampingi Perjalanan <span className="text-pink-600">Keibuan</span> Anda
+              </h1>
+              
+              <p className="text-base md:text-lg text-muted-foreground md:pr-12">
+                Safe Mother menyediakan layanan Maternal Low-Intensity Psychological Intervention (MLIPI) 
+                yang komprehensif untuk mendampingi Calon Ibu, Ibu Hamil, dan Ibu Pasca Melahirkan.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 pt-2 md:pt-4">
+                <Button size="lg" className="w-full sm:w-auto" onClick={handleJoinProgram}>
+                  {userProfile?.safe_mother_role ? 'Lihat Dashboard' : 'Bergabung Sekarang'} 
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  Pelajari Lebih Lanjut
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 md:gap-8 pt-4 md:pt-6">
+                <div>
+                  <p className="text-2xl md:text-3xl font-bold text-pink-600">3</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Tahap Layanan</p>
+                </div>
+                <div>
+                  <p className="text-2xl md:text-3xl font-bold text-pink-600">24/7</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Dukungan Online</p>
+                </div>
+                <div>
+                  <p className="text-2xl md:text-3xl font-bold text-pink-600">100%</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Gratis</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* About Section */}
+        <section className="py-16 px-4 sm:px-6 bg-gradient-to-r from-pink-50/30 to-purple-50/30 overflow-hidden relative">
+          <div className="container mx-auto">
+            <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Apa itu Safe Mother?
+              </h2>
+              <p className="text-muted-foreground">
+                Program intervensi psikologis intensitas rendah yang dirancang khusus untuk mendukung 
+                kesehatan mental ibu di setiap tahap perjalanan keibuan.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 fade-in">
+              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-soft hover:shadow-medium transition-all duration-300">
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-pink-100 mb-4">
+                  <Baby className="h-6 w-6 text-pink-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Rencana Hamil</h3>
+                <p className="text-muted-foreground text-sm">
+                  Persiapan mental dan emosional untuk calon ibu yang merencanakan kehamilan.
+                </p>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-soft hover:shadow-medium transition-all duration-300">
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-purple-100 mb-4">
+                  <Heart className="h-6 w-6 text-purple-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Masa Kehamilan</h3>
+                <p className="text-muted-foreground text-sm">
+                  Dukungan kesehatan mental selama masa kehamilan dengan berbagai tantangannya.
+                </p>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-soft hover:shadow-medium transition-all duration-300">
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-pink-100 mb-4">
+                  <Shield className="h-6 w-6 text-pink-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Pasca Nifas</h3>
+                <p className="text-muted-foreground text-sm">
+                  Pemulihan dan penyesuaian psikologis setelah melahirkan untuk ibu baru.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Services Section */}
+        <section id="services" className="section-padding">
+          <div className="container mx-auto">
+            <div className="text-center max-w-3xl mx-auto mb-12 fade-in">
+              <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-1 text-primary text-sm font-medium mb-4">
+                <span>Layanan Kami</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Layanan Komprehensif untuk Kesehatan Mental Maternal
+              </h2>
+              <p className="text-muted-foreground">
+                Safe Mother menyediakan berbagai layanan yang dirancang untuk mendampingi 
+                perjalanan keibuan Anda dengan pendekatan yang holistik dan berbasis bukti.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 fade-in">
+              {services.map((service) => (
+                <div key={service.id} className="bg-card p-6 rounded-xl border hover:shadow-medium transition-all duration-300 group">
+                  <div className={`w-12 h-12 flex items-center justify-center rounded-full ${service.color} mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    <service.icon className={`h-6 w-6 ${service.iconColor}`} />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
+                  <p className="text-muted-foreground text-sm mb-4">{service.description}</p>
+                  <Button variant="outline" size="sm" className="group-hover:bg-primary group-hover:text-white transition-colors">
+                    Pelajari Lebih Lanjut
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="section-padding bg-gradient-to-b from-muted to-background relative overflow-hidden">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-primary/5 backdrop-blur-3xl"></div>
           </div>
 
-          {/* Mobile Bottom Navigation */}
-          {isMobile && (
-            <div className="bg-card border-t p-2">
-              <div className="flex justify-around">
-                {menuItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setCurrentTab(item.id)}
-                    className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors ${
-                      currentTab === item.id
-                        ? "bg-primary text-white"
-                        : "hover:bg-muted/50"
-                    }`}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="text-xs">{item.label}</span>
-                  </button>
-                ))}
+          <div className="container mx-auto relative z-10">
+            <div className="text-center max-w-3xl mx-auto fade-in">
+              <div className="inline-flex items-center space-x-2 bg-pink-100 rounded-full px-4 py-1 text-pink-700 text-sm font-medium mb-4">
+                <Sparkles className="w-4 h-4" />
+                <span>Mulai Perjalanan Anda</span>
+              </div>
+              
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Siap untuk Memulai?
+              </h2>
+              
+              <p className="text-muted-foreground mb-8 text-lg">
+                Bergabunglah dengan program Safe Mother dan dapatkan dukungan yang Anda butuhkan 
+                untuk perjalanan keibuan yang sehat dan bahagia.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button size="lg" onClick={handleJoinProgram}>
+                  {userProfile?.safe_mother_role ? 'Akses Dashboard' : 'Daftar Gratis Sekarang'}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button variant="outline" size="lg">
+                  Hubungi Kami
+                </Button>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
     </div>
   );
 };

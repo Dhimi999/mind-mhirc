@@ -32,6 +32,10 @@ import EmailConfirmed from "./pages/EmailConfirmed";
 import TokenExpired from "./pages/TokenExpired";
 import CompleteOAuthProfile from "./pages/CompleteOAuthProfile";
 import SafeMother from "./pages/SafeMother";
+import Psikoedukasi from "./pages/safe-mother/Psikoedukasi";
+import ForumKonsultasi from "./pages/safe-mother/ForumKonsultasi";
+import CBT from "./pages/safe-mother/CBT";
+import Profil from "./pages/safe-mother/Profil";
 import UnderMaintanance from "./pages/UnderMaintenance";
 import { HelmetProvider } from "react-helmet-async";
 
@@ -118,6 +122,10 @@ const AppRoutes = () => {
         <Route path="/services" element={<Services />} />
         <Route path="/services/:id" element={<ServiceDetail />} />
         <Route path="/safe-mother" element={<SafeMother />} />
+        <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
+        <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
+        <Route path="/safe-mother/cbt" element={<CBT />} />
+        <Route path="/safe-mother/profil" element={<Profil />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />
