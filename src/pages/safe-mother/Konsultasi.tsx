@@ -95,13 +95,9 @@ const Konsultasi = () => {
     };
     fetchProfessionals();
   }, []);
-  console.log(professionals);
   // 2. Fetch riwayat konsultasi (chat rooms)
   const fetchConsultationRooms = useCallback(async () => {
-    console.log(`fetch consultation room ${user}`);
-
     if (!user) return;
-    console.log(`fetch consultation room ${selectedRoomId}`);
     setIsLoading((prev) => ({ ...prev, rooms: true }));
     try {
       // Ambil semua room_id dimana user adalah partisipan
@@ -213,29 +209,21 @@ const Konsultasi = () => {
   // 4. Fetch messages untuk room yang dipilih
   useEffect(() => {
     if (!selectedRoomId) {
-      setMessages([]); // Pindahkan ke sini
+      setMessages([]);
       return;
     }
-    console.log(`sebelum fetch message `);
-    // Saat berpindah antar room, kosongkan dulu pesan lama sambil menunggu yang baru
-    setMessages([]); // Kosongkan messages jika tidak ada room dipilih
+    
+    // Kosongkan messages saat berpindah antar room
+    setMessages([]);
 
     const fetchMessages = async () => {
       setIsLoading((prev) => ({ ...prev, messages: true }));
       try {
-        console.log(
-          `[DEBUG] Mulai mengambil pesan untuk room: ${selectedRoomId}`
-        );
-
         const { data, error } = await supabase
           .from("chat_messages")
           .select("*, sender: profiles(*)")
           .eq("chat_room_id", selectedRoomId)
           .order("created_at");
-
-        // -- TAMBAHKAN BLOK DEBUG INI --
-        console.log("[DEBUG] Respon dari Supabase:", { data, error });
-        // -----------------------------
 
         if (error) throw error;
         setMessages(data || []); // Gunakan `data || []` agar lebih aman
