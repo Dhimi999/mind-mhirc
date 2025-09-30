@@ -153,6 +153,13 @@ const AppRoutes = () => {
         <Route path="/services" element={<Services />} />
         <Route path="/services/:id" element={<ServiceDetail />} />
 
+  {/* Spiritual & Budaya */}
+  <Route path="/spiritual-budaya" element={<SpiritualBudaya />} />
+  <Route path="/spiritual-budaya/materi/:slug" element={<SpiritualBudayaMateri />} />
+  <Route path="/spiritual-budaya/intervensi/sesi/:sesi" element={<IntervensiPortalSesi />} />
+  <Route path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan" element={<IntervensiPertemuan />} />
+  <Route path="/spiritual-budaya/intervensi/sesi/:sesi/penugasan" element={<IntervensiPenugasan />} />
+
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />
