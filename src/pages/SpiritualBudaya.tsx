@@ -13,7 +13,7 @@ import heroImage from "@/assets/spiritual-cultural-hero.jpg";
 import jelajahImage from "@/assets/spiritual-jelajah.jpg";
 import tasksImage from "@/assets/spiritual-tasks.jpg";
 const SpiritualBudaya = () => {
-  const [activeTab, setActiveTab] = useState("jelajah");
+  const [activeTab, setActiveTab] = useState("pengantar");
   const { isAuthenticated } = useAuth();
   type SessionProgress = { meetingDone: boolean; assignmentDone: boolean };
   const [progressMap, setProgressMap] = useState<Record<number, SessionProgress>>({});
@@ -146,8 +146,9 @@ const SpiritualBudaya = () => {
             <Tabs
               value={activeTab}
               onValueChange={(val) => {
-                if (!isAuthenticated && val !== "jelajah") {
-                  // Arahkan ke login dan jangan ganti tab
+                // Pengantar & jelajah selalu boleh; intervensi/psikoedukasi butuh login
+                const requiresAuth = val === "intervensi" || val === "psikoedukasi";
+                if (!isAuthenticated && requiresAuth) {
                   navigate(`/login?redirect=/spiritual-budaya`);
                   return;
                 }
@@ -155,28 +156,95 @@ const SpiritualBudaya = () => {
               }}
               className="max-w-6xl mx-auto"
             >
-              <TabsList className="grid w-full grid-cols-3 mb-12">
-                <TabsTrigger value="jelajah" className="text-lg py-3">
-                  <Book className="mr-2 h-5 w-5" />
-                  Jelajah
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-12 gap-2">
+                <TabsTrigger value="pengantar" className="py-3 text-sm md:text-base">
+                  <span className="flex flex-col sm:flex-col items-center justify-center gap-1 text-center">
+                    <Home className="h-5 w-5" />
+                    <span>Pengantar</span>
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="jelajah" className="py-3 text-sm md:text-base">
+                  <span className="flex flex-col sm:flex-col items-center justify-center gap-1 text-center">
+                    <Book className="h-5 w-5" />
+                    <span>Eksplor</span>
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="intervensi"
-                  className={`text-lg py-3 ${!isAuthenticated ? "opacity-60" : ""}`}
+                  className={`py-3 text-sm md:text-base ${!isAuthenticated ? "opacity-60" : ""}`}
                   title={!isAuthenticated ? "Login diperlukan" : undefined}
                 >
-                  <FileText className="mr-2 h-5 w-5" />
-                  Intervensi
+                  <span className="flex flex-col sm:flex-col items-center justify-center gap-1 text-center">
+                    <FileText className="h-5 w-5" />
+                    <span>Intervensi</span>
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="psikoedukasi"
-                  className={`text-lg py-3 ${!isAuthenticated ? "opacity-60" : ""}`}
+                  className={`py-3 text-sm md:text-base ${!isAuthenticated ? "opacity-60" : ""}`}
                   title={!isAuthenticated ? "Login diperlukan" : undefined}
                 >
-                  <Brain className="mr-2 h-5 w-5" />
-                  Psikoedukasi
+                  <span className="flex flex-col sm:flex-col items-center justify-center gap-1 text-center">
+                    <Brain className="h-5 w-5" />
+                    <span>Psikoedukasi</span>
+                  </span>
                 </TabsTrigger>
               </TabsList>
+
+              {/* Pengantar Tab */}
+              <TabsContent value="pengantar" className="space-y-8">
+                <div className="text-center mb-6 md:mb-10">
+                  <h2 className="text-3xl font-bold mb-3">Selamat Datang di Spiritual & Budaya</h2>
+                  <p className="text-muted-foreground max-w-3xl mx-auto">
+                    Program intervensi self-compassion berbasis spiritual dan budaya Indonesia. Di sini Anda bisa mengeksplorasi materi,
+                    mengikuti intervensi terstruktur 8 sesi, dan membaca psikoedukasi terkait.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="rounded-xl border p-5 bg-amber-50/50 border-amber-200">
+                    <h3 className="font-semibold mb-1">Apa Intervensi Ini?</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Intervensi memadukan nilai spiritual dan budaya untuk membantu regulasi emosi, membangun harapan, dan
+                      memperkuat dukungan sosial.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border p-5">
+                    <h3 className="font-semibold mb-1">Bagaimana Alurnya?</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Terdiri dari 8 sesi. Setiap sesi memiliki Pertemuan Daring dan Penugasan. Selesaikan berurutan untuk hasil optimal.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border p-5">
+                    <h3 className="font-semibold mb-1">Siapa yang Cocok?</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Cocok bagi siapa pun yang mencari pendekatan ringan, humanis, dan relevan dengan konteks lokal Indonesia.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="rounded-xl border p-5">
+                    <h4 className="font-semibold mb-1">Langkah 1 — Eksplor</h4>
+                    <p className="text-sm text-muted-foreground mb-3">Baca materi pengantar dan artikel singkat.</p>
+                    <Button variant="outline" onClick={() => setActiveTab("jelajah")}>Buka Eksplor</Button>
+                  </div>
+                  <div className="rounded-xl border p-5">
+                    <h4 className="font-semibold mb-1">Langkah 2 — Intervensi</h4>
+                    <p className="text-sm text-muted-foreground mb-3">Ikuti sesi secara berurutan.</p>
+                    <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => {
+                      if (!isAuthenticated) return navigate(`/login?redirect=/spiritual-budaya`);
+                      setActiveTab("intervensi");
+                    }}>Mulai Intervensi</Button>
+                  </div>
+                  <div className="rounded-xl border p-5">
+                    <h4 className="font-semibold mb-1">Langkah 3 — Psikoedukasi</h4>
+                    <p className="text-sm text-muted-foreground mb-3">Baca materi pendukung singkat.</p>
+                    <Button variant="outline" onClick={() => {
+                      if (!isAuthenticated) return navigate(`/login?redirect=/spiritual-budaya`);
+                      setActiveTab("psikoedukasi");
+                    }}>Buka Psikoedukasi</Button>
+                  </div>
+                </div>
+              </TabsContent>
 
               {/* Jelajah Tab */}
               <TabsContent value="jelajah" className="space-y-8">

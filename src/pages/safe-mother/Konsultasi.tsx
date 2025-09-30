@@ -86,7 +86,7 @@ const Konsultasi = () => {
         const { data, error } = await supabase
           .from("profiles")
           .select("id, full_name, avatar_url, profession, account_type")
-          .eq("profession", "Dokter")
+          .in("profession", ["Dokter", "Perawat"])
           .order("full_name");
 
         if (error) throw error;

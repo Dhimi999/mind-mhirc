@@ -71,6 +71,112 @@ const IntervensiPortalSesi: React.FC = () => {
   const schedule = meetingSchedule[sessionNumber];
   const percent = useMemo(() => (progress.meetingDone ? 50 : 0) + (progress.assignmentDone ? 50 : 0), [progress]);
 
+  // Paraphrased guidance aligned with workbook (ringkas, non-verbatim)
+  const renderGuide = () => {
+    if (!progress.meetingDone) return null;
+    switch (sessionNumber) {
+      case 1:
+        return (
+          <div className="space-y-3 text-sm leading-relaxed">
+            <p>
+              Sesi pengantar untuk memahami pemicu, reaksi, dan pola yang terjadi saat menghadapi situasi sulit. Tujuannya memperjelas rantai peristiwa agar Anda bisa menyiapkan respon yang lebih sehat.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Kenali momen-momen kunci dan makna yang Anda berikan pada peristiwa.</li>
+              <li>Catat pikiran/emosi yang dominan serta respon yang Anda coba.</li>
+            </ul>
+            <div className="mt-2">
+              <a className="text-amber-700 underline" href="/downloads/spiritual-budaya/Contoh Sesi 1.pdf" target="_blank" rel="noreferrer">Contoh Sesi 1 (PDF)</a>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-3 text-sm leading-relaxed">
+            <p>
+              Latihan ekspresi emosi melalui medium budaya seperti motif batik, teater cerita rakyat, atau puisi tradisional. Pilih salah satu atau kombinasi yang paling cocok.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Batik ekspresif digital: gambarkan motif/warna yang mewakili emosi Anda, lalu tulis refleksi singkat.</li>
+              <li>Teater cerita rakyat: hayati karakter yang relevan dan catat wawasan dari perannya.</li>
+              <li>Puisi tradisional (pantun/syair/gurindam): tuangkan perasaan dalam bentuk kata-kata singkat bermakna.</li>
+            </ul>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="space-y-3 text-sm leading-relaxed">
+            <p>
+              Fokus pada stigma kesehatan jiwa dan peran nilai komunitas untuk menguranginya melalui diskusi reflektif dan rancangan solusi bersama.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Renungkan kisah penyintas dan dampak stigma pada keseharian.</li>
+              <li>Diskusikan langkah komunal yang realistis untuk edukasi dan dukungan.</li>
+              <li>Susun rencana aksi pribadi sederhana untuk lingkungan Anda.</li>
+            </ul>
+          </div>
+        );
+      case 5:
+        return (
+          <div className="space-y-3 text-sm leading-relaxed">
+            <p>
+              Menguatkan jejaring dukungan emosional: petakan orang/komunitas kunci dan latih check-in yang aman serta empatik.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Buat peta jaringan sosial dan tandai sumber dukungan.</li>
+              <li>Praktik kelompok dukungan (mendengar-aktif, validasi, kalimat suportif).</li>
+              <li>Refleksi cara memperkuat dukungan di lingkungan terdekat.</li>
+            </ul>
+          </div>
+        );
+      case 6:
+        return (
+          <div className="space-y-3 text-sm leading-relaxed">
+            <p>
+              Mengenal ritual/tradisi yang aman dan bermakna sebagai sarana ketenangan batin. Utamakan persetujuan diri dan keselamatan.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Ikuti simulasi singkat (mis. doa/meditasi bernuansa lokal) dan amati pengaruhnya.</li>
+              <li>Diskusikan makna simbolik dan cara integrasi kecil dalam rutinitas.</li>
+              <li>Refleksikan perubahan emosi sebelum/sesudah praktik.</li>
+            </ul>
+          </div>
+        );
+      case 7:
+        return (
+          <div className="space-y-3 text-sm leading-relaxed">
+            <p>
+              Literasi tanda risiko bunuh diri dan dukungan berbasis budaya/komunitas. Tujuannya meningkatkan kepekaan dan respons awal yang aman.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Kenali indikator umum (perubahan perilaku, putus asa, penarikan diri).</li>
+              <li>Susun pendekatan berbasis keluarga/komunitas dan rujukan profesional bila perlu.</li>
+              <li>Bahas studi kasus secara empatik dan manusiawi.</li>
+            </ul>
+          </div>
+        );
+      case 8:
+        return (
+          <div className="space-y-3 text-sm leading-relaxed">
+            <p>
+              Menyusun komitmen hidup dan prospek masa depan. Gunakan ritual simbolik sederhana dan afirmasi untuk menopang motivasi.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Surat untuk diri di masa depan: harapan, langkah, dan dukungan yang dibutuhkan.</li>
+              <li>Ritual simbolik “api harapan” (visualisasi/niat) untuk melepas ragu dan menguatkan komitmen.</li>
+              <li>Afirmasi pribadi/kelompok dan rencana tindak lanjut yang terukur.</li>
+            </ul>
+          </div>
+        );
+      default:
+        return (
+          <div className="text-sm text-muted-foreground">
+            Panduan sesi akan tersedia setelah pertemuan daring diselesaikan.
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
@@ -174,38 +280,8 @@ const IntervensiPortalSesi: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      {sessionNumber === 1 && (
-                        <div className="space-y-3 mb-4 text-sm leading-relaxed">
-                          <p>
-                            Pada sesi pertama ini, peserta akan melakukan analisis rantai untuk memahami faktor-faktor yang menyebabkan masalah yang
-                            sedang dihadapi. Tujuan sesi ini adalah untuk membantu peserta mengenali faktor risiko dan peristiwa yang bisa memicu
-                            krisis emosional, termasuk perasaan ingin bunuh diri. Dalam sesi ini, peserta akan berdiskusi dan bertanya jawab, di mana
-                            terapis akan membimbing peserta untuk memahami bagaimana cara mereka berpikir, merasakan, dan bertindak saat menghadapi peristiwa tersebut.
-                          </p>
-                          <p>
-                            Teknik metafora "bingkai dalam film" akan digunakan, di mana peserta diminta untuk membayangkan peristiwa krisis seperti menonton sebuah
-                            film. Peserta kemudian diminta untuk membekukan momen-momen tertentu dalam film tersebut untuk mengenali reaksi mental dan emosional yang muncul saat itu.
-                            Karena sesi ini dilakukan secara online melalui platform digital berbasis web, peserta dapat berinteraksi dan berdiskusi secara langsung melalui
-                            fitur tanya jawab, sambil melakukan refleksi terhadap peristiwa yang dibahas dalam sesi ini.
-                          </p>
-                          <div className="p-3 rounded border bg-muted/30">
-                            <p className="font-semibold mb-1">Contoh Kisah: Belajar dari Pengalaman Hidup — Kasus Nina</p>
-                            <p>
-                              Nina adalah seorang mahasiswa yang sedang menyelesaikan skripsinya. Setiap hari, ia merasa terbebani oleh tekanan tugas yang terus
-                              menumpuk dan ekspektasi yang sangat tinggi dari orang tuanya untuk lulus dengan cepat. Nina mulai merasa kesulitan untuk mengatur waktu
-                              dan merasa sangat tertekan. Pada suatu malam, setelah berusaha keras mengerjakan bab skripsi yang sama berulang kali, Nina merasa frustasi
-                              dan hampir menyerah. Pikiran-pikiran negatif mulai menguasai dirinya, ia merasa seolah-olah tidak ada jalan keluar, bahkan muncul pikiran
-                              untuk mengakhiri hidup.
-                            </p>
-                            <p className="mt-2">
-                              Namun, dalam kondisi terburuknya, Nina teringat pada teknik Analisis Rantai yang diajarkan oleh terapisnya beberapa waktu lalu. Nina memutuskan
-                              untuk menggunakan buku kerja online untuk menuliskan langkah-langkah yang membawanya ke dalam perasaan tersebut, dari tugas yang tidak kunjung
-                              selesai hingga perasaan terisolasi dan cemas yang semakin dalam. Dengan menggunakan platform digital berbasis web ini, Nina dapat menganalisis
-                              perasaan dan menemukan cara untuk menghadapinya dengan perspektif yang lebih jelas.
-                            </p>
-                          </div>
-                        </div>
-                      )}
+                      {/* Paraphrased guide per sesi */}
+                      <div className="mb-4">{renderGuide()}</div>
 
                       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
                         <li>
@@ -216,6 +292,11 @@ const IntervensiPortalSesi: React.FC = () => {
                         <li>
                           <a className="text-amber-700 underline" href="/downloads/spiritual-budaya/lembar-kerja.docx" download>
                             Lembar Kerja (DOCX)
+                          </a>
+                        </li>
+                        <li>
+                          <a className="text-amber-700 underline" href="/downloads/spiritual-budaya/Buku Kerja Intervensi Digital Berbasis Spiritual dan Budaya.pdf" target="_blank" rel="noreferrer">
+                            Buku Kerja Intervensi Digital Berbasis Spiritual & Budaya (PDF)
                           </a>
                         </li>
                         <li>

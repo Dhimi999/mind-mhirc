@@ -173,23 +173,6 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/spiritual-budaya" element={<SpiritualBudaya />} />
-        <Route
-          path="/spiritual-budaya/materi/:slug"
-          element={<SpiritualBudayaMateri />}
-        />
-        <Route
-          path="/spiritual-budaya/intervensi/sesi/:sesi"
-          element={<IntervensiPortalSesi />}
-        />
-        <Route
-          path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan"
-          element={<IntervensiPertemuan />}
-        />
-        <Route
-          path="/spiritual-budaya/intervensi/sesi/:sesi/penugasan"
-          element={<IntervensiPenugasan />}
-        />
         <Route element={<ProtectedLayout />}>
           <Route path="/safe-mother" element={<SafeMother />} />
           <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
