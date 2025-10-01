@@ -156,6 +156,13 @@ const AppRoutes = () => {
 
   {/* Spiritual & Budaya */}
   <Route path="/spiritual-budaya" element={<SpiritualBudaya />} />
+  {/* Deep links per tab */}
+  <Route path="/spiritual-budaya/:tab" element={<SpiritualBudaya />} />
+  {/* Legacy alias redirect for old materi slug */}
+  <Route
+    path="/spiritual-budaya/materi/self-compassion-budaya"
+    element={<Navigate to="/spiritual-budaya/materi/regulasi-emosi-budaya" replace />}
+  />
   <Route path="/spiritual-budaya/materi/:slug" element={<SpiritualBudayaMateri />} />
   <Route path="/spiritual-budaya/intervensi/sesi/:sesi" element={<IntervensiPortalSesi />} />
   <Route path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan" element={<IntervensiPertemuan />} />

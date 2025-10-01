@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Brain, Users, Heart, BookOpen, MessageSquare, BarChart, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Brain, Users, Heart, BookOpen, MessageSquare, BarChart, ArrowLeft, CheckCircle2, LucideIcon } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
@@ -10,6 +10,7 @@ const ServiceDetail = () => {
   const { id } = useParams();
   const [service, setService] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
   // Sample services data
   const servicesData = [
@@ -57,7 +58,8 @@ const ServiceDetail = () => {
         "Evaluasi dan umpan balik",
         "Dukungan tindak lanjut"
       ],
-      image: "https://images.unsplash.com/photo-1591115765373-5207764f72e4?auto=format&fit=crop&q=80"
+      image: "/images/services/workshop-training.jpg",
+      fallbackImage: "https://images.unsplash.com/photo-1591115765373-5207764f72e4?auto=format&fit=crop&q=80"
     },
     {
       id: "3",
@@ -153,15 +155,7 @@ const ServiceDetail = () => {
     }
   ];
   
-  // Icons map for dynamic rendering
-  const iconsMap: any = {
-    Brain,
-    Users,
-    Heart,
-    BookOpen,
-    MessageSquare,
-    BarChart
-  };
+  // We will use the component reference stored in service.icon directly
   
   useEffect(() => {
     // Simulate fetching service details
@@ -176,6 +170,11 @@ const ServiceDetail = () => {
     
     fetchService();
   }, [id]);
+
+  // Reset image load state when switching services or image source changes
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [id, service?.image]);
   
   if (loading) {
     return (
@@ -214,7 +213,7 @@ const ServiceDetail = () => {
     );
   }
   
-  const ServiceIcon = service.icon ? iconsMap[service.icon.name] : null;
+  const ServiceIcon = (service.icon as LucideIcon) || null;
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -249,11 +248,26 @@ const ServiceDetail = () => {
               
               <div className="md:w-1/2">
                 <div className="rounded-xl overflow-hidden shadow-medium">
-                  <img
-                    src={service.image}
-                    alt={service.title}
-                    className="w-full h-auto object-cover"
-                  />
+                  <div className="relative w-full aspect-[4/3] bg-muted">
+                    {/* Shimmer placeholder */}
+                    <div className={`absolute inset-0 skeleton-shimmer ${imageLoaded ? 'hidden' : ''}`} />
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      loading="lazy"
+                      className={`h-full w-full object-cover ${imageLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+                      onLoad={() => setImageLoaded(true)}
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        if (service.fallbackImage && target.src !== service.fallbackImage) {
+                          target.src = service.fallbackImage;
+                        } else {
+                          // Show placeholder shimmer indefinitely if no fallback
+                          setImageLoaded(false);
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

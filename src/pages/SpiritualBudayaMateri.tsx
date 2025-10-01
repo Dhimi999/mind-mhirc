@@ -123,10 +123,10 @@ const materiMap: Record<string, { title: string; description: string; sections: 
       },
     ],
   },
-  "self-compassion-budaya": {
-    title: "Teknik Self-Compassion Berbasis Budaya",
+  "regulasi-emosi-budaya": {
+    title: "Teknik Regulasi Emosi Berbasis Budaya",
     description:
-      "Cara-cara praktis menumbuhkan kasih sayang diri yang selaras dengan nilai dan ekspresi budaya Indonesia.",
+      "Cara-cara praktis menumbuhkan regulasi emosi yang selaras dengan nilai dan ekspresi budaya Indonesia.",
     sections: [
       {
         heading: "1. Konsep Inti Self-Compassion",
@@ -266,7 +266,12 @@ const materiMap: Record<string, { title: string; description: string; sections: 
 
 const SpiritualBudayaMateri: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const materi = slug ? materiMap[slug] : undefined;
+  // Legacy alias mapping to keep old links working
+  const aliasMap: Record<string, string> = {
+    "self-compassion-budaya": "regulasi-emosi-budaya",
+  };
+  const resolvedSlug = slug ? aliasMap[slug] || slug : undefined;
+  const materi = resolvedSlug ? materiMap[resolvedSlug] : undefined;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -279,7 +284,7 @@ const SpiritualBudayaMateri: React.FC = () => {
             "Materi psikoedukasi dan intervensi berbasis spiritual dan budaya untuk kesehatan mental."
           }
         />
-        <link rel="canonical" href={`https://mind-mhirc.my.id/spiritual-budaya/materi/${slug || ""}`} />
+        <link rel="canonical" href={`https://mind-mhirc.my.id/spiritual-budaya/materi/${resolvedSlug || ""}`} />
       </Helmet>
 
       <Navbar />

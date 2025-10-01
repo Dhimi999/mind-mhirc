@@ -13,6 +13,74 @@ import ServiceCard from "@/components/ServiceCard";
 import { Helmet } from "react-helmet-async"; // Jangan lupa import
 
 const Services = () => {
+  // Helper to render multiple labels/links per program with consistent tones
+  const ProgramActions = ({
+    items
+  }: {
+    items: Array<{
+      kind: "label" | "link";
+      label: string;
+      href?: string;
+      tone?: "amber" | "pink" | "blue" | "emerald";
+    }>;
+  }) => {
+    const tone = (t?: string) => {
+      switch (t) {
+        case "amber":
+          return {
+            label: "bg-amber-100 text-amber-700",
+            button: "bg-amber-600 hover:bg-amber-700",
+          };
+        case "pink":
+          return {
+            label: "bg-pink-100 text-pink-700",
+            button: "bg-pink-600 hover:bg-pink-700",
+          };
+        case "emerald":
+          return {
+            label: "bg-emerald-100 text-emerald-700",
+            button: "bg-emerald-600 hover:bg-emerald-700",
+          };
+        case "blue":
+          return {
+            label: "bg-blue-100 text-blue-700",
+            button: "bg-blue-600 hover:bg-blue-700",
+          };
+        default:
+          return {
+            label: "bg-gray-100 text-gray-800",
+            button: "bg-gray-600 hover:bg-gray-700",
+          };
+      }
+    };
+
+    return (
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        {items.map((it, idx) => {
+          const t = tone(it.tone);
+          if (it.kind === "label") {
+            return (
+              <span
+                key={idx}
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${t.label}`}
+              >
+                {it.label}
+              </span>
+            );
+          }
+          return (
+            <a
+              key={idx}
+              href={it.href || "#"}
+              className={`inline-flex items-center text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium ${t.button}`}
+            >
+              {it.label}
+            </a>
+          );
+        })}
+      </div>
+    );
+  };
   // Sample services data
   const services = [
     {
@@ -225,6 +293,12 @@ const Services = () => {
                     <span>Program dukungan sebaya</span>
                   </li>
                 </ul>
+                <ProgramActions
+                  items={[
+                    { kind: "label", label: "Spiritual & Budaya", tone: "amber" },
+                    { kind: "link", label: "Lihat Spiritual & Budaya", href: "/spiritual-budaya/pengantar", tone: "amber" },
+                  ]}
+                />
               </div>
 
               <div className="bg-card rounded-xl p-8 shadow-soft">
@@ -273,6 +347,34 @@ const Services = () => {
                     <span>Aktivitas sosial dan program stimulasi mental</span>
                   </li>
                 </ul>
+              </div>
+
+              {/* New: Mind for Mothers */}
+              <div className="bg-card rounded-xl p-8 shadow-soft">
+                <h3 className="text-xl font-semibold mb-4">Mind for Mothers</h3>
+                <p className="text-muted-foreground mb-6">
+                  Program pendampingan untuk calon ibu, ibu hamil, dan ibu pasca melahirkan dengan pendekatan Low-Intensity Psychological Intervention (MLIPI) yang komprehensif: dari psikoedukasi, dukungan komunitas, hingga konsultasi.
+                </p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start">
+                    <div className="mr-3 mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0"></div>
+                    <span>Psikoedukasi maternal yang praktis</span>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="mr-3 mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0"></div>
+                    <span>Konseling intensitas rendah (low-intensity)</span>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="mr-3 mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0"></div>
+                    <span>Dukungan dan forum komunitas ibu</span>
+                  </li>
+                </ul>
+                <ProgramActions
+                  items={[
+                    { kind: "label", label: "Safe Mother", tone: "pink" },
+                    { kind: "link", label: "Buka Safe Mother", href: "/safe-mother", tone: "pink" },
+                  ]}
+                />
               </div>
             </div>
           </div>

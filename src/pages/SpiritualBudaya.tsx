@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { ArrowLeft, Book, FileText, Users, Heart, Home, Brain, Lock } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,61 @@ import heroImage from "@/assets/spiritual-cultural-hero.jpg";
 import jelajahImage from "@/assets/spiritual-jelajah.jpg";
 import tasksImage from "@/assets/spiritual-tasks.jpg";
 const SpiritualBudaya = () => {
+  const { tab } = useParams<{ tab?: string }>();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("pengantar");
   const { isAuthenticated } = useAuth();
   type SessionProgress = { meetingDone: boolean; assignmentDone: boolean };
   const [progressMap, setProgressMap] = useState<Record<number, SessionProgress>>({});
   const navigate = useNavigate();
+
+  // Initialize tab from URL; allow viewing restricted tabs but overlay when not authenticated
+  useEffect(() => {
+    const allowedTabs = ["pengantar", "jelajah", "intervensi", "psikoedukasi"] as const;
+    const desired = (tab || "pengantar").toLowerCase();
+    const isValid = (allowedTabs as readonly string[]).includes(desired);
+    if (!isValid) {
+      setActiveTab("pengantar");
+      return;
+    }
+    setActiveTab(desired);
+  }, [tab]);
+
+  // When tab changes via UI, reflect in URL
+  const setTabAndUrl = (val: string) => {
+    setActiveTab(val);
+    // Only push when the pathname differs to avoid redundant entries
+    const targetPath = `/spiritual-budaya/${val}`;
+    if (location.pathname !== targetPath) {
+      navigate(targetPath, { replace: false });
+    }
+  };
+
+  // Guarded wrapper to blur content for non-auth users with an overlay prompt
+  const Guarded: React.FC<{ children: React.ReactNode; label?: string }> = ({ children, label }) => {
+    if (isAuthenticated) return <>{children}</>;
+    return (
+      <div className="relative">
+        {/* Show only the upper half of the content (50vh), hide the rest, and disable interactions */}
+        <div className="relative max-h-[50vh] overflow-hidden pointer-events-none select-none">
+          <div className="blur-sm">{children}</div>
+          {/* Subtle fade at the bottom to indicate more content is available when logged in */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white/95 dark:from-black/70 to-transparent" />
+        </div>
+
+        {/* Centered overlay message within the visible area */}
+        <div className="absolute inset-0 flex items-center justify-center px-4 z-20" aria-live="polite">
+          <div className="mx-auto rounded-xl border bg-white/90 dark:bg-black/60 backdrop-blur-md p-4 md:p-5 max-w-xl text-center shadow-lg">
+            <p className="mb-2 font-medium">{label || "Halaman ini hanya bisa diakses untuk user terdaftar."}</p>
+            <p className="text-sm text-muted-foreground mb-3">Silakan login untuk membuka konten ini.</p>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => navigate(`/login?redirect=/spiritual-budaya/${activeTab}`)}>
+              Login untuk Mengakses
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Load/save progress from localStorage
   useEffect(() => {
@@ -95,11 +145,11 @@ const SpiritualBudaya = () => {
     articles: 12,
     slug: "kearifan-lokal"
   }, {
-    title: "Teknik Self-Compassion Berbasis Budaya",
-    description: "Metode praktis untuk mengembangkan kasih sayang diri dengan pendekatan yang sesuai budaya Indonesia.",
+    title: "Teknik Regulasi Emosi Berbasis Budaya",
+    description: "Metode praktis untuk menyeimbangkan emosi dengan pendekatan yang sesuai budaya Indonesia.",
     icon: Heart,
     articles: 15,
-    slug: "self-compassion-budaya"
+    slug: "regulasi-emosi-budaya"
   }, {
     title: "Komunitas dan Dukungan Sosial",
     description: "Peran penting komunitas dalam memberikan dukungan emosional dan spiritual untuk kesehatan mental.",
@@ -109,8 +159,8 @@ const SpiritualBudaya = () => {
   }];
   return <div className="min-h-screen flex flex-col">
       <Helmet>
-        <title>Spiritual & Budaya - Intervensi Self Compassion | Mind MHIRC</title>
-        <meta name="description" content="Program intervensi self compassion berbasis spiritual dan budaya untuk kesehatan mental yang sesuai dengan nilai-nilai kearifan lokal Indonesia." />
+        <title>Spiritual & Budaya - Intervensi Digital Berbasis Spiritual & Budaya | Mind MHIRC</title>
+        <meta name="description" content="Program intervensi digital berbasis spiritual dan budaya yang selaras dengan nilai kearifan lokal Indonesia untuk mendukung kesehatan jiwa." />
         <link rel="canonical" href="https://mind-mhirc.my.id/spiritual-budaya" />
       </Helmet>
 
@@ -131,8 +181,8 @@ const SpiritualBudaya = () => {
               </h1>
               
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-                Program intervensi self compassion berbasis spiritual dan budaya yang mengintegrasikan 
-                nilai-nilai kearifan lokal Indonesia untuk mendukung kesehatan mental dan kesejahteraan holistik.
+                Program intervensi digital berbasis spiritual dan budaya yang mengintegrasikan
+                nilai-nilai kearifan lokal Indonesia untuk mendukung kesehatan jiwa dan kesejahteraan holistik.
               </p>
 
               
@@ -145,15 +195,7 @@ const SpiritualBudaya = () => {
           <div className="container mx-auto px-6">
             <Tabs
               value={activeTab}
-              onValueChange={(val) => {
-                // Pengantar & jelajah selalu boleh; intervensi/psikoedukasi butuh login
-                const requiresAuth = val === "intervensi" || val === "psikoedukasi";
-                if (!isAuthenticated && requiresAuth) {
-                  navigate(`/login?redirect=/spiritual-budaya`);
-                  return;
-                }
-                setActiveTab(val);
-              }}
+              onValueChange={(val) => setTabAndUrl(val)}
               className="max-w-6xl mx-auto"
             >
               <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-12 gap-2">
@@ -196,7 +238,7 @@ const SpiritualBudaya = () => {
                 <div className="text-center mb-6 md:mb-10">
                   <h2 className="text-3xl font-bold mb-3">Selamat Datang di Spiritual & Budaya</h2>
                   <p className="text-muted-foreground max-w-3xl mx-auto">
-                    Program intervensi self-compassion berbasis spiritual dan budaya Indonesia. Di sini Anda bisa mengeksplorasi materi,
+                    Program intervensi digital berbasis spiritual dan budaya Indonesia. Di sini Anda dapat mengeksplorasi materi,
                     mengikuti intervensi terstruktur 8 sesi, dan membaca psikoedukasi terkait.
                   </p>
                 </div>
@@ -225,23 +267,21 @@ const SpiritualBudaya = () => {
                   <div className="rounded-xl border p-5">
                     <h4 className="font-semibold mb-1">Langkah 1 — Eksplor</h4>
                     <p className="text-sm text-muted-foreground mb-3">Baca materi pengantar dan artikel singkat.</p>
-                    <Button variant="outline" onClick={() => setActiveTab("jelajah")}>Buka Eksplor</Button>
+                    <Button variant="outline" onClick={() => setTabAndUrl("jelajah")}>Buka Eksplor</Button>
                   </div>
                   <div className="rounded-xl border p-5">
                     <h4 className="font-semibold mb-1">Langkah 2 — Intervensi</h4>
                     <p className="text-sm text-muted-foreground mb-3">Ikuti sesi secara berurutan.</p>
-                    <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => {
-                      if (!isAuthenticated) return navigate(`/login?redirect=/spiritual-budaya`);
-                      setActiveTab("intervensi");
-                    }}>Mulai Intervensi</Button>
+                    <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setTabAndUrl("intervensi")}>
+                      Mulai Intervensi
+                    </Button>
                   </div>
                   <div className="rounded-xl border p-5">
                     <h4 className="font-semibold mb-1">Langkah 3 — Psikoedukasi</h4>
                     <p className="text-sm text-muted-foreground mb-3">Baca materi pendukung singkat.</p>
-                    <Button variant="outline" onClick={() => {
-                      if (!isAuthenticated) return navigate(`/login?redirect=/spiritual-budaya`);
-                      setActiveTab("psikoedukasi");
-                    }}>Buka Psikoedukasi</Button>
+                    <Button variant="outline" onClick={() => setTabAndUrl("psikoedukasi")}>
+                      Buka Psikoedukasi
+                    </Button>
                   </div>
                 </div>
               </TabsContent>
@@ -267,16 +307,20 @@ const SpiritualBudaya = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {jelajahContent.map((item, index) => <Card key={index} className="group hover:shadow-lg transition-shadow">
+                  {jelajahContent.map((item, index) => (
+                    <Card key={index} className="group transition-shadow">
                       <CardHeader>
                         <div className="flex items-start gap-4">
                           <div className="bg-amber-100 p-3 rounded-lg">
                             <item.icon className="h-6 w-6 text-amber-600" />
                           </div>
                           <div className="flex-1">
-                            <CardTitle className="group-hover:text-amber-600 transition-colors">
-                              {item.title}
-                            </CardTitle>
+                            <div className="flex items-start justify-between gap-2">
+                              <CardTitle className="group-hover:text-amber-600 transition-colors">
+                                {item.title}
+                              </CardTitle>
+                              <Badge variant="secondary" className="bg-amber-200 text-amber-900 whitespace-nowrap">Segera Hadir</Badge>
+                            </div>
                             <CardDescription className="mt-2">
                               {item.description}
                             </CardDescription>
@@ -285,22 +329,25 @@ const SpiritualBudaya = () => {
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="bg-green-300">
-                            {item.articles} artikel
-                          </Badge>
-                          <Link to={`/spiritual-budaya/materi/${item.slug}`}>
-                            <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700">
-                              Baca Selengkapnya →
-                            </Button>
-                          </Link>
+                          <Badge variant="secondary" className="bg-gray-200 text-gray-800">Materi dalam pengembangan</Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled
+                            className="text-amber-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            Baca Selengkapnya →
+                          </Button>
                         </div>
                       </CardContent>
-                    </Card>)}
+                    </Card>
+                  ))}
                 </div>
               </TabsContent>
 
               {/* Intervensi Tab */}
               <TabsContent value="intervensi" className="space-y-8">
+                <Guarded label="Konten Intervensi hanya tersedia bagi pengguna terdaftar.">
                 <div className="text-center mb-12">
                   <h2 className="text-3xl font-bold mb-4">Intervensi & Treatment Modules</h2>
                   <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -413,10 +460,12 @@ const SpiritualBudaya = () => {
                     </CardContent>
                   </Card>
                 </div>
+                </Guarded>
               </TabsContent>
 
               {/* Psikoedukasi Tab */}
               <TabsContent value="psikoedukasi" className="space-y-8">
+                <Guarded label="Konten Psikoedukasi hanya tersedia bagi pengguna terdaftar.">
                 <div className="text-center mb-12">
                   <h2 className="text-3xl font-bold mb-4">Psikoedukasi</h2>
                   <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -462,6 +511,7 @@ const SpiritualBudaya = () => {
                     </CardContent>
                   </Card>
                 </div>
+                </Guarded>
               </TabsContent>
             </Tabs>
           </div>

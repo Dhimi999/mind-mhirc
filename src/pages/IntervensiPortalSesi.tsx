@@ -42,13 +42,13 @@ const IntervensiPortalSesi: React.FC = () => {
   const title = sessionTitles[sessionNumber];
   const materiRelated: Record<number, string> = {
     1: "prinsip-dasar",
-    2: "self-compassion-budaya",
-    3: "self-compassion-budaya",
+    2: "regulasi-emosi-budaya",
+    3: "regulasi-emosi-budaya",
     4: "komunitas-dukungan",
     5: "komunitas-dukungan",
     6: "kearifan-lokal",
     7: "prinsip-dasar",
-    8: "self-compassion-budaya",
+    8: "regulasi-emosi-budaya",
   };
 
   const [progressMap, setProgressMap] = useState<Record<number, SessionProgress>>({});

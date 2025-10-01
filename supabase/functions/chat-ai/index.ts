@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Declare Deno for TypeScript editor to avoid "Cannot find name 'Deno'" in non-Deno tooling
+declare const Deno: any;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -10,58 +13,99 @@ const corsHeaders = {
 
 // --- PROMPT HELPERS ---
 
-const createSafetyCheckPrompt = (userMessage: string) => {
+type UserContext = {
+  name?: string | null;
+  ageYears?: number | null;
+  gender?: string | null;
+  city?: string | null;
+  country?: string | null;
+};
+
+const buildUserContext = (profile: any | null): UserContext => {
+  if (!profile) return {};
+  const name =
+    profile.display_name ||
+    profile.first_name ||
+    profile.full_name ||
+    profile.preferred_name ||
+    profile.nickname ||
+    profile.username ||
+    null;
+  const dobRaw = profile.date_of_birth || profile.dob || profile.birthdate || null;
+  let ageYears: number | null = null;
+  if (dobRaw) {
+    const dob = new Date(dobRaw);
+    if (!isNaN(dob.getTime())) {
+      const diff = Date.now() - dob.getTime();
+      ageYears = Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+    }
+  }
+  const gender = (profile.gender || profile.sex || profile.jenis_kelamin || null)?.toString();
+  // Prefer coarse location only; avoid full address lines
+  const city = profile.city || profile.kota || profile.town || null;
+  const country = profile.country || profile.negara || null;
+  return { name, ageYears, gender, city, country };
+};
+
+const createSafetyCheckPrompt = (
+  userMessage: string,
+  options?: { includeGreeting?: boolean; userLocale?: string; userContext?: UserContext }
+) => {
+  const includeGreeting = options?.includeGreeting ? "true" : "false";
+  const userLocale = options?.userLocale || "id";
+  const ctx = options?.userContext || {};
+  const userName = ctx.name || "";
   return `
-Kamu adalah Eva, seorang teman dan konselor sebaya yang profesional dalam mendampingi kesehatan mental. 
-Peranmu adalah mendengarkan, memahami, memvalidasi, dan memberikan dukungan emosional, namun tidak memberikan solusi, saran spesifik, atau langkah-langkah perbaikan. 
-Kamu hadir untuk menjadi pendengar yang aman, empatik, dan menghargai perasaan pengguna.
+PERAN & IDENTITAS
+Anda adalah Eva — teman AI empatik dari Mind MHIRC yang mendampingi kesehatan mental secara aman dan manusiawi. Tugas utama Anda adalah mendengarkan, memahami, memvalidasi emosi, dan menjaga keselamatan pengguna. Untuk percakapan umum (non‑konsultasi), jangan memberi langkah-langkah teknis/solusi detail; fokus pada dukungan emosional dan refleksi perasaan.
 
-Gaya Komunikasi:
-- Hangat, ramah, dan menenangkan.
-- Selalu menghargai dan memvalidasi perasaan pengguna.
-- Gunakan bahasa percakapan sehari-hari yang sopan, jelas, dan mudah dimengerti.
-- Jangan menggunakan bullet points, numbering, tanda hubung (-), tanda bintang (*), tanda pagar (#), atau simbol khusus lainnya.
-- Gunakan hanya teks paragraf biasa tanpa format markdown.
-- Jangan menggunakan huruf kapital berlebihan kecuali untuk nama atau awal kalimat.
+GAYA KOMUNIKASI
+- Hangat, ramah, menenangkan, dan non‑menghakimi.
+- Bahasa percakapan sederhana, jelas, dan sopan. Utamakan Bahasa Indonesia (userLocale: ${userLocale}).
+- Hindari format list/bullet. Jawab dalam paragraf pendek 1–3 kalimat per paragraf.
+- Jangan berlebihan kapitalisasi.
 
-Aturan Respon:
-- Pada awal chat, selalu awali dengan "Halo, aku Eva".
-- Jangan memberi solusi, saran praktis, atau langkah-langkah untuk mengatasi masalah.
-- Fokus pada refleksi perasaan pengguna, validasi emosi, dan memastikan mereka merasa didengar.
-- Jika pengguna menunjukkan tanda bahaya (misalnya pikiran bunuh diri), arahkan untuk segera menghubungi layanan darurat atau tenaga profesional.
+KESELAMATAN & ESKALASI
+- Jika ada indikasi bahaya mendesak (ide bunuh diri, kekerasan, atau krisis): validasi perasaan, sarankan segera menghubungi layanan darurat/tenaga profesional, dan dorong menghubungi orang tepercaya di sekitar.
 
-Contoh Respons:
-Pengguna: "Aku merasa sangat tertekan akhir-akhir ini."
-Eva: "Halo, aku Eva. Aku turut merasakan beratnya apa yang kamu lalui. Perasaan tertekan itu bisa sangat melelahkan, apalagi jika terus berlarut. Aku di sini untuk mendengarkan, jika kamu ingin bercerita lebih banyak."
-Kamu adalah Eva, seorang teman dan konselor sebaya yang profesional dalam mendampingi kesehatan mental. 
-Peranmu adalah mendengarkan, memahami, memvalidasi, dan memberikan dukungan emosional, namun tidak memberikan solusi, saran spesifik, atau langkah-langkah perbaikan. 
-Kamu hadir untuk menjadi pendengar yang aman, empatik, dan menghargai perasaan pengguna.
+ATURAN RESPON
+- Salam pembuka hanya pada pesan pertama percakapan (includeGreeting=${includeGreeting}). Jika true, awali jawaban dengan: "Halo, aku Eva." Jika false, jangan ulangi perkenalan.
+- Validasi emosi, dengarkan, ajukan pertanyaan terbuka yang ringan bila relevan.
+- Jangan memberi instruksi teknis/langkah rinci pada mode dukungan umum.
 
-Gaya Komunikasi:
-- Hangat, ramah, dan menenangkan.
-- Selalu menghargai dan memvalidasi perasaan pengguna.
-- Gunakan bahasa percakapan sehari-hari yang sopan, jelas, dan mudah dimengerti.
-- Jangan menggunakan bullet points, numbering, tanda hubung (-), tanda bintang (*), tanda pagar (#), atau simbol khusus lainnya.
-- Gunakan hanya teks paragraf biasa tanpa format markdown.
-- Jangan menggunakan huruf kapital berlebihan kecuali untuk nama atau awal kalimat.
+KONTEKS PENGGUNA (PRIVAT — JANGAN DIEKSPOS LANGSUNG)
+- Nama (jika ada): "${userName}"
+- Usia (tahun, jika terhitung dari Tgl Lahir): ${ctx.ageYears ?? ""}
+- Jenis kelamin (opsional): ${ctx.gender ?? ""}
+- Lokasi kasar (kota/negara, jika ada): ${ctx.city || ctx.country || ""}
 
-Aturan Respon:
-- Jangan memberi solusi, saran praktis, atau langkah-langkah untuk mengatasi masalah.
-- Fokus pada refleksi perasaan pengguna, validasi emosi, dan memastikan mereka merasa didengar.
-- Jika pengguna menunjukkan tanda bahaya (misalnya pikiran bunuh diri), arahkan untuk segera menghubungi layanan darurat atau tenaga profesional.
+ATURAN PRIVASI & PENGGUNAAN KONTEXT
+- Gunakan konteks ini hanya untuk menyesuaikan empati, contoh, dan nada bahasa.
+- Jangan menyebutkan atau membocorkan data spesifik (tgl lahir, alamat lengkap, kota/negara, jenis kelamin) kecuali pengguna telah menyebutkannya dalam chat saat ini.
+- Jika perlu menyebut usia, gunakan cara implisit (mis. "di tahap hidupmu") — hindari menyebut angka usia kecuali pengguna sudah menyebutkannya lebih dulu.
+- Untuk lokasi, hindari menyebut nama kota/negara kecuali pengguna sudah menyebutkannya.
+- Jika pengguna bertanya data apa yang kamu punya, jawab kategori secara umum tanpa nilai spesifik, kecuali mereka memintanya dengan jelas.
 
-Contoh Respons:
-Pengguna: "Aku merasa sangat tertekan akhir-akhir ini."
-Eva: "Aku turut merasakan beratnya apa yang kamu lalui. Perasaan tertekan itu bisa sangat melelahkan, apalagi jika terus berlarut. Aku di sini untuk mendengarkan, jika kamu ingin bercerita lebih banyak."
+PENYEBUTAN NAMA
+- Jika nama tersedia dan sesuai konteks, boleh menyapa dengan nama depan secara singkat setelah konfirmasi preferensi (mis. "Jika kamu nyaman, aku memanggilmu ${userName}.")
+- Jika nama tidak tersedia: jelaskan bahwa kamu belum tahu, lalu tanya bagaimana mereka ingin dipanggil.
+- Jangan menebak atau mengarang nama.
 
-Tugasmu adalah menganalisis pesan dari pengguna dan memberikan dua respons dalam format JSON yang valid:
-1. "jawaban": Respons kamu yang hangat, empatik, dan suportif untuk ditampilkan kepada pengguna.
-2. "flag": Status boolean (true/false) yang menandakan jika pesan pengguna mengandung indikasi bahaya atau dalam kondisi sedih dan frustasi.
-Berikut adalah pesan dari pengguna:
+DISAMBIGUASI PERTANYAAN "NAMA"
+- Jika pengguna menanyakan nama kamu (kata kunci: "namamu", "siapa namamu", "siapa kamu"): jawab singkat "Aku Eva" lalu kembali ke fokus dukungan.
+- Jika pengguna menanyakan apakah kamu tahu nama mereka (kata kunci: "namaku", "nama saya", "tahu namaku", "kamu tau namaku?"): ikuti aturan IDENTITAS PENGGUNA di atas.
+
+FORMAT KELUARAN
+Kembalikan HANYA JSON:
+{
+  "jawaban": "Teks respons empatik (opsional diawali salam sesuai aturan)",
+  "flag": true/false
+}
+
+PESAN PENGGUNA:
 ---
 ${userMessage}
----
-Hasilkan jawaban HANYA dalam format JSON: { "jawaban": "...", "flag": true/false }`;
+---`;
 };
 
 const createOptimizedSummaryPrompt = (
@@ -77,20 +121,40 @@ const createOptimizedSummaryPrompt = (
 
 const createConsultationPrompt = (
   userMessage: string,
-  consultationSummary: string
+  consultationSummary: string,
+  userContext?: UserContext
 ) => {
   return `
-Anda adalah seorang konselor AI yang membantu orang tua memahami situasi yang dialami anak mereka.
-Fokus utama Anda adalah memberikan panduan, saran, dan dukungan.
-Berikut adalah rangkuman masalah yang sedang dihadapi anak:
+PERAN & IDENTITAS
+Anda adalah Eva — konselor AI Mind MHIRC (mode konsultasi). Berikan panduan praktis yang aman, berbasis bukti, dan peka budaya.
+
+KONTEKS PENGGUNA (PRIVAT — JANGAN DIEKSPOS LANGSUNG)
+- Nama (jika ada): ${userContext?.name ?? ""}
+- Usia (tahun, jika ada): ${userContext?.ageYears ?? ""}
+- Jenis kelamin (opsional): ${userContext?.gender ?? ""}
+- Lokasi kasar (opsional): ${userContext?.city || userContext?.country || ""}
+
+Aturan privasi sama seperti di mode dukungan: gunakan konteks hanya untuk menyesuaikan rekomendasi; jangan sebutkan angka usia atau lokasi spesifik kecuali pengguna menyebutkannya dulu.
+
+GAYA KOMUNIKASI
+- Empatik, jelas, dan ringkas. Gunakan paragraf pendek.
+- Boleh menggunakan langkah/opsi praktis, namun tetap aman dan tidak menggantikan tenaga profesional.
+
+KONTEKS KASUS
+Ringkasan situasi:
 ---
 ${consultationSummary}
 ---
-Dan ini adalah pertanyaan dari orang tua:
+Pertanyaan orang tua:
 ---
 ${userMessage}
 ---
-Tolong berikan jawaban Anda sebagai seorang konselor ahli.`;
+
+TUJUAN JAWABAN
+- Berikan 2–4 opsi praktis yang aman untuk dicoba.
+- Sertakan anjuran kapan perlu mencari bantuan profesional.
+- Hindari istilah teknis berlebihan.
+`;
 };
 
 // --- FUNGSI RETRY ---
@@ -119,15 +183,39 @@ const retryWithBackoff = async <T>(
   }
 };
 
+// --- SANITIZER: enforce style and greeting rules ---
+const sanitizeSupportResponse = (text: string, includeGreeting: boolean) => {
+  let out = text || "";
+  // Remove code fences and markdown headers
+  out = out.replace(/```[\s\S]*?```/g, "");
+  out = out.replace(/^\s*#+\s*/gm, "");
+  // Convert bullet/list lines into plain text
+  out = out.replace(/^\s*(?:[-*•]|\d+[.)])\s+/gm, "");
+  // Collapse excessive blank lines
+  out = out.replace(/\n{3,}/g, "\n\n");
+  // Greeting control
+  const greetingRegex = /^\s*halo,?\s*aku\s*eva[.!\-–—:]?\s*/i;
+  const hasGreeting = greetingRegex.test(out);
+  if (!includeGreeting && hasGreeting) {
+    out = out.replace(greetingRegex, "");
+  }
+  if (includeGreeting && !hasGreeting) {
+    out = `Halo, aku Eva. ${out.trim()}`;
+  }
+  return out.trim();
+};
+
 // --- LOGIKA UTAMA SERVER ---
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     const requestTimestamp = new Date();
-    const { message, conversation_id, user_id } = await req.json();
+  const { message, conversation_id, user_id } = await req.json();
+  const acceptLang = req.headers.get("accept-language") || "id";
+  const userLocale = acceptLang.toLowerCase().startsWith("en") ? "en" : "id";
 
     if (!message || !conversation_id || !user_id) {
       throw new Error("Message, conversation_id, and user_id are required.");
@@ -154,6 +242,13 @@ serve(async (req) => {
       );
 
     let aiResponseText;
+    // Fetch user context (privacy-preserving)
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("id", user_id)
+      .maybeSingle();
+    const userCtx = buildUserContext(profile as any);
 
     // --- ALUR 1: PERCAKAPAN KONSULTASI ---
     if (conversationData?.conversation_type === "consultation") {
@@ -164,12 +259,13 @@ serve(async (req) => {
         conversationData.full_summary || "Tidak ada rangkuman detail.";
       const consultationPrompt = createConsultationPrompt(
         message,
-        consultationSummary
+        consultationSummary,
+        userCtx
       );
-      const result = await retryWithBackoff(() =>
+      const result = (await retryWithBackoff(() =>
         model.generateContent(consultationPrompt)
-      );
-      aiResponseText = result.response.text();
+      )) as any;
+      aiResponseText = (result as any).response.text();
 
       await supabaseAdmin.from("ai_messages").insert([
         {
@@ -192,16 +288,19 @@ serve(async (req) => {
       // --- ALUR 2: PERCAKAPAN BIASA (DENGAN MODERASI & SUMMARY) ---
       console.log(`[AI] Generating GENERAL response for: ${conversation_id}`);
 
-      const moderationResult = await retryWithBackoff(() =>
-        model.generateContent(createSafetyCheckPrompt(message))
-      );
-      const rawResponseText = moderationResult.response.text();
+      const isFirstMessage = (conversationData?.messages_count || 0) === 0;
+      const moderationResult = (await retryWithBackoff(() =>
+        model.generateContent(
+          createSafetyCheckPrompt(message, { includeGreeting: isFirstMessage, userLocale, userContext: userCtx })
+        )
+      )) as any;
+      const rawResponseText = (moderationResult as any).response.text();
       const jsonMatch = rawResponseText.match(/{[\s\S]*}/);
       if (!jsonMatch)
         throw new Error("Invalid JSON response from moderation AI.");
 
       const { jawaban, flag } = JSON.parse(jsonMatch[0]);
-      aiResponseText = jawaban;
+      aiResponseText = sanitizeSupportResponse(jawaban, isFirstMessage);
       const isUrgent = flag === true || flag === "true";
 
       await supabaseAdmin.from("ai_messages").insert([
@@ -264,7 +363,7 @@ serve(async (req) => {
                     conversationId: conversation_id
                   }
                 })
-                .catch((err) =>
+                .catch((err: unknown) =>
                   console.error("Error invoking notify-parent:", err)
                 );
             }
@@ -287,7 +386,7 @@ serve(async (req) => {
           .order("created_at", { ascending: true })
           .limit(4);
         contextForSummary =
-          msgs?.map((m) => `${m.sender}: ${m.content}`).join("\n") || null;
+          msgs?.map((m: { sender: string; content: string }) => `${m.sender}: ${m.content}`).join("\n") || null;
       } else if (newMessagesCount > 4 && existingSummary) {
         summaryMode = "UPDATE";
         const { data: msgs } = await supabaseAdmin
@@ -299,18 +398,18 @@ serve(async (req) => {
         contextForSummary =
           msgs
             ?.reverse()
-            .map((m) => `${m.sender}: ${m.content}`)
+            .map((m: { sender: string; content: string }) => `${m.sender}: ${m.content}`)
             .join("\n") || null;
       }
 
       if (contextForSummary && summaryMode) {
         console.log(`[SUMMARY] Triggered: ${summaryMode}.`);
-        const summaryResponse = await retryWithBackoff(() =>
+        const summaryResponse = (await retryWithBackoff(() =>
           model.generateContent(
             createOptimizedSummaryPrompt(contextForSummary!, existingSummary)
           )
-        );
-        const summaryJsonMatch = summaryResponse.response
+        )) as any;
+        const summaryJsonMatch = (summaryResponse as any).response
           .text()
           .match(/{[\s\S]*}/);
         if (summaryJsonMatch) {
