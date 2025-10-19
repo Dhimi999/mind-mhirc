@@ -1,17 +1,15 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   BrowserRouter,
   Routes,
   Route,
   useLocation,
-  Navigate,
-  useSearchParams
+  Navigate
 } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
@@ -35,10 +33,7 @@ import TokenExpired from "./pages/TokenExpired";
 import CompleteOAuthProfile from "./pages/CompleteOAuthProfile";
 import SafeMother from "./pages/SafeMother";
 import Psikoedukasi from "./pages/safe-mother/Psikoedukasi";
-import PsikoedukasiDetail from "./pages/safe-mother/PsikoedukasiDetail";
 import ForumKonsultasi from "./pages/safe-mother/ForumKonsultasi";
-import Konsultasi from "./pages/safe-mother/Konsultasi";
-
 import CBT from "./pages/safe-mother/CBT";
 import Profil from "./pages/safe-mother/Profil";
 import SpiritualBudaya from "./pages/SpiritualBudaya";
@@ -46,21 +41,18 @@ import SpiritualBudayaMateri from "./pages/SpiritualBudayaMateri";
 import IntervensiPertemuan from "./pages/IntervensiPertemuan";
 import IntervensiPenugasan from "./pages/IntervensiPenugasan";
 import IntervensiPortalSesi from "./pages/IntervensiPortalSesi";
+import HibridaNaratifCBT from "./pages/HibridaNaratifCBT";
+import HibridaPortalSesi from "./pages/HibridaPortalSesi";
+import HibridaPortalSesi2 from "./pages/HibridaPortalSesi2";
+import PsikoedukasiPortalSesi from "./pages/PsikoedukasiPortalSesi";
+import PsikoedukasiPortalSesi1 from "./pages/PsikoedukasiPortalSesi1";
+import PsikoedukasiPortalSesi2 from "./pages/PsikoedukasiPortalSesi2";
+import PsikoedukasiPortalSesi3 from "./pages/PsikoedukasiPortalSesi3";
+import PsikoedukasiPortalSesi4 from "./pages/PsikoedukasiPortalSesi4";
 import UnderMaintanance from "./pages/UnderMaintenance";
 import { HelmetProvider } from "react-helmet-async";
-import ProtectedLayout from "./pages/safe-mother/ProtectedLayout";
-import ForumIbu from "./pages/safe-mother/ForumIbu";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      retry: 1,
-      staleTime: 5 * 60 * 1000 // 5 minutes
-    }
-  }
-});
+const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }) => {
   const { user, isLoading, isOAuthProfileIncomplete } = useAuth();
   const location = useLocation();
@@ -92,8 +84,7 @@ const ProtectedRoute = ({ children }) => {
 const AuthCallback = () => {
   const { refreshUser, isLoading, isAuthenticated, isOAuthProfileIncomplete } =
     useAuth();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const navigate = useLocation();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -107,7 +98,7 @@ const AuthCallback = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Memuat Data...</p>
+        <p className="text-muted-foreground">Memuat...</p>
       </div>
     );
   }
@@ -116,30 +107,35 @@ const AuthCallback = () => {
     if (isOAuthProfileIncomplete) {
       return <Navigate to="/complete-profile" replace />;
     }
-    let redirect = searchParams.get("redirect");
-    if (redirect && redirect.startsWith("/login")) redirect = null;
-    const referrer =
-      document.referrer &&
-      new URL(document.referrer).origin === window.location.origin
-        ? new URL(document.referrer).pathname +
-          new URL(document.referrer).search
-        : null;
-    const target =
-      redirect || (location.state as any)?.from?.pathname || referrer || "/";
-    return <Navigate to={target} replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Navigate to="/login" replace />;
 };
 
-// ScrollToTop component to handle automatic scrolling
+// ScrollToTop with exception: keep scroll when switching tabs inside /hibrida-cbt (non-session paths)
 const ScrollToTop = () => {
   const { pathname } = useLocation();
+  const prevPathRef = useRef(pathname);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    const prev = prevPathRef.current;
+    const isHibrida = pathname.startsWith('/hibrida-cbt');
+    const wasHibrida = prev.startsWith('/hibrida-cbt');
+    const isSession = /\/hibrida-cbt\/(intervensi|psikoedukasi)\/sesi\//.test(pathname);
+    const wasSession = /\/hibrida-cbt\/(intervensi|psikoedukasi)\/sesi\//.test(prev);
 
+    // Conditions to scroll:
+    // 1. Navigating outside hibrida-cbt area
+    // 2. Entering a session portal
+    // 3. Leaving a session portal
+    // 4. First time arriving to hibrida-cbt from outside
+    const shouldScroll = !isHibrida || !wasHibrida || isSession || wasSession;
+    if (shouldScroll) {
+      try { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }); } catch { window.scrollTo(0,0); }
+    }
+    prevPathRef.current = pathname;
+  }, [pathname]);
   return null;
 };
 
@@ -153,21 +149,30 @@ const AppRoutes = () => {
         <Route path="/tests/:id" element={<UnderMaintanance />} />
         <Route path="/services" element={<Services />} />
         <Route path="/services/:id" element={<ServiceDetail />} />
-
-  {/* Spiritual & Budaya */}
+        <Route path="/safe-mother" element={<SafeMother />} />
+        <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
+        <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
+        <Route path="/safe-mother/cbt" element={<CBT />} />
+        <Route path="/safe-mother/profil" element={<Profil />} />
   <Route path="/spiritual-budaya" element={<SpiritualBudaya />} />
-  {/* Deep links per tab */}
-  <Route path="/spiritual-budaya/:tab" element={<SpiritualBudaya />} />
-  {/* Legacy alias redirect for old materi slug */}
-  <Route
-    path="/spiritual-budaya/materi/self-compassion-budaya"
-    element={<Navigate to="/spiritual-budaya/materi/regulasi-emosi-budaya" replace />}
-  />
   <Route path="/spiritual-budaya/materi/:slug" element={<SpiritualBudayaMateri />} />
   <Route path="/spiritual-budaya/intervensi/sesi/:sesi" element={<IntervensiPortalSesi />} />
   <Route path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan" element={<IntervensiPertemuan />} />
   <Route path="/spiritual-budaya/intervensi/sesi/:sesi/penugasan" element={<IntervensiPenugasan />} />
-
+    {/* Hibrida Naratif CBT service routes */}
+  <Route path="/hibrida-cbt" element={<HibridaNaratifCBT />} />
+  <Route path="/hibrida-cbt/:tab" element={<HibridaNaratifCBT />} />
+  <Route path="/hibrida-cbt/intervensi/sesi/2" element={<HibridaPortalSesi2 />} />
+  <Route path="/hibrida-cbt/intervensi/sesi/:sesi" element={<HibridaPortalSesi />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/1" element={<PsikoedukasiPortalSesi1 />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/2" element={<PsikoedukasiPortalSesi2 />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/3" element={<PsikoedukasiPortalSesi3 />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/4" element={<PsikoedukasiPortalSesi4 />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/5" element={<NotFound />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/6" element={<NotFound />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/7" element={<NotFound />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/8" element={<NotFound />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/:sesi" element={<PsikoedukasiPortalSesi />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />
@@ -181,20 +186,6 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-        <Route element={<ProtectedLayout />}>
-          <Route path="/safe-mother" element={<SafeMother />} />
-          <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
-          <Route path="/safe-mother/psikoedukasi/:slug" element={<PsikoedukasiDetail />} />
-          <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
-          <Route
-            path="/safe-mother/privatekonsultasi"
-            element={<Konsultasi />}
-          />
-          <Route path="/safe-mother/forumIbu" element={<ForumIbu />} />
-          <Route path="/safe-mother/cbt" element={<CBT />} />
-          <Route path="/safe-mother/profil" element={<Profil />} />
-        </Route>
-
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/cookies" element={<Cookies />} />
@@ -210,12 +201,8 @@ const AppRoutes = () => {
   );
 };
 
-// Workaround some TS setups complaining about HelmetProvider JSX type
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const HelmetProviderAny = HelmetProvider as unknown as React.FC<any>;
-
 const App = () => (
-  <HelmetProviderAny>
+  <HelmetProvider>
     {/* 1. Tambahkan HelmetProvider sebagai pembungkus terluar */}
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -229,7 +216,7 @@ const App = () => (
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
-  </HelmetProviderAny>
+  </HelmetProvider>
 );
 
 export default App;

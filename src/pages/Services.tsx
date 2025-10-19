@@ -146,8 +146,18 @@ const Services = () => {
         "Intervensi self compassion berbasis spiritual dan budaya untuk mendukung kesehatan mental melalui nilai-nilai kearifan lokal dan spiritualitas Indonesia.",
       icon: Sparkles,
       color: "bg-amber-600"
+    },
+    {
+      id: "9",
+      title: "Hibrida Naratif CBT",
+      description:
+        "Program integratif berbasis terapi naratif dan CBT untuk membantu restrukturisasi kognitif, fleksibilitas emosi, dan rekonstruksi cerita diri secara sehat.",
+      icon: Brain,
+      color: "bg-indigo-600"
     }
   ];
+
+  // Dynamic program services section dihapus sementara sesuai permintaan pengguna
 
   return (
     <div className="min-h-screen flex flex-col">

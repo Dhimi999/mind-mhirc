@@ -60,7 +60,7 @@ import SpiritualAccountManagement from "../components/dashboard/spiritual-budaya
 import SpiritualAssignmentManagement from "../components/dashboard/spiritual-budaya/SpiritualAssignmentManagement";
 import SpiritualMeetingManagement from "../components/dashboard/spiritual-budaya/SpiritualMeetingManagement";
 import HibridaAccountManagement from "@/components/dashboard/hibrida-cbt/HibridaAccountManagement";
-import HibridaAssignmentManagement from "@/components/dashboard/hibrida-cbt/HibridaAssignmentManagement";
+import UnifiedAssignmentManagement from "@/components/dashboard/hibrida-cbt/UnifiedAssignmentManagement";
 import HibridaMeetingManagement from "@/components/dashboard/hibrida-cbt/HibridaMeetingManagement";
 import PsikoedukasiManagement from "@/components/dashboard/safe-mother/PsikoedukasiManagement";
 import SaveMotherAccountManagement from "@/components/dashboard/save-mother/SaveMotherAccountManagement";
@@ -662,7 +662,7 @@ const Dashboard = () => {
                     />
                     <Route
                       path="hibrida-cbt/assignments/*"
-                      element={<HibridaAssignmentManagement />}
+                      element={<UnifiedAssignmentManagement />}
                     />
                     <Route
                       path="hibrida-cbt/meetings/*"

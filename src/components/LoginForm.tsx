@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn, UserPlus, Briefcase, User } from "lucide-react";
 import Button from "./Button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +15,6 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 import { signUp, signIn, signInWithGoogle } from "@/services/authService";
 import type { SignUpData, SignInData } from "@/services/authService";
 
@@ -62,9 +61,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
     parentId: ""
   });
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
 
   // --- START: New Handler for Subtype Checkboxes ---
   const handleSubtypeChange = (subtype: "parent" | "child") => {
@@ -178,20 +175,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
             title: "Login Berhasil",
             description: "Selamat datang kembali di Mind MHIRC"
           });
-          // Pastikan state auth ter-update
-          await refreshUser();
-          let redirectParam = searchParams.get("redirect");
-          // Hindari redirect ke halaman login lagi
-          if (redirectParam && redirectParam.startsWith("/login")) {
-            redirectParam = null;
-          }
-          const fallback = 
-            (location.state as any)?.from || 
-            (document.referrer && new URL(document.referrer).origin === window.location.origin
-              ? new URL(document.referrer).pathname + new URL(document.referrer).search
-              : null);
-          const target = redirectParam || fallback || "/";
-          navigate(target, { replace: true });
+          navigate("/dashboard");
         } else {
           toast({
             title: "Login Gagal",

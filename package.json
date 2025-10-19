@@ -21,7 +21,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "extract:spiritual-budaya": "node scripts/extract-pdf.cjs \"public\\downloads\\spiritual-budaya\\Buku Kerja Intervensi Digital Berbasis Spiritual dan Budaya.pdf\""
+    "extract:spiritual-budaya": "node scripts/extract-pdf.cjs \"public\\downloads\\spiritual-budaya\\Buku Kerja Intervensi Digital Berbasis Spiritual dan Budaya.pdf\"",
+    "db:inspect": "node scripts/inspect-db.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.11.0",
