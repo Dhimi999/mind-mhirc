@@ -8,11 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/spiritual-cultural-hero.jpg";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePsikoedukasiSession } from "@/hooks/usePsikoedukasiSession";
+import { GuidanceMaterialsDisplay } from "@/components/dashboard/hibrida-cbt/GuidanceMaterialsDisplay";
+import { CounselorResponseDisplay } from "@/components/dashboard/hibrida-cbt/CounselorResponseDisplay";
 
-const PROGRESS_KEY = "hibridaPsikoEduProgress";
 const ASSIGNMENT_KEY = "psikoEduSession3Assignment";
-
-interface SessionProgress { meetingDone: boolean; assignmentDone: boolean; sessionOpened: boolean; counselorResponse?: string; }
 
 interface AssignmentData {
   situasi: string;
@@ -36,29 +36,39 @@ const defaultAssignment: AssignmentData = {
   submitted: false
 };
 
-const meetingSchedule = { 3: { date: "2025-10-28", time: "19:00 WIB", link: "https://meet.google.com/psikoedukasi-sesi-3" } };
-
 const PsikoedukasiPortalSesi3: React.FC = () => {
   const sessionNumber = 3;
   const title = "Pengembangan Keterampilan Koping Adaptif Bagi Mahasiswa";
   const { user } = useAuth();
 
-  const [progressMap, setProgressMap] = useState<Record<number, SessionProgress>>({});
-  const progress = progressMap[sessionNumber] || { meetingDone: false, assignmentDone: false, sessionOpened: false };
+  const { progress, meetingSchedule: schedule, markMeetingDone, submitAssignment: submitAssignmentRemote, loadAssignment, autoSaveAssignment } = usePsikoedukasiSession(sessionNumber, user?.id);
   const [hasReadGuide, setHasReadGuide] = useState(false);
   const [assignment, setAssignment] = useState<AssignmentData>(defaultAssignment);
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try { const raw = localStorage.getItem(PROGRESS_KEY); if (raw) setProgressMap(JSON.parse(raw)); } catch {}
-    try { const rawA = localStorage.getItem(ASSIGNMENT_KEY); if (rawA) setAssignment(prev => ({ ...prev, ...JSON.parse(rawA) })); } catch {}
-    setProgressMap(prev => ({ ...prev, [sessionNumber]: { ...(prev[sessionNumber] || { meetingDone: false, assignmentDone: false, sessionOpened: false }), sessionOpened: true } }));
-  }, []);
+    (async () => {
+      try {
+        const remote = await loadAssignment();
+        if (remote && typeof remote === 'object') {
+          setAssignment(prev => ({ ...prev, ...(remote as Partial<AssignmentData>) }));
+        } else {
+          const rawA = localStorage.getItem(ASSIGNMENT_KEY);
+          if (rawA) setAssignment(prev => ({ ...prev, ...JSON.parse(rawA) }));
+        }
+      } catch {}
+    })();
+  }, [loadAssignment]);
 
-  useEffect(() => { try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(progressMap)); } catch {} }, [progressMap]);
-  useEffect(() => { const h = setTimeout(() => { try { localStorage.setItem(ASSIGNMENT_KEY, JSON.stringify(assignment)); setAutoSavedAt(new Date().toLocaleTimeString()); } catch {} }, 500); return () => clearTimeout(h); }, [assignment]);
-
-  const updateProgress = (patch: Partial<SessionProgress>) => { setProgressMap(prev => ({ ...prev, [sessionNumber]: { ...(prev[sessionNumber] || { meetingDone: false, assignmentDone: false, sessionOpened: true }), ...patch } })); };
+  useEffect(() => {
+    if (progress.assignmentDone) return;
+    const h = setTimeout(() => {
+      autoSaveAssignment(assignment);
+      try { localStorage.setItem(ASSIGNMENT_KEY, JSON.stringify(assignment)); } catch {}
+      setAutoSavedAt(new Date().toLocaleTimeString());
+    }, 700);
+    return () => clearTimeout(h);
+  }, [assignment, progress.assignmentDone, autoSaveAssignment]);
 
   const assignmentValid = useMemo(() => {
     return [assignment.situasi, assignment.kopingMaladaptif, assignment.perencanaanAktivitas, assignment.tindakan, assignment.hasil, assignment.refleksi, assignment.jurnal].every(f => f.trim());
@@ -67,9 +77,11 @@ const PsikoedukasiPortalSesi3: React.FC = () => {
   const overallPercent = useMemo(() => { let t = 0; if (progress.sessionOpened) t += 20; if (progress.meetingDone) t += 30; if (progress.assignmentDone) t += 30; if (progress.counselorResponse) t += 20; return t; }, [progress]);
   const assignmentFillPercent = useMemo(() => { const fields = [assignment.situasi, assignment.kopingMaladaptif, assignment.perencanaanAktivitas, assignment.tindakan, assignment.hasil, assignment.refleksi, assignment.jurnal]; const filled = fields.filter(x => x.trim()).length; return Math.round((filled / fields.length) * 100); }, [assignment]);
 
-  const handleSubmitAssignment = useCallback(async () => { if (!assignmentValid) return; await new Promise(r => setTimeout(r, 350)); setAssignment(p => ({ ...p, submitted: true })); updateProgress({ assignmentDone: true }); }, [assignmentValid]);
-
-  const schedule = meetingSchedule[sessionNumber];
+  const handleSubmitAssignment = useCallback(async () => {
+    if (!assignmentValid || progress.assignmentDone) return;
+    const ok = await submitAssignmentRemote(assignment);
+    if (ok) setAssignment(p => ({ ...p, submitted: true }));
+  }, [assignmentValid, progress.assignmentDone, assignment, submitAssignmentRemote]);
 
   const renderGuide = () => {
     if (!progress.meetingDone) return <div className="text-sm text-muted-foreground">Panduan akan muncul setelah Anda menandai Pertemuan Daring selesai.</div>;
@@ -131,13 +143,38 @@ const PsikoedukasiPortalSesi3: React.FC = () => {
                       <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{schedule?.time||'TBD'}</span></div>
                       <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{schedule?.link? <a href={schedule.link} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3"><Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!schedule?.link} onClick={() => schedule?.link && window.open(schedule.link,'_blank')}>Mulai Pertemuan</Button><Button size="sm" variant={progress.meetingDone?"destructive":"outline"} onClick={()=> updateProgress({ meetingDone: !progress.meetingDone })}>{progress.meetingDone? 'Batalkan Selesai':'Tandai Selesai'}</Button></div>
-                      <Badge className={progress.meetingDone?'bg-green-600 text-white':'bg-amber-200 text-amber-900'}>{progress.meetingDone?'✓ Sudah selesai':'⏳ Belum selesai'}</Badge>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!schedule?.link} onClick={() => schedule?.link && window.open(schedule.link,'_blank')}>Mulai Pertemuan</Button>
+                        <Button size="sm" variant={progress.meetingDone?"destructive":"outline"} disabled={progress.meetingDone} onClick={()=> !progress.meetingDone && markMeetingDone()}>{progress.meetingDone? 'Sudah Selesai':'Tandai Selesai'}</Button>
+                      </div>
+                      <div className="sm:ml-auto">
+                        <Badge className={progress.meetingDone?'bg-green-600 text-white':'bg-amber-200 text-amber-900'}>{progress.meetingDone?'✓ Sudah selesai':'⏳ Belum selesai'}</Badge>
+                      </div>
                     </div>
                   </CardContent>
                 </div></div></Card>
-                <Card className="border-indigo-100 shadow-sm"><CardHeader><CardTitle>Panduan Sesi</CardTitle><CardDescription>Baca & centang konfirmasi sebelum penugasan.</CardDescription></CardHeader><CardContent>{renderGuide()}{progress.meetingDone && (<div className="mt-4 text-sm"><label className="flex items-start gap-2 cursor-pointer"><input type="checkbox" checked={progress.assignmentDone||hasReadGuide} onChange={()=> setHasReadGuide(v=> !v)} disabled={progress.assignmentDone} /><span>Saya sudah membaca panduan dan siap mengerjakan penugasan.</span></label></div>)}</CardContent></Card>
+                <Card className="border-indigo-100 shadow-sm"><CardHeader><CardTitle>Panduan Sesi</CardTitle><CardDescription>Baca & centang konfirmasi sebelum penugasan.</CardDescription></CardHeader><CardContent>{renderGuide()}{progress.meetingDone && (
+                  <div className="mt-4 text-sm space-y-2">
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="checkbox" checked={hasReadGuide || progress.assignmentDone} onChange={()=> setHasReadGuide(v=> !v)} disabled={progress.assignmentDone} />
+                      <span>Saya telah membaca dan memahami panduan.</span>
+                    </label>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="checkbox" checked={(hasReadGuide && !progress.assignmentDone) || progress.assignmentDone} onChange={()=> setHasReadGuide(v=> !v)} disabled={!hasReadGuide || progress.assignmentDone} />
+                      <span>Saya akan mengikuti panduan selama mengerjakan sesi.</span>
+                    </label>
+                  </div>
+                )}</CardContent></Card>
+                {progress.meetingDone && schedule && (
+                  <GuidanceMaterialsDisplay
+                    guidance_text={schedule.guidance_text}
+                    guidance_pdf_url={schedule.guidance_pdf_url}
+                    guidance_audio_url={schedule.guidance_audio_url}
+                    guidance_video_url={schedule.guidance_video_url}
+                    guidance_links={schedule.guidance_links}
+                  />
+                )}
                 <Card className="border-indigo-100 shadow-md"><CardHeader><CardTitle>Penugasan</CardTitle><CardDescription>Transformasi koping maladaptif → adaptif</CardDescription></CardHeader><CardContent>{!hasReadGuide && !progress.assignmentDone && (<div className="mb-4 p-3 rounded border border-indigo-300 bg-indigo-50 text-indigo-900 text-sm">Penugasan terkunci. Baca panduan lalu centang konfirmasi.</div>)}<div className={(!hasReadGuide && !progress.assignmentDone)?'pointer-events-none opacity-60 select-none':''}>
                   <div className="space-y-8">
                     <div>
@@ -159,7 +196,11 @@ const PsikoedukasiPortalSesi3: React.FC = () => {
                     <div className="text-[11px] text-muted-foreground">Progress penugasan: {assignmentFillPercent}%</div>
                   </div>
                 </div></CardContent></Card>
-                <Card className="border-emerald-100 shadow-sm"><CardHeader><div className="flex items-center gap-3"><div className="p-2 bg-emerald-600 rounded-lg"><svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg></div><div><CardTitle className="text-emerald-800">Response Konselor</CardTitle><CardDescription>Balasan & umpan balik</CardDescription></div></div></CardHeader><CardContent>{progress.counselorResponse ? (<div className="space-y-3"><div className="bg-emerald-50 rounded-lg p-4 border-l-4 border-emerald-500"><p className="text-sm leading-relaxed whitespace-pre-wrap">{progress.counselorResponse}</p></div><div className="text-xs text-muted-foreground flex items-center gap-1"><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>Response diterima</div></div>) : (<div className="text-center py-8"><div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center"><svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></div><p className="text-sm text-muted-foreground mb-1">{progress.assignmentDone ? 'Menunggu response dari konselor':'Response akan muncul setelah Anda menyelesaikan penugasan'}</p><p className="text-xs text-muted-foreground">Konselor akan memberi feedback dalam 1–2 hari kerja</p></div>)}</CardContent></Card>
+                <CounselorResponseDisplay
+                  counselorResponse={progress.counselorResponse}
+                  counselorName={progress.counselorName}
+                  respondedAt={progress.respondedAt}
+                />
               </div>
             </div>
           </div>

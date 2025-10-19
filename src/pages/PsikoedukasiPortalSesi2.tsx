@@ -152,6 +152,10 @@ const PsikoedukasiPortalSesi2: React.FC = () => {
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               <div className="lg:col-span-1 space-y-6">
+                <div className="rounded-xl border border-indigo-100 p-4 text-xs leading-relaxed bg-white/60 backdrop-blur">
+                  <p className="font-semibold mb-1 text-indigo-700">Tips</p>
+                  <p>Catat segera tanda yang Anda sadari agar mudah dievaluasi.</p>
+                </div>
                 <div className="rounded-xl bg-gradient-to-b from-indigo-50 to-white border border-indigo-100 p-5 shadow-sm sticky top-28">
                   <h3 className="font-semibold mb-4 text-sm tracking-wide text-indigo-700">PROGRES SESI</h3>
                   <div className="mb-4">
@@ -167,10 +171,7 @@ const PsikoedukasiPortalSesi2: React.FC = () => {
                     <li className="flex items-center gap-2"><span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress.counselorResponse ? 'bg-green-500 text-white':'bg-indigo-200 text-indigo-800'}`}>3</span><span>Response Konselor</span></li>
                   </ol>
                 </div>
-                <div className="rounded-xl border border-indigo-100 p-4 text-xs leading-relaxed bg-white/60 backdrop-blur">
-                  <p className="font-semibold mb-1 text-indigo-700">Tips</p>
-                  <p>Catat segera tanda yang Anda sadari agar mudah dievaluasi.</p>
-                </div>
+                
               </div>
               <div className="lg:col-span-3 space-y-8">
                 <Card className="border-indigo-100 shadow-sm overflow-hidden">
@@ -187,12 +188,14 @@ const PsikoedukasiPortalSesi2: React.FC = () => {
                         <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{meeting?.time || 'TBD'}</span></div>
                         <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{meeting?.link ? <a href={meeting.link} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-wrap items-center gap-3">
                           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!meeting?.link} onClick={() => meeting?.link && window.open(meeting.link, '_blank')}>Mulai Pertemuan</Button>
                           <Button size="sm" variant={progress.meetingDone ? "destructive" : "outline"} disabled={progress.meetingDone} onClick={() => !progress.meetingDone && markMeetingDone()}>{progress.meetingDone ? 'Sudah Selesai' : 'Tandai Selesai'}</Button>
                         </div>
-                        <Badge className={progress.meetingDone ? 'bg-green-600 text-white':'bg-amber-200 text-amber-900'}>{progress.meetingDone ? '✓ Sudah selesai':'⏳ Belum selesai'}</Badge>
+                        <div className="sm:ml-auto">
+                          <Badge className={progress.meetingDone ? 'bg-green-600 text-white':'bg-amber-200 text-amber-900'}>{progress.meetingDone ? '✓ Sudah selesai':'⏳ Belum selesai'}</Badge>
+                        </div>
                       </div>
                     </CardContent>
                   </div></div>
@@ -202,7 +205,16 @@ const PsikoedukasiPortalSesi2: React.FC = () => {
                   <CardContent>
                     {renderGuide()}
                     {progress.meetingDone && (
-                      <div className="mt-4 text-sm"><label className="flex items-start gap-2 cursor-pointer"><input type="checkbox" checked={progress.assignmentDone || hasReadGuide} onChange={() => setHasReadGuide(v => !v)} disabled={progress.assignmentDone} /><span>Saya sudah membaca panduan dan siap mengerjakan penugasan.</span></label></div>
+                      <div className="mt-4 text-sm space-y-2">
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <input type="checkbox" checked={hasReadGuide || progress.assignmentDone} onChange={() => setHasReadGuide(v => !v)} disabled={progress.assignmentDone} />
+                          <span>Saya telah membaca dan memahami panduan.</span>
+                        </label>
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <input type="checkbox" checked={(hasReadGuide && !progress.assignmentDone) || progress.assignmentDone} onChange={() => setHasReadGuide(v => !v)} disabled={!hasReadGuide || progress.assignmentDone} />
+                          <span>Saya akan mengikuti panduan selama mengerjakan sesi.</span>
+                        </label>
+                      </div>
                     )}
                   </CardContent>
                 </Card>

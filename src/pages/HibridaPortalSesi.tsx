@@ -721,8 +721,12 @@ const HibridaPortalSesi: React.FC = () => {
         <section className="py-12">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              {/* Left Sticky Progress & Steps */}
+              {/* Left Column: Tips above Sticky Progress */}
               <div className="lg:col-span-1 space-y-6">
+                <div className="rounded-xl border border-indigo-100 dark:border-indigo-800 p-4 text-xs leading-relaxed bg-white/60 dark:bg-indigo-950/30 backdrop-blur">
+                  <p className="font-semibold mb-1 text-indigo-700 dark:text-indigo-200">Tips</p>
+                  <p>Simpan rencana tindakan (#11) di tempat mudah diakses (catatan ponsel) setelah selesai.</p>
+                </div>
                 <div className="rounded-xl bg-gradient-to-b from-indigo-50 to-white dark:from-indigo-900/40 border border-indigo-100 dark:border-indigo-800 p-5 shadow-sm sticky top-28">
                   <h3 className="font-semibold mb-4 text-sm tracking-wide text-indigo-700 dark:text-indigo-300">PROGRES SESI</h3>
                   <div className="mb-4">
@@ -750,10 +754,7 @@ const HibridaPortalSesi: React.FC = () => {
                     </li>
                   </ol>
                 </div>
-                <div className="rounded-xl border border-indigo-100 dark:border-indigo-800 p-4 text-xs leading-relaxed bg-white/60 dark:bg-indigo-950/30 backdrop-blur">
-                  <p className="font-semibold mb-1 text-indigo-700 dark:text-indigo-200">Tips</p>
-                  <p>Simpan rencana tindakan (#11) di tempat mudah diakses (catatan ponsel) setelah selesai.</p>
-                </div>
+                
               </div>
               {/* Main Content */}
               <div className="lg:col-span-3 space-y-8">
@@ -794,8 +795,8 @@ const HibridaPortalSesi: React.FC = () => {
                           ) : <span className="font-medium">TBD</span>}
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-wrap items-center gap-3">
                           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!schedule?.link} onClick={() => schedule?.link && window.open(schedule.link, '_blank')}>
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-7V8a3 3 0 00-3-3H8a3 3 0 00-3 3v1M9 21h6" />
@@ -811,9 +812,11 @@ const HibridaPortalSesi: React.FC = () => {
                             {progress.meetingDone ? 'Sudah Selesai' : 'Tandai Selesai'}
                           </Button>
                         </div>
-                        <Badge className={progress.meetingDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>
-                          {progress.meetingDone ? '✓ Sudah selesai' : '⏳ Belum selesai'}
-                        </Badge>
+                        <div className="sm:ml-auto">
+                          <Badge className={progress.meetingDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>
+                            {progress.meetingDone ? '✓ Sudah selesai' : '⏳ Belum selesai'}
+                          </Badge>
+                        </div>
                       </div>
                     </CardContent>
                   </div>
@@ -828,15 +831,14 @@ const HibridaPortalSesi: React.FC = () => {
                 <CardContent>
                   {renderGuide()}
                   {progress.meetingDone && (
-                    <div className="mt-4 text-sm">
+                    <div className="mt-4 text-sm space-y-2">
                       <label className="flex items-start gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={progress.assignmentDone || hasReadGuide}
-                          onChange={() => setHasReadGuide(v => !v)}
-                          disabled={progress.assignmentDone}
-                        />
-                        <span>Saya telah membaca panduan dan siap mengerjakan penugasan.</span>
+                        <input type="checkbox" checked={hasReadGuide || progress.assignmentDone} onChange={() => setHasReadGuide(v => !v)} disabled={progress.assignmentDone} />
+                        <span>Saya telah membaca dan memahami panduan.</span>
+                      </label>
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" checked={(hasReadGuide && !progress.assignmentDone) || progress.assignmentDone} onChange={() => setHasReadGuide(v => !v)} disabled={!hasReadGuide || progress.assignmentDone} />
+                        <span>Saya akan mengikuti panduan selama mengerjakan sesi.</span>
                       </label>
                     </div>
                   )}

@@ -22,7 +22,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "extract:spiritual-budaya": "node scripts/extract-pdf.cjs \"public\\downloads\\spiritual-budaya\\Buku Kerja Intervensi Digital Berbasis Spiritual dan Budaya.pdf\"",
-    "db:inspect": "node scripts/inspect-db.mjs"
+    "db:inspect": "node scripts/inspect-db.mjs",
+    "supabase:login": "supabase login",
+    "supabase:link": "supabase link",
+    "supabase:push": "supabase db push",
+    "supabase:reset": "supabase db reset"
   },
   "dependencies": {
     "@google/genai": "^1.11.0",
