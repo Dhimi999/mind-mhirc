@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { ClipboardList, ArrowLeft, FileText, Download, Send, Users, Upload, Trash2, Edit, ExternalLink, BookOpen, CheckCircle, UserCheck, SendHorizontal, Link as LinkIcon, Plus, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { ClipboardList, ArrowLeft, FileText, Download, Send, Users, Upload, Trash2, Edit, ExternalLink, BookOpen, CheckCircle, UserCheck, SendHorizontal, Link as LinkIcon, Plus, X, ChevronLeft, ChevronRight, MessageCircle, Globe, Folder, Link2, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from "react-router-dom";
+import PdfInlineViewer from "@/components/common/PdfInlineViewer";
 
 type ProgramType = "hibrida" | "psikoedukasi";
 
@@ -25,7 +27,7 @@ interface GuidanceMaterials {
   guidance_pdf_url: string | null;
   guidance_audio_url: string | null;
   guidance_video_url: string | null;
-  guidance_links: { title: string; url: string }[];
+  guidance_links: { title: string; url: string; icon?: string }[];
 }
 
 interface Assignment {
@@ -53,6 +55,7 @@ interface UserProfile {
 
 const UnifiedAssignmentManagement: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedSession, setSelectedSession] = useState<SessionInfo | null>(null);
   const [view, setView] = useState<"list" | "guidance" | "answers" | "participants">("list");
   
@@ -67,6 +70,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
   const [uploadingFile, setUploadingFile] = useState<"pdf" | "audio" | null>(null);
   const [newLinkTitle, setNewLinkTitle] = useState("");
   const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [newLinkIcon, setNewLinkIcon] = useState<string>("auto");
 
   // Answers viewing state
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -325,11 +329,12 @@ const UnifiedAssignmentManagement: React.FC = () => {
 
     setGuidanceMaterials(prev => ({
       ...prev,
-      guidance_links: [...prev.guidance_links, { title: newLinkTitle, url: newLinkUrl }]
+      guidance_links: [...prev.guidance_links, { title: newLinkTitle, url: newLinkUrl, icon: newLinkIcon !== "auto" ? newLinkIcon : undefined }]
     }));
 
     setNewLinkTitle("");
     setNewLinkUrl("");
+    setNewLinkIcon("auto");
   };
 
   const handleRemoveLink = (index: number) => {
@@ -337,6 +342,39 @@ const UnifiedAssignmentManagement: React.FC = () => {
       ...prev,
       guidance_links: prev.guidance_links.filter((_, i) => i !== index)
     }));
+  };
+
+  const getLinkIcon = (icon: string | undefined, url: string) => {
+    const normalized = (icon || inferIconFromUrl(url));
+    const cls = "h-4 w-4 text-indigo-600";
+    switch (normalized) {
+      case "youtube":
+        return <PlayCircle className={cls} />;
+      case "google-drive":
+        return <Folder className={cls} />;
+      case "facebook":
+        return <Globe className={cls} />;
+      case "whatsapp":
+        return <MessageCircle className={cls} />;
+      case "link":
+        return <Link2 className={cls} />;
+      default:
+        return <ExternalLink className={cls} />;
+    }
+  };
+
+  const inferIconFromUrl = (url: string): string => {
+    try {
+      const u = new URL(url);
+      const h = u.hostname;
+      if (/youtu\.be|youtube\.com/.test(h)) return "youtube";
+      if (/drive\.google\.com/.test(h)) return "google-drive";
+      if (/facebook\.com/.test(h)) return "facebook";
+      if (/wa\.me|whatsapp\.com/.test(h)) return "whatsapp";
+      return "link";
+    } catch {
+      return "link";
+    }
   };
 
   const handleViewDetail = (assignment: Assignment) => {
@@ -519,16 +557,59 @@ const UnifiedAssignmentManagement: React.FC = () => {
   // Header for detail views
   const detailHeader = (
     <div className="mb-6">
-      <Button variant="ghost" onClick={() => { setSelectedSession(null); setView("list"); }} className="mb-4">
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Kembali ke Daftar Sesi
-      </Button>
-      <h1 className="text-2xl font-semibold mb-2">{selectedSession?.title}</h1>
-      <p className="text-muted-foreground">
-        {view === "guidance" && "Kelola panduan penugasan untuk sesi ini"}
-        {view === "answers" && "Lihat jawaban peserta dan berikan respons konselor"}
-        {view === "participants" && "Daftar peserta yang mengakses sesi ini"}
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Button variant="ghost" onClick={() => { setSelectedSession(null); setView("list"); }} className="mb-2 sm:mb-0">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Kembali ke Daftar Sesi
+          </Button>
+          <h1 className="text-2xl font-semibold mt-2">{selectedSession?.title}</h1>
+          <p className="text-muted-foreground">
+            {view === "guidance" && "Kelola panduan penugasan untuk sesi ini"}
+            {view === "answers" && "Lihat jawaban peserta dan berikan respons konselor"}
+            {view === "participants" && "Daftar peserta yang mengakses sesi ini"}
+          </p>
+        </div>
+        {selectedSession && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => navigate("/hibrida-cbt")}> 
+              <span className="hidden sm:inline">Masuk ke halaman Hibrida Naratif CBT</span>
+              <span className="sm:hidden">Masuk ke layanan</span>
+            </Button>
+            <Button
+              size="icon"
+              variant="secondary"
+              disabled={selectedSession.number <= 1}
+              onClick={() => {
+                const sessions = selectedSession.program === "hibrida" ? hibridaSessions : psikoedukasiSessions;
+                const idx = sessions.findIndex(s => s.number === selectedSession.number);
+                if (idx > 0) {
+                  const prev = sessions[idx - 1];
+                  handleSessionClick(prev, view as any);
+                }
+              }}
+              aria-label="Sesi sebelumnya"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              disabled={selectedSession.number >= 8}
+              onClick={() => {
+                const sessions = selectedSession.program === "hibrida" ? hibridaSessions : psikoedukasiSessions;
+                const idx = sessions.findIndex(s => s.number === selectedSession.number);
+                if (idx >= 0 && idx < sessions.length - 1) {
+                  const next = sessions[idx + 1];
+                  handleSessionClick(next, view as any);
+                }
+              }}
+              aria-label="Sesi selanjutnya"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -538,7 +619,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
       <div>
         {detailHeader}
         
-        <div className="max-w-4xl space-y-6">
+        <div className="space-y-6">
           {/* Text Guidance */}
           <Card>
             <CardHeader>
@@ -564,14 +645,27 @@ const UnifiedAssignmentManagement: React.FC = () => {
             </CardHeader>
             <CardContent>
               {guidanceMaterials.guidance_pdf_url ? (
-                <div className="flex items-center justify-between p-3 bg-muted rounded">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    <span className="text-sm">PDF tersedia</span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span className="text-sm">PDF tersedia</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={() => window.open(guidanceMaterials.guidance_pdf_url!, '_blank')}>
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Buka
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteFile("pdf")}>
+                        <Trash2 className="h-3 w-3" />
+                        Hapus
+                      </Button>
+                    </div>
                   </div>
-                  <Button size="sm" variant="destructive" onClick={() => handleDeleteFile("pdf")}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  {/* Inline preview */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <PdfInlineViewer fileUrl={guidanceMaterials.guidance_pdf_url!} />
+                  </div>
                 </div>
               ) : (
                 <div>
@@ -595,14 +689,27 @@ const UnifiedAssignmentManagement: React.FC = () => {
             </CardHeader>
             <CardContent>
               {guidanceMaterials.guidance_audio_url ? (
-                <div className="flex items-center justify-between p-3 bg-muted rounded">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    <span className="text-sm">Audio tersedia</span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span className="text-sm">Audio tersedia</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={() => window.open(guidanceMaterials.guidance_audio_url!, '_blank')}>
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Buka
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteFile("audio")}>
+                        <Trash2 className="h-3 w-3" />
+                        Hapus
+                      </Button>
+                    </div>
                   </div>
-                  <Button size="sm" variant="destructive" onClick={() => handleDeleteFile("audio")}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  <audio controls className="w-full">
+                    <source src={guidanceMaterials.guidance_audio_url!} />
+                    Browser Anda tidak mendukung pemutar audio.
+                  </audio>
                 </div>
               ) : (
                 <div>
@@ -642,10 +749,10 @@ const UnifiedAssignmentManagement: React.FC = () => {
             <CardContent className="space-y-4">
               {guidanceMaterials.guidance_links.map((link, index) => (
                 <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded">
-                  <LinkIcon className="h-4 w-4" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{link.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+                  {getLinkIcon(link.icon, link.url)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium whitespace-normal break-words">{link.title}</p>
+                    <p className="text-xs text-muted-foreground whitespace-normal break-all">{link.url}</p>
                   </div>
                   <Button size="sm" variant="ghost" onClick={() => handleRemoveLink(index)}>
                     <X className="h-3 w-3" />
@@ -653,7 +760,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
                 </div>
               ))}
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <Input
                   placeholder="Judul link"
                   value={newLinkTitle}
@@ -664,6 +771,21 @@ const UnifiedAssignmentManagement: React.FC = () => {
                   value={newLinkUrl}
                   onChange={(e) => setNewLinkUrl(e.target.value)}
                 />
+                <div>
+                  <label className="text-xs text-muted-foreground">Pilih ikon</label>
+                  <select
+                    className="mt-1 w-full border rounded px-2 py-2 text-sm bg-background"
+                    value={newLinkIcon}
+                    onChange={(e) => setNewLinkIcon(e.target.value)}
+                  >
+                    <option value="auto">Auto (berdasarkan URL)</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="google-drive">Google Drive</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="link">Tautan</option>
+                  </select>
+                </div>
               </div>
               <Button size="sm" onClick={handleAddLink}>
                 <Plus className="h-3 w-3 mr-2" />

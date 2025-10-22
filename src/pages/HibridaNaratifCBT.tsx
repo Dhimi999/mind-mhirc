@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useHibridaRole } from "@/hooks/useHibridaRole";
+import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/spiritual-cultural-hero.jpg"; // Placeholder reuse
 import jelajahImage from "@/assets/spiritual-jelajah.jpg"; // Placeholder reuse
 import tasksImage from "@/assets/spiritual-tasks.jpg"; // Placeholder reuse
@@ -21,7 +23,10 @@ const HibridaNaratifCBT: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
+  const { enrollment, loading: enrollmentLoading, requestEnrollment, canAccessIntervensiHNCBT, canAccessIntervensiPsikoedukasi, isSuperAdmin } = useHibridaRole();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("pengantar");
+  const [isRequestingEnrollment, setIsRequestingEnrollment] = useState(false);
 
   // Future: session progress map (placeholder for parity)
   type SessionProgress = { meetingDone: boolean; assignmentDone: boolean };
@@ -52,8 +57,62 @@ const HibridaNaratifCBT: React.FC = () => {
     if (location.pathname !== target) navigate(target);
   };
 
-  const Guarded: React.FC<{ children: React.ReactNode; label?: string }> = ({ children, label }) => {
-    if (isAuthenticated) return <>{children}</>;
+  const handleRequestEnrollment = async () => {
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/hibrida-cbt/pengantar');
+      return;
+    }
+
+    setIsRequestingEnrollment(true);
+    const result = await requestEnrollment();
+    setIsRequestingEnrollment(false);
+
+    if (result.success) {
+      toast({
+        title: "Pendaftaran Berhasil",
+        description: "Permintaan pendaftaran Anda telah dikirim. Silakan tunggu persetujuan dari admin.",
+        variant: "default"
+      });
+    } else {
+      toast({
+        title: "Pendaftaran Gagal",
+        description: result.error || "Terjadi kesalahan saat mendaftar.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const GuardedIntervensi: React.FC<{ 
+    children: React.ReactNode; 
+    requireRole: 'grup-int' | 'grup-cont'; 
+    label?: string 
+  }> = ({ children, requireRole, label }) => {
+    if (!isAuthenticated) {
+      return (
+        <div className="relative">
+          <div className="relative max-h-[50vh] overflow-hidden pointer-events-none select-none">
+            <div className="blur-sm">{children}</div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white/95 dark:from-black/70 to-transparent" />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center px-4 z-20" aria-live="polite">
+            <div className="mx-auto rounded-xl border bg-white/90 dark:bg-black/60 backdrop-blur-md p-4 md:p-5 max-w-xl text-center shadow-lg">
+              <p className="mb-2 font-medium">Konten ini membutuhkan autentikasi.</p>
+              <p className="text-sm text-muted-foreground mb-3">Silakan login untuk membuka seluruh materi.</p>
+              <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => navigate(`/login?redirect=/hibrida-cbt/${activeTab}`)}>
+                Login untuk Mengakses
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const hasAccess = isSuperAdmin || 
+      (requireRole === 'grup-int' && canAccessIntervensiHNCBT) ||
+      (requireRole === 'grup-cont' && canAccessIntervensiPsikoedukasi);
+
+    if (hasAccess) return <>{children}</>;
+
     return (
       <div className="relative">
         <div className="relative max-h-[50vh] overflow-hidden pointer-events-none select-none">
@@ -62,11 +121,12 @@ const HibridaNaratifCBT: React.FC = () => {
         </div>
         <div className="absolute inset-0 flex items-center justify-center px-4 z-20" aria-live="polite">
           <div className="mx-auto rounded-xl border bg-white/90 dark:bg-black/60 backdrop-blur-md p-4 md:p-5 max-w-xl text-center shadow-lg">
-            <p className="mb-2 font-medium">{label || "Konten ini membutuhkan autentikasi."}</p>
-            <p className="text-sm text-muted-foreground mb-3">Silakan login untuk membuka seluruh materi.</p>
-            <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => navigate(`/login?redirect=/hibrida-cbt/${activeTab}`)}>
-              Login untuk Mengakses
-            </Button>
+            <p className="mb-2 font-medium">{label || "Akses Terbatas"}</p>
+            <p className="text-sm text-muted-foreground mb-3">
+              {enrollment?.status === 'pending' 
+                ? "Permintaan pendaftaran Anda sedang diproses. Silakan tunggu persetujuan dari admin."
+                : "Anda belum terdaftar untuk mengakses konten ini. Silakan daftar terlebih dahulu di tab Pengantar."}
+            </p>
           </div>
         </div>
       </div>
@@ -228,20 +288,117 @@ const HibridaNaratifCBT: React.FC = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="rounded-xl border p-5">
-                    <h4 className="font-semibold mb-1">Langkah 1 — Jelajah</h4>
-                    <p className="text-sm text-muted-foreground mb-3">Kenali konsep CBT & naratif.</p>
-                    <Button variant="outline" onClick={() => setTabAndUrl("jelajah")}>Buka Jelajah</Button>
+                  <div className="rounded-xl border p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                    <h4 className="font-semibold mb-2">Langkah 1 — Daftar</h4>
+                    {!isAuthenticated ? (
+                      <>
+                        <p className="text-sm text-muted-foreground mb-3">Login dan daftar untuk mengikuti program.</p>
+                        <Button 
+                          className="w-full bg-indigo-600 hover:bg-indigo-700" 
+                          onClick={() => navigate('/login?redirect=/hibrida-cbt/pengantar')}
+                        >
+                          Login & Daftar
+                        </Button>
+                      </>
+                    ) : enrollmentLoading ? (
+                      <p className="text-sm text-muted-foreground">Memuat status...</p>
+                    ) : (!enrollment || (enrollment.status === 'pending' && !enrollment.enrollmentRequestedAt)) ? (
+                      <>
+                        <p className="text-sm text-muted-foreground mb-3">Daftar untuk mengikuti program intervensi.</p>
+                        <Button 
+                          className="w-full bg-indigo-600 hover:bg-indigo-700" 
+                          onClick={handleRequestEnrollment}
+                          disabled={isRequestingEnrollment}
+                        >
+                          {isRequestingEnrollment ? 'Mendaftar...' : 'Daftar Sekarang'}
+                        </Button>
+                      </>
+                    ) : enrollment?.status === 'pending' ? (
+                      <>
+                        <Badge className="mb-2 bg-amber-100 text-amber-800 border-amber-300">Menunggu Persetujuan</Badge>
+                        <p className="text-xs text-muted-foreground">Permintaan Anda sedang diproses admin.</p>
+                      </>
+                    ) : enrollment?.status === 'approved' ? (
+                      <>
+                        <Badge className="mb-2 bg-green-100 text-green-800 border-green-300">Terdaftar</Badge>
+                        <p className="text-xs text-muted-foreground">Anda telah terdaftar dalam program.</p>
+                      </>
+                    ) : enrollment?.status === 'rejected' ? (
+                      <>
+                        <Badge className="mb-2 bg-red-100 text-red-800 border-red-300">Ditolak</Badge>
+                        <p className="text-xs text-muted-foreground">Hubungi admin untuk informasi lebih lanjut.</p>
+                      </>
+                    ) : (
+                      <>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Terdaftar</Badge>
+                        <p className="text-xs text-muted-foreground">Klik "Daftar Sekarang" untuk mulai mendaftar.</p>
+                      </>
+                    )}
                   </div>
+
                   <div className="rounded-xl border p-5">
-                    <h4 className="font-semibold mb-1">Langkah 2 — Intervensi</h4>
-                    <p className="text-sm text-muted-foreground mb-3">Ikuti sesi berurutan.</p>
-                    <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => setTabAndUrl("intervensi-hibrida")}>Mulai Intervensi</Button>
+                    <h4 className="font-semibold mb-2">Langkah 2 — Status</h4>
+                    {!isAuthenticated || enrollmentLoading ? (
+                      <p className="text-sm text-muted-foreground">-</p>
+                    ) : enrollment?.status === 'approved' ? (
+                      <>
+                        <Badge className="mb-2 bg-green-100 text-green-800 border-green-300">Aktif</Badge>
+                        <p className="text-xs text-muted-foreground">
+                          Aktif untuk: {
+                            isSuperAdmin ? 'Super-Admin (Semua Akses)' :
+                            enrollment.role === 'grup-int' ? 'Intervensi HN-CBT' :
+                            enrollment.role === 'grup-cont' ? 'Intervensi Psikoedukasi' :
+                            'Reguler'
+                          }
+                        </p>
+                      </>
+                    ) : enrollment?.status === 'pending' ? (
+                      <>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Aktif</Badge>
+                        <p className="text-xs text-muted-foreground">Daftar untuk mengaktifkan akses.</p>
+                      </>
+                    ) : enrollment?.status === 'rejected' ? (
+                      <>
+                        <Badge className="mb-2 bg-red-100 text-red-800 border-red-300">Ditolak</Badge>
+                        <p className="text-xs text-muted-foreground">Hubungi admin untuk informasi lebih lanjut.</p>
+                      </>
+                    ) : (
+                      <>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Aktif</Badge>
+                        <p className="text-xs text-muted-foreground">Daftar untuk mengaktifkan akses.</p>
+                      </>
+                    )}
                   </div>
+
                   <div className="rounded-xl border p-5">
-                    <h4 className="font-semibold mb-1">Langkah 3 — Psikoedukasi</h4>
-                    <p className="text-sm text-muted-foreground mb-3">Perdalam pemahaman.</p>
-                    <Button variant="outline" onClick={() => setTabAndUrl("psikoedukasi")}>Buka Psikoedukasi</Button>
+                    <h4 className="font-semibold mb-2">Langkah 3 — Grouping</h4>
+                    {!isAuthenticated || enrollmentLoading ? (
+                      <p className="text-sm text-muted-foreground">-</p>
+                    ) : enrollment?.status === 'approved' && enrollment?.group ? (
+                      <>
+                        <Badge className="mb-2 bg-purple-100 text-purple-800 border-purple-300">
+                          Grup {enrollment.group}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground">
+                          Anda tergabung dalam Grup {enrollment.group}
+                        </p>
+                      </>
+                    ) : enrollment?.status === 'approved' ? (
+                      <>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Dikelompokkan</Badge>
+                        <p className="text-xs text-muted-foreground">Grup akan ditentukan oleh admin.</p>
+                      </>
+                    ) : enrollment?.status === 'rejected' ? (
+                      <>
+                        <Badge className="mb-2 bg-red-100 text-red-800 border-red-300">Ditolak</Badge>
+                        <p className="text-xs text-muted-foreground">Hubungi admin untuk informasi lebih lanjut.</p>
+                      </>
+                    ) : (
+                      <>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Dikelompokkan</Badge>
+                        <p className="text-xs text-muted-foreground">Grup akan ditentukan oleh admin.</p>
+                      </>
+                    )}
                   </div>
                 </div>
               </TabsContent>
@@ -289,9 +446,9 @@ const HibridaNaratifCBT: React.FC = () => {
                 </div>
               </TabsContent>
 
-              {/* Intervensi */}
+              {/* Intervensi HN-CBT */}
               <TabsContent value="intervensi-hibrida" className="space-y-8">
-                <Guarded label="Konten Intervensi hanya untuk pengguna terdaftar.">
+                <GuardedIntervensi requireRole="grup-int" label="Konten Intervensi HN-CBT hanya untuk peserta terdaftar.">
                   <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold mb-4">Intervensi Terstruktur</h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">Ikuti 8 sesi bertahap untuk mengubah pola pikir dan membangun narasi diri yang sehat.</p>
@@ -367,12 +524,12 @@ const HibridaNaratifCBT: React.FC = () => {
                       );
                     })}
                   </div>
-                </Guarded>
+                </GuardedIntervensi>
               </TabsContent>
 
               {/* Psikoedukasi */}
               <TabsContent value="psikoedukasi" className="space-y-8">
-                <Guarded label="Konten Psikoedukasi hanya untuk pengguna terdaftar.">
+                <GuardedIntervensi requireRole="grup-cont" label="Konten Psikoedukasi hanya untuk peserta terdaftar.">
                   <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold mb-4">Psikoedukasi</h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">Modul psikoedukasi terstruktur dengan penugasan reflektif untuk memperkuat pemahaman.</p>
@@ -435,7 +592,7 @@ const HibridaNaratifCBT: React.FC = () => {
                       );
                     })}
                   </div>
-                </Guarded>
+                </GuardedIntervensi>
               </TabsContent>
             </Tabs>
           </div>

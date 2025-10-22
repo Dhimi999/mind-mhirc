@@ -799,6 +799,45 @@ export type Database = {
         }
         Relationships: []
       }
+      hibrida_enrollments: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          enrollment_requested_at: string | null
+          enrollment_status: Database["public"]["Enums"]["enrollment_status"]
+          group_assignment: Database["public"]["Enums"]["hibrida_group"] | null
+          id: string
+          role: Database["public"]["Enums"]["hibrida_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          enrollment_requested_at?: string | null
+          enrollment_status?: Database["public"]["Enums"]["enrollment_status"]
+          group_assignment?: Database["public"]["Enums"]["hibrida_group"] | null
+          id?: string
+          role?: Database["public"]["Enums"]["hibrida_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          enrollment_requested_at?: string | null
+          enrollment_status?: Database["public"]["Enums"]["enrollment_status"]
+          group_assignment?: Database["public"]["Enums"]["hibrida_group"] | null
+          id?: string
+          role?: Database["public"]["Enums"]["hibrida_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       hibrida_meetings: {
         Row: {
           created_at: string | null
@@ -1333,6 +1372,9 @@ export type Database = {
     Enums: {
       app_role: "super" | "admin" | "user"
       cbt_module_status: "available" | "locked" | "completed"
+      enrollment_status: "pending" | "approved" | "rejected"
+      hibrida_group: "A" | "B" | "C" | "Admin"
+      hibrida_role: "reguler" | "grup-int" | "grup-cont" | "super-admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1462,6 +1504,9 @@ export const Constants = {
     Enums: {
       app_role: ["super", "admin", "user"],
       cbt_module_status: ["available", "locked", "completed"],
+      enrollment_status: ["pending", "approved", "rejected"],
+      hibrida_group: ["A", "B", "C", "Admin"],
+      hibrida_role: ["reguler", "grup-int", "grup-cont", "super-admin"],
     },
   },
 } as const
