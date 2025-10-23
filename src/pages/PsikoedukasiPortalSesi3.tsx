@@ -41,7 +41,7 @@ const PsikoedukasiPortalSesi3: React.FC = () => {
   const title = "Pengembangan Keterampilan Koping Adaptif Bagi Mahasiswa";
   const { user } = useAuth();
 
-  const { progress, meetingSchedule: schedule, markMeetingDone, submitAssignment: submitAssignmentRemote, loadAssignment, autoSaveAssignment } = usePsikoedukasiSession(sessionNumber, user?.id);
+  const { progress, meetingSchedule: schedule, markMeetingDone, submitAssignment: submitAssignmentRemote, loadAssignment, autoSaveAssignment, groupAssignment, isSuperAdmin, allGroupSchedules } = usePsikoedukasiSession(sessionNumber, user?.id);
   const [hasReadGuide, setHasReadGuide] = useState(false);
   const [assignment, setAssignment] = useState<AssignmentData>(defaultAssignment);
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
@@ -138,11 +138,38 @@ const PsikoedukasiPortalSesi3: React.FC = () => {
                 <Card className="border-indigo-100 shadow-sm overflow-hidden"><div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-600 p-1"><div className="bg-white rounded-sm">
                   <CardHeader className="bg-gradient-to-r from-indigo-50 to-violet-50"><div className="flex items-center gap-3"><div className="p-2 bg-indigo-600 rounded-lg"><svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></div><div><CardTitle className="text-indigo-800">Pertemuan Daring</CardTitle><CardDescription>Sesi sinkron fasilitator</CardDescription></div></div></CardHeader>
                   <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm">
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{schedule?.date||'TBD'}</span></div>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{schedule?.time||'TBD'}</span></div>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{schedule?.link? <a href={schedule.link} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
-                    </div>
+                    {(() => { const meeting = schedule; const normalizeHref = (url?: string | null) => { if (!url) return undefined; try { const u = new URL(url); return u.toString(); } catch { if (/^\/?\/?[\w.-]+/.test(url)) return `https://${url.replace(/^\/+/, '')}`; return url; } }; return (
+                      isSuperAdmin && meeting?.has_group_schedules && allGroupSchedules ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                          {(['A','B','C'] as const).map(k => (
+                            <div key={k} className="rounded border p-3 bg-muted/30">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-muted-foreground">Grup</span>
+                                <span className="px-2 py-0.5 text-[11px] rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">{k}</span>
+                              </div>
+                              <div className="text-sm"><span className="text-muted-foreground">Tanggal:</span> <span className="font-medium">{allGroupSchedules[k]?.date || 'TBD'}</span></div>
+                              <div className="text-sm"><span className="text-muted-foreground">Waktu:</span> <span className="font-medium">{allGroupSchedules[k]?.time || 'TBD'}</span></div>
+                              <div className="text-sm"><span className="text-muted-foreground">Link:</span> {allGroupSchedules[k]?.link ? (
+                                <a className="text-indigo-700 underline font-medium" href={normalizeHref(allGroupSchedules[k]?.link)} target="_blank" rel="noreferrer">Tersedia</a>
+                              ) : <span className="font-medium">TBD</span>}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mb-2 flex items-center gap-2">
+                            {meeting?.has_group_schedules && (groupAssignment === 'A' || groupAssignment === 'B' || groupAssignment === 'C') && (
+                              <span className="px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-800 border border-purple-200">Grup {groupAssignment}</span>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm">
+                            <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{meeting?.date || 'TBD'}</span></div>
+                            <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{meeting?.time || 'TBD'}</span></div>
+                            <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{meeting?.link ? <a href={normalizeHref(meeting.link)} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
+                          </div>
+                        </>
+                      )
+                    ); })()}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex flex-wrap items-center gap-3">
                         <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!schedule?.link} onClick={() => schedule?.link && window.open(schedule.link,'_blank')}>Mulai Pertemuan</Button>
@@ -166,15 +193,13 @@ const PsikoedukasiPortalSesi3: React.FC = () => {
                     </label>
                   </div>
                 )}</CardContent></Card>
-                {progress.meetingDone && schedule && (
-                  <GuidanceMaterialsDisplay
-                    guidance_text={schedule.guidance_text}
-                    guidance_pdf_url={schedule.guidance_pdf_url}
-                    guidance_audio_url={schedule.guidance_audio_url}
-                    guidance_video_url={schedule.guidance_video_url}
-                    guidance_links={schedule.guidance_links}
-                  />
-                )}
+                <GuidanceMaterialsDisplay
+                  guidance_text={schedule?.guidance_text}
+                  guidance_pdf_url={schedule?.guidance_pdf_url}
+                  guidance_audio_url={schedule?.guidance_audio_url}
+                  guidance_video_url={schedule?.guidance_video_url}
+                  guidance_links={schedule?.guidance_links}
+                />
                 <Card className="border-indigo-100 shadow-md"><CardHeader><CardTitle>Penugasan</CardTitle><CardDescription>Transformasi koping maladaptif → adaptif</CardDescription></CardHeader><CardContent>{!hasReadGuide && !progress.assignmentDone && (<div className="mb-4 p-3 rounded border border-indigo-300 bg-indigo-50 text-indigo-900 text-sm">Penugasan terkunci. Baca panduan lalu centang konfirmasi.</div>)}<div className={(!hasReadGuide && !progress.assignmentDone)?'pointer-events-none opacity-60 select-none':''}>
                   <div className="space-y-8">
                     <div>

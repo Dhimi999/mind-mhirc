@@ -46,6 +46,11 @@ const HibridaAccountManagement: React.FC = () => {
   // Filters for approved enrollments
   const [roleFilter, setRoleFilter] = useState<'all' | 'grup-int' | 'grup-cont' | 'super-admin'>('all');
   const [groupFilter, setGroupFilter] = useState<'all' | 'A' | 'B' | 'C' | 'Admin'>('all');
+  // Pagination state
+  const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
+  const [pendingPage, setPendingPage] = useState(1);
+  const [approvedPage, setApprovedPage] = useState(1);
+  const [rejectedPage, setRejectedPage] = useState(1);
 
   useEffect(() => {
     fetchEnrollments();
@@ -203,6 +208,26 @@ const HibridaAccountManagement: React.FC = () => {
     return roleOk && groupOk;
   });
 
+  // Pagination helpers
+  const paginate = <T,>(arr: T[], page: number, size: number) => {
+    const totalPages = Math.max(1, Math.ceil(arr.length / size));
+    const current = Math.min(page, totalPages);
+    const start = (current - 1) * size;
+    const end = start + size;
+    return { items: arr.slice(start, end), totalPages, current };
+  };
+  const pendingPaged = paginate(pendingEnrollments, pendingPage, pageSize);
+  const approvedPaged = paginate(filteredApproved, approvedPage, pageSize);
+  const rejectedPaged = paginate(rejectedEnrollments, rejectedPage, pageSize);
+
+  const onChangePageSize = (val: string) => {
+    const n = Number(val) as 25 | 50 | 100;
+    setPageSize(n);
+    setPendingPage(1);
+    setApprovedPage(1);
+    setRejectedPage(1);
+  };
+
   const toggleSelectAllPending = () => {
     if (selectAllPending) {
       setSelectedPending(new Set());
@@ -341,9 +366,9 @@ const HibridaAccountManagement: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="space-y-4">
+        <TabsContent value="pending" className="space-y-3">
           {/* Bulk action toolbar */}
-          <div className="flex items-center justify-between border rounded-lg p-3">
+          <div className="flex flex-wrap items-center justify-between border rounded-lg p-3 gap-3">
             <div className="flex items-center gap-3">
               <button onClick={toggleSelectAllPending} className="flex items-center gap-2 text-sm">
                 {selectAllPending ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
@@ -351,7 +376,18 @@ const HibridaAccountManagement: React.FC = () => {
               </button>
               <span className="text-sm text-muted-foreground">Terpilih: {selectedPending.size}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Tampil:</span>
+                <Select value={String(pageSize)} onValueChange={onChangePageSize}>
+                  <SelectTrigger className="h-8 w-[100px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button variant="outline" size="sm" onClick={bulkRejectSelected} disabled={selectedPending.size === 0}>
                 <XCircle className="mr-2 h-4 w-4" /> Decline Selected
               </Button>
@@ -363,15 +399,15 @@ const HibridaAccountManagement: React.FC = () => {
 
           {pendingEnrollments.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
+              <CardContent className="py-10 text-center">
                 <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Tidak ada permintaan pendaftaran yang menunggu.</p>
               </CardContent>
             </Card>
           ) : (
-            pendingEnrollments.map(enrollment => (
+            pendingPaged.items.map(enrollment => (
               <Card key={enrollment.id}>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <Checkbox
@@ -379,9 +415,13 @@ const HibridaAccountManagement: React.FC = () => {
                         onCheckedChange={() => toggleSelectPending(enrollment.id)}
                         aria-label="Pilih"
                       />
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white font-semibold">
-                        {enrollment.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}
-                      </div>
+                      {enrollment.profiles?.avatar_url ? (
+                        <img src={enrollment.profiles.avatar_url} alt={enrollment.profiles?.full_name || 'Avatar'} className="h-10 w-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white font-semibold">
+                          {enrollment.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      )}
                       <div>
                         <CardTitle className="text-lg">{enrollment.profiles?.full_name}</CardTitle>
                         <CardDescription>{enrollment.profiles?.email}</CardDescription>
@@ -390,7 +430,7 @@ const HibridaAccountManagement: React.FC = () => {
                     <Badge className="bg-amber-100 text-amber-800 border-amber-300">Menunggu</Badge>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="py-3">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                       <p>Tanggal Pendaftaran: {enrollment.enrollment_requested_at ? new Date(enrollment.enrollment_requested_at).toLocaleDateString('id-ID') : '-'}</p>
@@ -410,11 +450,21 @@ const HibridaAccountManagement: React.FC = () => {
               </Card>
             ))
           )}
+
+          {pendingEnrollments.length > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Halaman {pendingPaged.current} dari {pendingPaged.totalPages}</span>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled={pendingPaged.current <= 1} onClick={() => setPendingPage(p => Math.max(1, p - 1))}>Sebelumnya</Button>
+                <Button variant="outline" size="sm" disabled={pendingPaged.current >= pendingPaged.totalPages} onClick={() => setPendingPage(p => Math.min(pendingPaged.totalPages, p + 1))}>Berikutnya</Button>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="approved" className="space-y-4">
+        <TabsContent value="approved" className="space-y-3">
           {/* Filters toolbar */}
-          <div className="flex flex-wrap items-center gap-3 border rounded-lg p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border rounded-lg p-3">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
               <span className="text-sm font-medium">Filter</span>
@@ -444,24 +494,39 @@ const HibridaAccountManagement: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Tampil:</span>
+              <Select value={String(pageSize)} onValueChange={onChangePageSize}>
+                <SelectTrigger className="h-8 w-[100px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {filteredApproved.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
+              <CardContent className="py-10 text-center">
                 <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Tidak ada data sesuai filter.</p>
               </CardContent>
             </Card>
           ) : (
-            filteredApproved.map(enrollment => (
+            approvedPaged.items.map(enrollment => (
               <Card key={enrollment.id}>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-400 flex items-center justify-center text-white font-semibold">
-                        {enrollment.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}
-                      </div>
+                      {enrollment.profiles?.avatar_url ? (
+                        <img src={enrollment.profiles.avatar_url} alt={enrollment.profiles?.full_name || 'Avatar'} className="h-10 w-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-400 flex items-center justify-center text-white font-semibold">
+                          {enrollment.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      )}
                       <div>
                         <CardTitle className="text-lg">{enrollment.profiles?.full_name}</CardTitle>
                         <CardDescription>{enrollment.profiles?.email}</CardDescription>
@@ -477,7 +542,7 @@ const HibridaAccountManagement: React.FC = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="py-3">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                       <p>Disetujui: {enrollment.approved_at ? new Date(enrollment.approved_at).toLocaleDateString('id-ID') : '-'}</p>
@@ -490,25 +555,52 @@ const HibridaAccountManagement: React.FC = () => {
               </Card>
             ))
           )}
+
+          {filteredApproved.length > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Halaman {approvedPaged.current} dari {approvedPaged.totalPages}</span>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled={approvedPaged.current <= 1} onClick={() => setApprovedPage(p => Math.max(1, p - 1))}>Sebelumnya</Button>
+                <Button variant="outline" size="sm" disabled={approvedPaged.current >= approvedPaged.totalPages} onClick={() => setApprovedPage(p => Math.min(approvedPaged.totalPages, p + 1))}>Berikutnya</Button>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="rejected" className="space-y-4">
+        <TabsContent value="rejected" className="space-y-3">
+          <div className="flex items-center justify-end">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Tampil:</span>
+              <Select value={String(pageSize)} onValueChange={onChangePageSize}>
+                <SelectTrigger className="h-8 w-[100px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           {rejectedEnrollments.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
+              <CardContent className="py-10 text-center">
                 <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Tidak ada pendaftaran yang ditolak.</p>
               </CardContent>
             </Card>
           ) : (
-            rejectedEnrollments.map(enrollment => (
+            rejectedPaged.items.map(enrollment => (
               <Card key={enrollment.id}>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-red-400 to-rose-400 flex items-center justify-center text-white font-semibold">
-                        {enrollment.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}
-                      </div>
+                      {enrollment.profiles?.avatar_url ? (
+                        <img src={enrollment.profiles.avatar_url} alt={enrollment.profiles?.full_name || 'Avatar'} className="h-10 w-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-red-400 to-rose-400 flex items-center justify-center text-white font-semibold">
+                          {enrollment.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      )}
                       <div>
                         <CardTitle className="text-lg">{enrollment.profiles?.full_name}</CardTitle>
                         <CardDescription>{enrollment.profiles?.email}</CardDescription>
@@ -517,7 +609,7 @@ const HibridaAccountManagement: React.FC = () => {
                     <Badge className="bg-red-100 text-red-800 border-red-300">Ditolak</Badge>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="py-3">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                       <p>Ditolak: {enrollment.approved_at ? new Date(enrollment.approved_at).toLocaleDateString('id-ID') : '-'}</p>
@@ -529,6 +621,16 @@ const HibridaAccountManagement: React.FC = () => {
                 </CardContent>
               </Card>
             ))
+          )}
+
+          {rejectedEnrollments.length > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Halaman {rejectedPaged.current} dari {rejectedPaged.totalPages}</span>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled={rejectedPaged.current <= 1} onClick={() => setRejectedPage(p => Math.max(1, p - 1))}>Sebelumnya</Button>
+                <Button variant="outline" size="sm" disabled={rejectedPaged.current >= rejectedPaged.totalPages} onClick={() => setRejectedPage(p => Math.min(rejectedPaged.totalPages, p + 1))}>Berikutnya</Button>
+              </div>
+            </div>
           )}
         </TabsContent>
       </Tabs>

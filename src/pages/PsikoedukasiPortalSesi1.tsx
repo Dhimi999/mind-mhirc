@@ -59,7 +59,10 @@ const PsikoedukasiPortalSesi1: React.FC = () => {
     markMeetingDone,
     submitAssignment: submitAssignmentRemote,
     loadAssignment,
-    autoSaveAssignment
+    autoSaveAssignment,
+    groupAssignment,
+    isSuperAdmin,
+    allGroupSchedules
   } = usePsikoedukasiSession(sessionNumber, user?.id);
   const [progressMap, setProgressMap] = useState<Record<number, SessionProgress>>({}); // legacy local kept for backward compatibility
   const [hasReadGuide, setHasReadGuide] = useState(false);
@@ -130,6 +133,14 @@ const PsikoedukasiPortalSesi1: React.FC = () => {
   }, [assignmentValid, progress.assignmentDone, assignment, submitAssignmentRemote]);
 
   const meeting = schedule; // alias
+
+  const normalizeHref = (url?: string | null) => {
+    if (!url) return undefined;
+    try { const u = new URL(url); return u.toString(); } catch {
+      if (/^\/?\/?[\w.-]+/.test(url)) return `https://${url.replace(/^\/+/, '')}`;
+      return url;
+    }
+  };
 
   const renderGuide = () => {
     if (!progress.meetingDone) {
@@ -235,11 +246,36 @@ const PsikoedukasiPortalSesi1: React.FC = () => {
                         </div>
                       </CardHeader>
                       <CardContent className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm">
-                          <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{meeting?.date || 'TBD'}</span></div>
-                          <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{meeting?.time || 'TBD'}</span></div>
-                          <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{meeting?.link ? <a href={meeting.link} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
-                        </div>
+                        {isSuperAdmin && meeting?.has_group_schedules && allGroupSchedules ? (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            {(['A','B','C'] as const).map(k => (
+                              <div key={k} className="rounded border p-3 bg-muted/30">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs text-muted-foreground">Grup</span>
+                                  <span className="px-2 py-0.5 text-[11px] rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">{k}</span>
+                                </div>
+                                <div className="text-sm"><span className="text-muted-foreground">Tanggal:</span> <span className="font-medium">{allGroupSchedules[k]?.date || 'TBD'}</span></div>
+                                <div className="text-sm"><span className="text-muted-foreground">Waktu:</span> <span className="font-medium">{allGroupSchedules[k]?.time || 'TBD'}</span></div>
+                                <div className="text-sm"><span className="text-muted-foreground">Link:</span> {allGroupSchedules[k]?.link ? (
+                                  <a className="text-indigo-700 underline font-medium" href={normalizeHref(allGroupSchedules[k]?.link)} target="_blank" rel="noreferrer">Tersedia</a>
+                                ) : <span className="font-medium">TBD</span>}</div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="mb-2 flex items-center gap-2">
+                              {meeting?.has_group_schedules && (groupAssignment === 'A' || groupAssignment === 'B' || groupAssignment === 'C') && (
+                                <span className="px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-800 border border-purple-200">Grup {groupAssignment}</span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm">
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{meeting?.date || 'TBD'}</span></div>
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{meeting?.time || 'TBD'}</span></div>
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{meeting?.link ? <a href={normalizeHref(meeting.link)} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
+                            </div>
+                          </>
+                        )}
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex flex-wrap items-center gap-3">
                             <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!meeting?.link} onClick={() => meeting?.link && window.open(meeting.link, '_blank')}>Mulai Pertemuan</Button>
@@ -277,15 +313,13 @@ const PsikoedukasiPortalSesi1: React.FC = () => {
                 </Card>
 
                 {/* Guidance Materials */}
-                {progress.meetingDone && meeting && (
-                  <GuidanceMaterialsDisplay
-                    guidance_text={meeting.guidance_text}
-                    guidance_pdf_url={meeting.guidance_pdf_url}
-                    guidance_audio_url={meeting.guidance_audio_url}
-                    guidance_video_url={meeting.guidance_video_url}
-                    guidance_links={meeting.guidance_links}
-                  />
-                )}
+                <GuidanceMaterialsDisplay
+                  guidance_text={meeting?.guidance_text}
+                  guidance_pdf_url={meeting?.guidance_pdf_url}
+                  guidance_audio_url={meeting?.guidance_audio_url}
+                  guidance_video_url={meeting?.guidance_video_url}
+                  guidance_links={meeting?.guidance_links}
+                />
                 {/* Penugasan */}
                 <Card className="border-indigo-100 shadow-md">
                   <CardHeader>

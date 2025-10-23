@@ -59,9 +59,8 @@ CREATE TRIGGER on_auth_user_created_hibrida
 CREATE OR REPLACE FUNCTION public.auto_assign_hibrida_super_admin()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Check if user is admin or professional
-  IF NEW.is_admin = true OR NEW.account_type = 'professional' THEN
-    -- Update or insert enrollment with super-admin role
+  -- Only when user is explicitly marked as admin
+  IF NEW.is_admin = true THEN
     INSERT INTO public.hibrida_enrollments (user_id, role, group_assignment, enrollment_status, approved_at)
     VALUES (NEW.id, 'super-admin', 'Admin', 'approved', now())
     ON CONFLICT (user_id) 

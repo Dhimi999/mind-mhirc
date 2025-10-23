@@ -76,12 +76,16 @@ const UnifiedAssignmentManagement: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [progress, setProgress] = useState<Record<string, UserProgress>>({});
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({});
+  const [groups, setGroups] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [selectedProgress, setSelectedProgress] = useState<UserProgress | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [counselorResponse, setCounselorResponse] = useState("");
-  const [showDrafts, setShowDrafts] = useState(false);
+  // Filters for Answers view
+  const [statusTab, setStatusTab] = useState<"all" | "draft" | "pending" | "done">("all");
+  const [programFilter, setProgramFilter] = useState<ProgramType | null>(null);
+  const [groupFilter, setGroupFilter] = useState<"all" | "A" | "B" | "C" | "none">("all");
   
   // Bulk response state
   const [isBulkResponseOpen, setIsBulkResponseOpen] = useState(false);
@@ -89,6 +93,14 @@ const UnifiedAssignmentManagement: React.FC = () => {
 
   // Participant list state
   const [allParticipants, setAllParticipants] = useState<UserProfile[]>([]);
+
+  // Keep programFilter in sync with selected session (must be before any early returns)
+  useEffect(() => {
+    if (selectedSession) {
+      setProgramFilter(selectedSession.program);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSession]);
 
   const hibridaSessions: SessionInfo[] = Array.from({ length: 8 }, (_, i) => ({
     number: i + 1,
@@ -144,7 +156,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
     try {
       const table = session.program === "hibrida" ? "hibrida_assignments" : "psikoedukasi_assignments";
       const progressTable = session.program === "hibrida" ? "hibrida_user_progress" : "psikoedukasi_user_progress";
-      const includeDrafts = includeDraftsOverride ?? showDrafts;
+      const includeDrafts = includeDraftsOverride ?? (statusTab === "all" || statusTab === "draft");
 
       let query = supabase
         .from(table)
@@ -181,6 +193,20 @@ const UnifiedAssignmentManagement: React.FC = () => {
           profilesMap[p.id] = p;
         });
         setProfiles(profilesMap);
+
+        // Fetch kelompok from hibrida_enrollments for all users
+        const { data: enrollments, error: enrollmentsError } = await supabase
+          .from("hibrida_enrollments")
+          .select("user_id, group_assignment")
+          .in("user_id", userIds);
+
+        if (enrollmentsError) throw enrollmentsError;
+
+        const groupMap: Record<string, string | null> = {};
+        enrollments?.forEach(e => {
+          groupMap[e.user_id as string] = (e.group_assignment as any) || null;
+        });
+        setGroups(groupMap);
       }
 
   setAssignments(assignmentsData || []);
@@ -832,21 +858,63 @@ const UnifiedAssignmentManagement: React.FC = () => {
             <Download className="h-4 w-4 mr-2" />
             Ekspor CSV
           </Button>
-          <div className="ml-auto flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={showDrafts}
+          <div className="ml-auto w-full sm:w-auto flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            {/* Program filter */}
+            <div className="flex items-center gap-2 text-sm w-full sm:w-auto">
+              <label className="text-sm">Program</label>
+              <select
+                className="border rounded px-2 py-1 bg-background flex-1 sm:flex-none"
+                value={programFilter || "hibrida"}
                 onChange={(e) => {
-                  setShowDrafts(e.target.checked);
-                  if (selectedSession) fetchSessionAssignments(selectedSession, e.target.checked);
+                  const newProg = (e.target.value as ProgramType);
+                  setProgramFilter(newProg);
+                  if (selectedSession) {
+                    const newTitle = `${newProg === "hibrida" ? "HN-CBT" : "Psikoedukasi"} Sesi ${selectedSession.number}`;
+                    const newSession = { ...selectedSession, program: newProg, title: newTitle } as SessionInfo;
+                    setSelectedSession(newSession);
+                    fetchSessionAssignments(newSession);
+                  }
                 }}
-              />
-              Tampilkan Draft
-            </label>
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">{assignments.length} jawaban</span>
+              >
+                <option value="hibrida">HN-CBT</option>
+                <option value="psikoedukasi">Psikoedukasi</option>
+              </select>
+            </div>
+            {/* Kelompok filter */}
+            <div className="flex items-center gap-2 text-sm w-full sm:w-auto">
+              <label className="text-sm">Kelompok</label>
+              <select
+                className="border rounded px-2 py-1 bg-background flex-1 sm:flex-none"
+                value={groupFilter}
+                onChange={(e) => setGroupFilter(e.target.value as any)}
+              >
+                <option value="all">Semua</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="none">Belum</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>{assignments.length} jawaban</span>
+            </div>
           </div>
+        </div>
+
+        {/* Status Tabs */}
+        <div className="mb-4">
+          <Tabs value={statusTab} onValueChange={(v) => {
+            setStatusTab(v as any);
+            if (selectedSession) fetchSessionAssignments(selectedSession);
+          }}>
+            <TabsList>
+              <TabsTrigger value="all">Semua</TabsTrigger>
+              <TabsTrigger value="draft">Draft</TabsTrigger>
+              <TabsTrigger value="pending">Menunggu Balasan</TabsTrigger>
+              <TabsTrigger value="done">Selesai</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="bg-card rounded-lg border">
@@ -854,62 +922,82 @@ const UnifiedAssignmentManagement: React.FC = () => {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
+                  <th className="text-left p-4 font-medium w-16">No.</th>
                   <th className="text-left p-4 font-medium">Nama Peserta</th>
-                  <th className="text-left p-4 font-medium">Tanggal Kirim</th>
-                  <th className="text-left p-4 font-medium">Status Respons</th>
-                  <th className="text-left p-4 font-medium">Konselor</th>
+                  <th className="text-left p-4 font-medium">Program</th>
+                  <th className="text-left p-4 font-medium">Kelompok</th>
+                  <th className="text-left p-4 font-medium">Status</th>
                   <th className="text-left p-4 font-medium">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {assignments.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
                       Tidak ada penugasan yang dikumpulkan.
                     </td>
                   </tr>
                 ) : (
-                  assignments.map((assignment) => {
-                    const userProgress = progress[assignment.user_id];
-                    const hasResponse = !!userProgress?.counselor_response;
-                    return (
-                      <tr key={assignment.id} className="hover:bg-muted/30">
-                        <td className="p-4">
-                          {profiles[assignment.user_id]?.full_name || "Tidak diketahui"}
-                        </td>
-                        <td className="p-4">
-                          {assignment.submitted_at
-                            ? new Date(assignment.submitted_at).toLocaleDateString("id-ID", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit"
-                              })
-                            : "-"}
-                        </td>
-                        <td className="p-4">
-                          <Badge variant={hasResponse ? "default" : "secondary"}>
-                            {hasResponse ? "Sudah direspons" : "Belum direspons"}
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-sm text-muted-foreground">
-                          {userProgress?.counselor_name || "-"}
-                          {userProgress?.responded_at && (
-                            <div className="text-xs">
-                              {new Date(userProgress.responded_at).toLocaleDateString("id-ID")}
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-4">
-                          <Button size="sm" variant="outline" onClick={() => handleViewDetail(assignment)}>
-                            <FileText className="h-3 w-3 mr-1" />
-                            Lihat & Respons
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })
+                  assignments
+                    .filter((a) => {
+                      // Apply statusTab filters using robust submitted detection
+                      const p = progress[a.user_id];
+                      const hasResp = !!p?.counselor_response;
+                      const isSubmitted = !!a.submitted || !!a.submitted_at;
+                      if (statusTab === "draft") return !isSubmitted;
+                      if (statusTab === "pending") return isSubmitted && !hasResp;
+                      if (statusTab === "done") return isSubmitted && hasResp;
+                      return true;
+                    })
+                    .filter((a) => {
+                      // Apply group filter
+                      const g = groups[a.user_id] || null;
+                      if (groupFilter === "all") return true;
+                      if (groupFilter === "none") return g === null || g === undefined || g === "";
+                      return g === groupFilter;
+                    })
+                    .map((assignment, idx) => {
+                      const userProgress = progress[assignment.user_id];
+                      const hasResponse = !!userProgress?.counselor_response;
+                      const isSubmitted = !!assignment.submitted || !!assignment.submitted_at;
+                      const statusLabel = !isSubmitted
+                        ? "Draft"
+                        : hasResponse
+                        ? "Selesai"
+                        : "Menunggu Balasan";
+                      const statusVariant = !isSubmitted
+                        ? "secondary"
+                        : hasResponse
+                        ? "default"
+                        : "outline";
+                      const groupLabel = groups[assignment.user_id] || "-";
+                      return (
+                        <tr key={assignment.id} className="hover:bg-muted/30">
+                          <td className="p-4 text-sm text-muted-foreground">{idx + 1}</td>
+                          <td className="p-4">
+                            {profiles[assignment.user_id]?.full_name || "Tidak diketahui"}
+                          </td>
+                          <td className="p-4">
+                            {selectedSession?.program === "hibrida" ? "HN-CBT" : "Psikoedukasi"}
+                          </td>
+                          <td className="p-4">{groupLabel}</td>
+                          <td className="p-4">
+                            <Badge variant={statusVariant as any}>{statusLabel}</Badge>
+                            {hasResponse && (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                Dijawab oleh {userProgress?.counselor_name || "-"} pada {userProgress?.responded_at ? new Date(userProgress.responded_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <Button size="sm" variant="outline" onClick={() => handleViewDetail(assignment)} className="inline-flex items-center">
+                              <FileText className="h-3 w-3" />
+                              <span className="hidden sm:inline ml-1">Lihat & Respons</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })
                 )}
               </tbody>
             </table>
@@ -930,9 +1018,34 @@ const UnifiedAssignmentManagement: React.FC = () => {
             <div className="space-y-4 py-4">
               <div className="bg-muted/50 rounded-lg p-4">
                 <h4 className="font-semibold mb-2">Jawaban Peserta:</h4>
-                <pre className="text-xs whitespace-pre-wrap bg-background p-3 rounded border max-h-[300px] overflow-y-auto">
-                  {JSON.stringify(selectedAssignment?.answers, null, 2)}
-                </pre>
+                <div className="bg-background p-3 rounded border max-h-[300px] overflow-y-auto">
+                  {selectedAssignment?.answers ? (
+                    <div className="space-y-2 text-sm">
+                      {Object.entries(selectedAssignment.answers).map(([key, value]) => (
+                        <div key={key}>
+                          <div className="font-medium">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</div>
+                          <div className="text-muted-foreground break-words">
+                            {typeof value === 'string' || typeof value === 'number' ? (
+                              String(value)
+                            ) : Array.isArray(value) ? (
+                              <ul className="list-disc pl-5">
+                                {value.map((v, i) => (
+                                  <li key={i} className="break-words">{typeof v === 'string' ? v : JSON.stringify(v)}</li>
+                                ))}
+                              </ul>
+                            ) : value && typeof value === 'object' ? (
+                              <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
+                            ) : (
+                              <span>-</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">Tidak ada jawaban</div>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="counselor-response">Respons Konselor</Label>
@@ -942,14 +1055,18 @@ const UnifiedAssignmentManagement: React.FC = () => {
                   placeholder="Tulis respons atau feedback untuk peserta..."
                   value={counselorResponse}
                   onChange={(e) => setCounselorResponse(e.target.value)}
+                  disabled={!!selectedProgress?.counselor_response && selectedProgress?.counselor_name !== (user?.full_name || "")}
                 />
+                {!!selectedProgress?.counselor_response && selectedProgress?.counselor_name !== (user?.full_name || "") && (
+                  <p className="text-xs text-muted-foreground">Hanya konselor {selectedProgress?.counselor_name} yang dapat mengedit respons ini.</p>
+                )}
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
                 Tutup
               </Button>
-              <Button onClick={handleSaveResponse} className="bg-indigo-600 hover:bg-indigo-700">
+              <Button onClick={handleSaveResponse} className="bg-indigo-600 hover:bg-indigo-700" disabled={!!selectedProgress?.counselor_response && selectedProgress?.counselor_name !== (user?.full_name || "")}>
                 Simpan Respons
               </Button>
             </DialogFooter>

@@ -24,7 +24,7 @@ const PsikoedukasiPortalSesi4: React.FC = () => {
   const sessionNumber = 4;
   const title = "Perilaku Mencari Bantuan Bagi Mahasiswa";
   const { user } = useAuth();
-  const { progress, meetingSchedule: schedule, markMeetingDone, submitAssignment: submitAssignmentRemote, loadAssignment, autoSaveAssignment } = usePsikoedukasiSession(sessionNumber, user?.id);
+  const { progress, meetingSchedule: schedule, markMeetingDone, submitAssignment: submitAssignmentRemote, loadAssignment, autoSaveAssignment, groupAssignment, isSuperAdmin, allGroupSchedules } = usePsikoedukasiSession(sessionNumber, user?.id);
   const [hasReadGuide, setHasReadGuide] = useState(false);
   const [assignment, setAssignment] = useState<AssignmentData>(defaultAssignment);
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
@@ -117,11 +117,38 @@ const PsikoedukasiPortalSesi4: React.FC = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm">
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{schedule?.date || 'TBD'}</span></div>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{schedule?.time || 'TBD'}</span></div>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{schedule?.link ? <a href={schedule.link} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
-                    </div>
+                    {(() => { const meeting = schedule; const normalizeHref = (url?: string | null) => { if (!url) return undefined; try { const u = new URL(url); return u.toString(); } catch { if (/^\/?\/?[\w.-]+/.test(url)) return `https://${url.replace(/^\/+/, '')}`; return url; } }; return (
+                      isSuperAdmin && meeting?.has_group_schedules && allGroupSchedules ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                          {(['A','B','C'] as const).map(k => (
+                            <div key={k} className="rounded border p-3 bg-muted/30">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-muted-foreground">Grup</span>
+                                <span className="px-2 py-0.5 text-[11px] rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">{k}</span>
+                              </div>
+                              <div className="text-sm"><span className="text-muted-foreground">Tanggal:</span> <span className="font-medium">{allGroupSchedules[k]?.date || 'TBD'}</span></div>
+                              <div className="text-sm"><span className="text-muted-foreground">Waktu:</span> <span className="font-medium">{allGroupSchedules[k]?.time || 'TBD'}</span></div>
+                              <div className="text-sm"><span className="text-muted-foreground">Link:</span> {allGroupSchedules[k]?.link ? (
+                                <a className="text-indigo-700 underline font-medium" href={normalizeHref(allGroupSchedules[k]?.link)} target="_blank" rel="noreferrer">Tersedia</a>
+                              ) : <span className="font-medium">TBD</span>}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mb-2 flex items-center gap-2">
+                            {meeting?.has_group_schedules && (groupAssignment === 'A' || groupAssignment === 'B' || groupAssignment === 'C') && (
+                              <span className="px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-800 border border-purple-200">Grup {groupAssignment}</span>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm">
+                            <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{meeting?.date || 'TBD'}</span></div>
+                            <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{meeting?.time || 'TBD'}</span></div>
+                            <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{meeting?.link ? <a href={normalizeHref(meeting.link)} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
+                          </div>
+                        </>
+                      )
+                    ); })()}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex flex-wrap items-center gap-3">
                         <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!schedule?.link} onClick={() => schedule?.link && window.open(schedule.link, '_blank')}>Mulai Pertemuan</Button>
@@ -136,15 +163,13 @@ const PsikoedukasiPortalSesi4: React.FC = () => {
               </div>
             </Card>
             <Card className="border-indigo-100 shadow-sm"><CardHeader><CardTitle>Panduan Sesi</CardTitle><CardDescription>Baca & centang konfirmasi sebelum penugasan.</CardDescription></CardHeader><CardContent>{renderGuide()}{progress.meetingDone && (<div className="mt-4 text-sm space-y-2"><label className="flex items-start gap-2 cursor-pointer"><input type="checkbox" checked={hasReadGuide || progress.assignmentDone} onChange={()=> setHasReadGuide(v=> !v)} disabled={progress.assignmentDone} /><span>Saya telah membaca dan memahami panduan.</span></label><label className="flex items-start gap-2 cursor-pointer"><input type="checkbox" checked={(hasReadGuide && !progress.assignmentDone) || progress.assignmentDone} onChange={()=> setHasReadGuide(v=> !v)} disabled={!hasReadGuide || progress.assignmentDone} /><span>Saya akan mengikuti panduan selama mengerjakan sesi.</span></label></div>)}</CardContent></Card>
-            {progress.meetingDone && schedule && (
-              <GuidanceMaterialsDisplay
-                guidance_text={schedule.guidance_text}
-                guidance_pdf_url={schedule.guidance_pdf_url}
-                guidance_audio_url={schedule.guidance_audio_url}
-                guidance_video_url={schedule.guidance_video_url}
-                guidance_links={schedule.guidance_links}
-              />
-            )}
+            <GuidanceMaterialsDisplay
+              guidance_text={schedule?.guidance_text}
+              guidance_pdf_url={schedule?.guidance_pdf_url}
+              guidance_audio_url={schedule?.guidance_audio_url}
+              guidance_video_url={schedule?.guidance_video_url}
+              guidance_links={schedule?.guidance_links}
+            />
             <Card className="border-indigo-100 shadow-md"><CardHeader><CardTitle>Penugasan</CardTitle><CardDescription>Latihan perilaku mencari bantuan</CardDescription></CardHeader><CardContent>{!hasReadGuide && !progress.assignmentDone && (<div className="mb-4 p-3 rounded border border-indigo-300 bg-indigo-50 text-indigo-900 text-sm">Penugasan terkunci. Baca panduan lalu centang konfirmasi.</div>)}<div className={(!hasReadGuide && !progress.assignmentDone)?'pointer-events-none opacity-60 select-none':''}><div className="space-y-8"><div><h4 className="font-semibold mb-3">Identitas Peserta</h4><div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2"><div><label className="block text-xs font-medium mb-1">Nama</label><input className="w-full border rounded p-2 text-sm bg-gray-50" value={user?.full_name||'-'} disabled /></div><div><label className="block text-xs font-medium mb-1">Hari</label><input className="w-full border rounded p-2 text-sm bg-gray-50" value={new Date().toLocaleDateString('id-ID',{ weekday:'long'})} disabled /></div><div><label className="block text-xs font-medium mb-1">Tanggal</label><input className="w-full border rounded p-2 text-sm bg-gray-50" value={new Date().toLocaleDateString('id-ID')} disabled /></div></div></div><div><h4 className="font-semibold mb-3">1. Situasi</h4><textarea rows={3} className="w-full rounded border p-2 text-sm" value={assignment.situasi} onChange={e=> setAssignment(p=> ({ ...p, situasi: e.target.value }))} disabled={progress.assignmentDone} /></div><div><h4 className="font-semibold mb-3">2. Perilaku Mencari Bantuan</h4><textarea rows={3} className="w-full rounded border p-2 text-sm" value={assignment.perilakuMencariBantuan} onChange={e=> setAssignment(p=> ({ ...p, perilakuMencariBantuan: e.target.value }))} disabled={progress.assignmentDone} /></div><div><h4 className="font-semibold mb-3">3. Tindakan</h4><textarea rows={3} className="w-full rounded border p-2 text-sm" value={assignment.tindakan} onChange={e=> setAssignment(p=> ({ ...p, tindakan: e.target.value }))} disabled={progress.assignmentDone} /></div><div><h4 className="font-semibold mb-3">4. Hasil</h4><textarea rows={3} className="w-full rounded border p-2 text-sm" value={assignment.hasil} onChange={e=> setAssignment(p=> ({ ...p, hasil: e.target.value }))} disabled={progress.assignmentDone} /></div><div><h4 className="font-semibold mb-3">5. Refleksi</h4><textarea rows={3} className="w-full rounded border p-2 text-sm" value={assignment.refleksi} onChange={e=> setAssignment(p=> ({ ...p, refleksi: e.target.value }))} disabled={progress.assignmentDone} /></div><div><h4 className="font-semibold mb-3">6. Jurnal Harian</h4><textarea rows={5} className="w-full rounded border p-2 text-sm" value={assignment.jurnal} onChange={e=> setAssignment(p=> ({ ...p, jurnal: e.target.value }))} disabled={progress.assignmentDone} /></div><div className="flex items-center gap-3 pt-2 border-t"><Button className="bg-indigo-600 hover:bg-indigo-700" disabled={!assignmentValid || progress.assignmentDone} onClick={handleSubmitAssignment}>{progress.assignmentDone? 'Terkirim':'Kirim & Tandai Selesai'}</Button><Badge className={progress.assignmentDone?'bg-green-600 text-white':'bg-indigo-200 text-indigo-900'}>{progress.assignmentDone? 'Sudah selesai':'Belum selesai'}</Badge>{autoSavedAt && !progress.assignmentDone && <span className="text-xs text-muted-foreground">Draft tersimpan: {autoSavedAt}</span>}</div><div className="text-[11px] text-muted-foreground">Progress penugasan: {assignmentFillPercent}%</div></div></div></CardContent></Card>
             <CounselorResponseDisplay
               counselorResponse={progress.counselorResponse}

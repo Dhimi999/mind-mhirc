@@ -275,11 +275,11 @@ const Dashboard = () => {
             ></div>
           )}
           <aside
-            className={`fixed top-0 left-0 z-40 h-screen w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 ${
+            className={`fixed top-0 left-0 z-40 h-screen w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30 lg:h-auto lg:min-h-screen lg:self-start ${
               isSidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
           >
-            <div className="p-4 h-full flex flex-col max-h-screen">
+            <div className="p-4 h-full flex flex-col max-h-screen lg:max-h-none">
               <div className="flex items-center space-x-2 mb-6 mt-4">
                 <Brain className="h-8 w-8 text-primary" />
                 <span className="font-bold text-xl tracking-tight">
@@ -295,7 +295,7 @@ const Dashboard = () => {
                   <X size={20} />
                 </button>
               </div>
-              <div className="mt-5 flex-1 overflow-y-auto max-h-screen">
+              <div className="mt-5 flex-1 overflow-y-auto max-h-screen lg:overflow-visible lg:max-h-none">
                 <nav className="space-y-1">
                   <Link
                     to="/dashboard"

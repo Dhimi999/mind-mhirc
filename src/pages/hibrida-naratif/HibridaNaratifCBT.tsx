@@ -455,8 +455,8 @@ const HibridaNaratifCBT: React.FC = () => {
                   </div>
                   <div className="relative mb-8 rounded-2xl overflow-hidden">
                     <img src={tasksImage} alt="Intervensi Hibrida" className="w-full h-64 object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                      <div className="p-8 text-white">
+                    <div className="absolute inset-0 bg-gradient-to-t from_black/60 to-transparent flex items-end">
+                      <div className="p-8 text_white">
                         <h3 className="text-2xl font-bold mb-2">Portal Intervensi</h3>
                         <p className="text-white/90">Modul naratif + CBT progresif</p>
                       </div>
@@ -477,7 +477,7 @@ const HibridaNaratifCBT: React.FC = () => {
                             <div className="flex items-center gap-4">
                               <div className={`flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg ${available ? 'bg-indigo-600' : 'bg-muted'}`}>{m.session}</div>
                               <div className="flex-1">
-                                <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-start justify_between mb-2">
                                   <h3 className="font-semibold text-lg">Sesi {m.session}: {m.title}</h3>
                                   <Badge variant={available ? 'default' : 'secondary'}>{available ? 'Tersedia' : 'Terkunci'}</Badge>
                                 </div>

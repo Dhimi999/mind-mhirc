@@ -110,10 +110,6 @@ export const GuidanceMaterialsDisplay: React.FC<GuidanceMaterialsProps> = ({
 
   const hasAnyMaterial = guidance_text || guidance_pdf_url || guidance_audio_url || guidance_video_url || (guidance_links && guidance_links.length > 0);
 
-  if (!hasAnyMaterial) {
-    return null;
-  }
-
   return (
     <Card className="border-indigo-100 shadow-sm">
       {showTitle && (
@@ -123,6 +119,11 @@ export const GuidanceMaterialsDisplay: React.FC<GuidanceMaterialsProps> = ({
         </CardHeader>
       )}
       <CardContent className="space-y-6">
+        {!hasAnyMaterial && (
+          <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+            Tidak ada/Belum ada Panduan Penugasan untuk Sesi Ini, silahkan mengerjakan sesuai arahan Pertemuan Daring atau Panduan Sesi.
+          </div>
+        )}
         {/* Text Guidance */}
         {guidance_text && (
           <div className="prose prose-sm max-w-none">

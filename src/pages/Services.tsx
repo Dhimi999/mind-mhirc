@@ -1,11 +1,15 @@
 import {
   Brain,
+  Baby,
   Users,
   Heart,
   BookOpen,
-  MessageSquare,
+  ShieldAlert,
+  MessagesSquare,
+  BookHeart,
   BarChart,
-  Sparkles
+  Sparkles,
+  Book
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -88,7 +92,7 @@ const Services = () => {
       title: "Konsultasi Kesehatan Jiwa",
       description:
         "Layanan konsultasi kesehatan jiwa profesional untuk individu, pasangan, keluarga, dan kelompok.",
-      icon: Brain,
+      icon: MessagesSquare,
       color: "bg-primary"
     },
     {
@@ -120,7 +124,7 @@ const Services = () => {
       title: "Intervensi Krisis",
       description:
         "Layanan dukungan dan intervensi untuk situasi krisis mental dan emosional.",
-      icon: MessageSquare,
+      icon: ShieldAlert,
       color: "bg-rose-500"
     },
     {
@@ -136,7 +140,7 @@ const Services = () => {
       title: "Safe Mother",
       description:
         "Layanan Maternal Low-Intensity Psychological Intervention (MLIPI) untuk mendampingi Calon Ibu, Ibu Hamil, dan Ibu Pasca Melahirkan dengan layanan komprehensif mulai dari psikoedukasi hingga konsultasi.",
-      icon: Heart,
+      icon: Baby,
       color: "bg-pink-500"
     },
     {
@@ -152,7 +156,7 @@ const Services = () => {
       title: "Hibrida Naratif CBT",
       description:
         "Program integratif berbasis terapi naratif dan CBT untuk membantu restrukturisasi kognitif, fleksibilitas emosi, dan rekonstruksi cerita diri secara sehat.",
-      icon: Brain,
+      icon: BookHeart,
       color: "bg-indigo-600"
     }
   ];

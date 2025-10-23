@@ -49,7 +49,7 @@ const PsikoedukasiPortalSesi2: React.FC = () => {
   const title = "Mengenali Tanda-Tanda Dini Risiko Bunuh Diri Bagi Mahasiswa";
   const { user } = useAuth();
 
-  const { progress, meetingSchedule: schedule, markMeetingDone, submitAssignment, loadAssignment, autoSaveAssignment } = usePsikoedukasiSession(sessionNumber, user?.id);
+  const { progress, meetingSchedule: schedule, markMeetingDone, submitAssignment, loadAssignment, autoSaveAssignment, groupAssignment, isSuperAdmin, allGroupSchedules } = usePsikoedukasiSession(sessionNumber, user?.id);
   const [hasReadGuide, setHasReadGuide] = useState(false);
   const [assignment, setAssignment] = useState<AssignmentData>(defaultAssignment);
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
@@ -103,6 +103,7 @@ const PsikoedukasiPortalSesi2: React.FC = () => {
   }, [assignmentValid, progress.assignmentDone, assignment, submitAssignment]);
 
   const meeting = schedule;
+  const normalizeHref = (url?: string | null) => { if (!url) return undefined; try { const u = new URL(url); return u.toString(); } catch { if (/^\/?\/?[\w.-]+/.test(url)) return `https://${url.replace(/^\/+/, '')}`; return url; } };
 
   const renderGuide = () => {
     if (!progress.meetingDone) return <div className="text-sm text-muted-foreground">Panduan akan muncul setelah Anda menandai Pertemuan Daring selesai.</div>;
@@ -183,11 +184,36 @@ const PsikoedukasiPortalSesi2: React.FC = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm">
-                        <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{meeting?.date || 'TBD'}</span></div>
-                        <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{meeting?.time || 'TBD'}</span></div>
-                        <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{meeting?.link ? <a href={meeting.link} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
-                      </div>
+                        {isSuperAdmin && meeting?.has_group_schedules && allGroupSchedules ? (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            {(['A','B','C'] as const).map(k => (
+                              <div key={k} className="rounded border p-3 bg-muted/30">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs text-muted-foreground">Grup</span>
+                                  <span className="px-2 py-0.5 text-[11px] rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">{k}</span>
+                                </div>
+                                <div className="text-sm"><span className="text-muted-foreground">Tanggal:</span> <span className="font-medium">{allGroupSchedules[k]?.date || 'TBD'}</span></div>
+                                <div className="text-sm"><span className="text-muted-foreground">Waktu:</span> <span className="font-medium">{allGroupSchedules[k]?.time || 'TBD'}</span></div>
+                                <div className="text-sm"><span className="text-muted-foreground">Link:</span> {allGroupSchedules[k]?.link ? (
+                                  <a className="text-indigo-700 underline font-medium" href={normalizeHref(allGroupSchedules[k]?.link)} target="_blank" rel="noreferrer">Tersedia</a>
+                                ) : <span className="font-medium">TBD</span>}</div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="mb-2 flex items-center gap-2">
+                              {meeting?.has_group_schedules && (groupAssignment === 'A' || groupAssignment === 'B' || groupAssignment === 'C') && (
+                                <span className="px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-800 border border-purple-200">Grup {groupAssignment}</span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm">
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{meeting?.date || 'TBD'}</span></div>
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{meeting?.time || 'TBD'}</span></div>
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{meeting?.link ? <a href={normalizeHref(meeting.link)} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
+                            </div>
+                          </>
+                        )}
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-wrap items-center gap-3">
                           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!meeting?.link} onClick={() => meeting?.link && window.open(meeting.link, '_blank')}>Mulai Pertemuan</Button>
@@ -218,15 +244,13 @@ const PsikoedukasiPortalSesi2: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
-                {progress.meetingDone && meeting && (
-                  <GuidanceMaterialsDisplay
-                    guidance_text={meeting.guidance_text}
-                    guidance_pdf_url={meeting.guidance_pdf_url}
-                    guidance_audio_url={meeting.guidance_audio_url}
-                    guidance_video_url={meeting.guidance_video_url}
-                    guidance_links={meeting.guidance_links}
-                  />
-                )}
+                <GuidanceMaterialsDisplay
+                  guidance_text={meeting?.guidance_text}
+                  guidance_pdf_url={meeting?.guidance_pdf_url}
+                  guidance_audio_url={meeting?.guidance_audio_url}
+                  guidance_video_url={meeting?.guidance_video_url}
+                  guidance_links={meeting?.guidance_links}
+                />
                 <Card className="border-indigo-100 shadow-md">
                   <CardHeader><CardTitle>Penugasan</CardTitle><CardDescription>Analisis tanda-tanda dini & respons</CardDescription></CardHeader>
                   <CardContent>

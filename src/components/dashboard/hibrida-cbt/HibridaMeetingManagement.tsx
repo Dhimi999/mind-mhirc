@@ -28,12 +28,28 @@ const HibridaMeetingManagement: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [program, setProgram] = useState<ProgramType>('hibrida');
 
+  type GroupKey = 'A' | 'B' | 'C';
+  type GroupSchedule = { date: string; time: string; link: string };
+  type GroupSchedules = Partial<Record<GroupKey, GroupSchedule>>;
+  const [usePerGroup, setUsePerGroup] = useState(false);
+  const [groupSchedules, setGroupSchedules] = useState<GroupSchedules>({});
   const [formData, setFormData] = useState({
     date: "",
     time: "",
     link: "",
     description: ""
   });
+
+  const parseGroupJson = (raw: string | null): GroupSchedules | null => {
+    if (!raw) return null;
+    try {
+      const obj = JSON.parse(raw);
+      if (obj && (obj.A || obj.B || obj.C)) return obj as GroupSchedules;
+      return null;
+    } catch {
+      return null;
+    }
+  };
 
   useEffect(() => {
     fetchMeetings();
@@ -59,10 +75,19 @@ const HibridaMeetingManagement: React.FC = () => {
 
   const handleEdit = (meeting: Meeting) => {
     setEditingMeeting(meeting);
+    // Try parse per-group JSON from link
+    const parsed = parseGroupJson(meeting.link);
+    if (parsed) {
+      setUsePerGroup(true);
+      setGroupSchedules(parsed);
+    } else {
+      setUsePerGroup(false);
+      setGroupSchedules({});
+    }
     setFormData({
       date: meeting.date || "",
       time: meeting.time || "",
-      link: meeting.link || "",
+      link: parsed ? "" : (meeting.link || ""),
       description: meeting.description || ""
     });
     setIsDialogOpen(true);
@@ -73,14 +98,15 @@ const HibridaMeetingManagement: React.FC = () => {
 
     try {
       const table = program === 'hibrida' ? 'hibrida_meetings' : 'psikoedukasi_meetings';
+      const payload: any = {
+        date: formData.date || null,
+        time: formData.time || null,
+        link: usePerGroup ? JSON.stringify(groupSchedules) : (formData.link || null),
+        description: formData.description || null
+      };
       const { error } = await supabase
         .from(table)
-        .update({
-          date: formData.date || null,
-          time: formData.time || null,
-          link: formData.link || null,
-          description: formData.description || null
-        })
+        .update(payload)
         .eq("id", editingMeeting.id);
 
       if (error) throw error;
@@ -153,31 +179,59 @@ const HibridaMeetingManagement: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Tanggal:</span>
-                <p className="font-medium">{meeting.date || "Belum diatur"}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Waktu:</span>
-                <p className="font-medium">{meeting.time || "Belum diatur"}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Link:</span>
-                <p className="font-medium text-xs truncate">
-                  {meeting.link ? (
-                    <a 
-                      href={meeting.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:underline"
-                    >
-                      {meeting.link}
-                    </a>
-                  ) : (
-                    "Belum diatur"
-                  )}
-                </p>
-              </div>
+              {(() => {
+                const parsed = parseGroupJson(meeting.link);
+                if (parsed) {
+                  const keys: GroupKey[] = ['A', 'B', 'C'];
+                  return (
+                    <div className="space-y-2">
+                      <div className="text-xs text-muted-foreground">Jadwal per grup:</div>
+                      {keys.map(k => (
+                        <div key={k} className="rounded border p-2 bg-muted/30">
+                          <div className="font-semibold">Grup {k}</div>
+                          <div className="flex flex-col">
+                            <span>Tanggal: <span className="font-medium">{parsed[k]?.date || 'Belum diatur'}</span></span>
+                            <span>Waktu: <span className="font-medium">{parsed[k]?.time || 'Belum diatur'}</span></span>
+                            <span className="truncate">Link: {parsed[k]?.link ? (
+                              <a href={parsed[k]?.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{parsed[k]?.link}</a>
+                            ) : 'Belum diatur'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+                // Default single schedule
+                return (
+                  <>
+                    <div>
+                      <span className="text-muted-foreground">Tanggal:</span>
+                      <p className="font-medium">{meeting.date || "Belum diatur"}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Waktu:</span>
+                      <p className="font-medium">{meeting.time || "Belum diatur"}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Link:</span>
+                      <p className="font-medium text-xs truncate">
+                        {meeting.link ? (
+                          <a 
+                            href={meeting.link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:underline"
+                          >
+                            {meeting.link}
+                          </a>
+                        ) : (
+                          "Belum diatur"
+                        )}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
               <div className="pt-2 flex gap-2">
                 <Button 
                   variant="outline" 
@@ -203,37 +257,64 @@ const HibridaMeetingManagement: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Tanggal</Label>
-                <Input
-                  id="date"
-                  type="text"
-                  placeholder="2025-10-05"
-                  value={formData.date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                />
+            {!usePerGroup ? (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Tanggal</Label>
+                    <Input
+                      id="date"
+                      type="text"
+                      placeholder="2025-10-05"
+                      value={formData.date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="time">Waktu</Label>
+                    <Input
+                      id="time"
+                      type="text"
+                      placeholder="20:00 WIB"
+                      value={formData.time}
+                      onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="link">Link Pertemuan</Label>
+                  <Input
+                    id="link"
+                    type="text"
+                    placeholder="https://meet.google.com/..."
+                    value={formData.link}
+                    onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+                Mode jadwal per grup diaktifkan. Form jadwal umum dinonaktifkan.
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Waktu</Label>
-                <Input
-                  id="time"
-                  type="text"
-                  placeholder="20:00 WIB"
-                  value={formData.time}
-                  onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
-                />
+            )}
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Gunakan jadwal per grup</Label>
+                <input type="checkbox" checked={usePerGroup} onChange={(e)=> setUsePerGroup(e.target.checked)} />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="link">Link Pertemuan</Label>
-              <Input
-                id="link"
-                type="text"
-                placeholder="https://meet.google.com/..."
-                value={formData.link}
-                onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
-              />
+              {usePerGroup && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {(['A','B','C'] as GroupKey[]).map(g => (
+                    <div key={g} className="space-y-2 border rounded p-3">
+                      <div className="font-semibold">Grup {g}</div>
+                      <Input placeholder="Tanggal" value={groupSchedules[g]?.date || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), date: e.target.value }}))} />
+                      <Input placeholder="Waktu" value={groupSchedules[g]?.time || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), time: e.target.value }}))} />
+                      <Input placeholder="Link" value={groupSchedules[g]?.link || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), link: e.target.value }}))} />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">Jika mode per grup aktif, data di atas akan disimpan sebagai JSON dan menggantikan jadwal umum.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Deskripsi</Label>

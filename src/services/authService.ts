@@ -247,6 +247,8 @@ export const completeOAuthProfile = async (
         city: profileData.city,
         profession: profileData.profession,
         account_type: profileData.account_type,
+        // Safety: ensure OAuth completion never elevates to admin automatically
+        is_admin: false,
         // Tambahkan baris ini
         subtypes: profileData.subtypes,
         parent_id: profileData.parent_id,
