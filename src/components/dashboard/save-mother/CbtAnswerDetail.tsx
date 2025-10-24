@@ -53,7 +53,7 @@ const CbtAnswerDetail: React.FC = () => {
 
     const moduleData = masterModules.find((m) => m.id === moduleIdNumber);
     if (!moduleData || moduleData.type !== "cbt") {
-      navigate(`/save-mother/assignments/cbt/review/${userId}`);
+      navigate(`/dashboard/safe-mother/assignments/cbt/review/${userId}`);
       return;
     }
     setModuleTitle(moduleData.title);
@@ -167,7 +167,7 @@ const CbtAnswerDetail: React.FC = () => {
 
   // Handle navigasi kembali (diubah sesuai rute baru)
   const handleGoBack = () => {
-    navigate(`/save-mother/assignments/cbt/review/${userId}`);
+    navigate(`/dashboard/safe-mother/assignments/cbt/review/${userId}`);
   };
 
   return (
@@ -175,7 +175,7 @@ const CbtAnswerDetail: React.FC = () => {
       <Button
         variant="ghost"
         onClick={() =>
-          navigate(`/dashboard/save-mother/assignments/cbt/review/${userId}`)
+          navigate(`/dashboard/safe-mother/assignments/cbt/review/${userId}`)
         }
         className="mb-6"
       >

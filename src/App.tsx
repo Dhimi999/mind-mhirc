@@ -33,22 +33,29 @@ import TokenExpired from "./pages/TokenExpired";
 import CompleteOAuthProfile from "./pages/CompleteOAuthProfile";
 import SafeMother from "./pages/SafeMother";
 import Psikoedukasi from "./pages/safe-mother/Psikoedukasi";
+import PsikoedukasiDetail from "./pages/safe-mother/PsikoedukasiDetail";
 import ForumKonsultasi from "./pages/safe-mother/ForumKonsultasi";
+import ForumIbu from "./pages/safe-mother/ForumIbu";
+import Konsultasi from "./pages/safe-mother/Konsultasi";
 import CBT from "./pages/safe-mother/CBT";
 import Profil from "./pages/safe-mother/Profil";
-import SpiritualBudaya from "./pages/SpiritualBudaya";
-import SpiritualBudayaMateri from "./pages/SpiritualBudayaMateri";
-import IntervensiPertemuan from "./pages/IntervensiPertemuan";
-import IntervensiPenugasan from "./pages/IntervensiPenugasan";
-import IntervensiPortalSesi from "./pages/IntervensiPortalSesi";
+import SpiritualBudaya from "./pages/spiritual-budaya/SpiritualBudaya";
+import SpiritualBudayaMateri from "./pages/spiritual-budaya/SpiritualBudayaMateri";
+import IntervensiPertemuan from "./pages/spiritual-budaya/IntervensiPertemuan";
+import IntervensiPenugasan from "./pages/spiritual-budaya/IntervensiPenugasan";
+import IntervensiPortalSesi from "./pages/spiritual-budaya/IntervensiPortalSesi";
 import HibridaNaratifCBT from "./pages/hibrida-naratif/HibridaNaratifCBT";
 import HibridaPortalSesi from "./pages/hibrida-naratif/HibridaPortalSesi";
 import HibridaPortalSesi2 from "./pages/hibrida-naratif/HibridaPortalSesi2";
-import PsikoedukasiPortalSesi from "./pages/PsikoedukasiPortalSesi";
-import PsikoedukasiPortalSesi1 from "./pages/PsikoedukasiPortalSesi1";
-import PsikoedukasiPortalSesi2 from "./pages/PsikoedukasiPortalSesi2";
-import PsikoedukasiPortalSesi3 from "./pages/PsikoedukasiPortalSesi3";
-import PsikoedukasiPortalSesi4 from "./pages/PsikoedukasiPortalSesi4";
+import PsikoedukasiPortalSesi from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi";
+import PsikoedukasiPortalSesi1 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi1";
+import PsikoedukasiPortalSesi2 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi2";
+import PsikoedukasiPortalSesi3 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi3";
+import PsikoedukasiPortalSesi4 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi4";
+import PsikoedukasiPortalSesi5 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi5";
+import PsikoedukasiPortalSesi6 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi6";
+import PsikoedukasiPortalSesi7 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi7";
+import PsikoedukasiPortalSesi8 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi8";
 import UnderMaintanance from "./pages/UnderMaintenance";
 import { HelmetProvider } from "react-helmet-async";
 
@@ -151,10 +158,15 @@ const AppRoutes = () => {
         <Route path="/services/:id" element={<ServiceDetail />} />
         <Route path="/safe-mother" element={<SafeMother />} />
         <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
-        <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
+  <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
+  <Route path="/safe-mother/forumIbu" element={<ForumIbu />} />
+  <Route path="/safe-mother/privatekonsultasi" element={<Konsultasi />} />
         <Route path="/safe-mother/cbt" element={<CBT />} />
         <Route path="/safe-mother/profil" element={<Profil />} />
   <Route path="/spiritual-budaya" element={<SpiritualBudaya />} />
+  <Route path="/spiritual-budaya/:tab" element={<SpiritualBudaya />} />
+  <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
+  <Route path="/safe-mother/psikoedukasi/:slug" element={<PsikoedukasiDetail />} />
   <Route path="/spiritual-budaya/materi/:slug" element={<SpiritualBudayaMateri />} />
   <Route path="/spiritual-budaya/intervensi/sesi/:sesi" element={<IntervensiPortalSesi />} />
   <Route path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan" element={<IntervensiPertemuan />} />
@@ -168,10 +180,10 @@ const AppRoutes = () => {
   <Route path="/hibrida-cbt/psikoedukasi/sesi/2" element={<PsikoedukasiPortalSesi2 />} />
   <Route path="/hibrida-cbt/psikoedukasi/sesi/3" element={<PsikoedukasiPortalSesi3 />} />
   <Route path="/hibrida-cbt/psikoedukasi/sesi/4" element={<PsikoedukasiPortalSesi4 />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/5" element={<NotFound />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/6" element={<NotFound />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/7" element={<NotFound />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/8" element={<NotFound />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/5" element={<PsikoedukasiPortalSesi5 />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/6" element={<PsikoedukasiPortalSesi6 />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/7" element={<PsikoedukasiPortalSesi7 />} />
+  <Route path="/hibrida-cbt/psikoedukasi/sesi/8" element={<PsikoedukasiPortalSesi8 />} />
   <Route path="/hibrida-cbt/psikoedukasi/sesi/:sesi" element={<PsikoedukasiPortalSesi />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />

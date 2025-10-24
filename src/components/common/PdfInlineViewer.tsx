@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import type { DocumentProps, PageProps } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCw, Download, ChevronLeft, ChevronRight } from "lucide-react";
 // Resolve pdf.js worker to a concrete URL at build-time (Vite)
@@ -6,8 +7,11 @@ import { ZoomIn, ZoomOut, RotateCw, Download, ChevronLeft, ChevronRight } from "
 // @ts-ignore
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
-// Lazy load react-pdf to keep initial bundle small
-let Document: any, Page: any, pdfjs: any;
+// Lazy load react-pdf to keep initial bundle small with proper types
+type PdfJsType = typeof import("react-pdf")["pdfjs"];
+let Document: React.ComponentType<DocumentProps> | null,
+  Page: React.ComponentType<PageProps> | null,
+  pdfjs: PdfJsType | null;
 async function ensurePdfLib() {
   if (!Document || !Page || !pdfjs) {
     const mod = await import("react-pdf");
@@ -17,7 +21,9 @@ async function ensurePdfLib() {
     // Configure worker for pdf.js using resolved URL
     try {
       pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl as string;
-    } catch {}
+    } catch {
+      /* noop */
+    }
   }
 }
 
@@ -26,12 +32,14 @@ type PdfInlineViewerProps = {
   className?: string;
 };
 
+type RotateAngle = 0 | 90 | 180 | 270;
+
 export default function PdfInlineViewer({ fileUrl, className }: PdfInlineViewerProps) {
   const [ready, setReady] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
-  const [rotation, setRotation] = useState(0);
+  const [rotation, setRotation] = useState<RotateAngle>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,7 +61,7 @@ export default function PdfInlineViewer({ fileUrl, className }: PdfInlineViewerP
     setErrorMsg(null);
   }, []);
 
-  const onDocumentLoadError = useCallback((err: any) => {
+  const onDocumentLoadError = useCallback((err: unknown) => {
     console.error("PDF load error", err);
     setErrorMsg("Gagal memuat PDF. Coba buka di tab baru atau periksa koneksi Anda.");
   }, []);
@@ -71,7 +79,11 @@ export default function PdfInlineViewer({ fileUrl, className }: PdfInlineViewerP
         <Button size="sm" variant="outline" onClick={() => setScale((s) => Math.min(3, s + 0.1))}>
           <ZoomIn className="w-4 h-4" />
         </Button>
-        <Button size="sm" variant="outline" onClick={() => setRotation((r) => (r + 90) % 360)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setRotation((r) => (((r + 90) % 360) as RotateAngle))}
+        >
           <RotateCw className="w-4 h-4" />
         </Button>
       </div>
@@ -114,7 +126,7 @@ export default function PdfInlineViewer({ fileUrl, className }: PdfInlineViewerP
             <Page
               pageNumber={pageNumber}
               scale={scale}
-              rotate={rotation as any}
+              rotate={rotation}
               renderTextLayer={false}
               renderAnnotationLayer={false}
             />

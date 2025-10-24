@@ -25,7 +25,7 @@ const SaveMotherAssignmentManagement: React.FC = () => {
               Lihat rekap dan status penyelesaian.
             </p>
             <div className="mt-3">
-              <Link to="/dashboard/save-mother/assignments/cbt/users">
+              <Link to="/dashboard/safe-mother/assignments/cbt/users">
                 <Button variant="outline" size="sm">
                   Buka
                 </Button>

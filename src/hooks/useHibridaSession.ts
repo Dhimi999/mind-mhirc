@@ -277,7 +277,16 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
         .maybeSingle();
 
       if (error && error.code !== "PGRST116") throw error;
-      return data?.answers || null;
+      const raw = (data as any)?.answers;
+      if (!raw) return null;
+      if (typeof raw === 'string') {
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      }
+      return raw;
     } catch (error: any) {
       console.error("Error loading assignment:", error);
       return null;

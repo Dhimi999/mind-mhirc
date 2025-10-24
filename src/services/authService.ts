@@ -1,6 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
 export interface SignUpData {
   email: string;
   password: string;
@@ -107,12 +110,10 @@ export const signUp = async (
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Signup error:", error);
-    return {
-      success: false,
-      error: error.message || "Pendaftaran gagal. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Pendaftaran gagal. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -128,12 +129,10 @@ export const signIn = async (
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Login error:", error);
-    return {
-      success: false,
-      error: error.message || "Login gagal. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Login gagal. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -161,12 +160,10 @@ export const signInWithGoogle = async (): Promise<{
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Google login error:", error);
-    return {
-      success: false,
-      error: error.message || "Login dengan Google gagal. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Login dengan Google gagal. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -214,7 +211,7 @@ export const checkOAuthProfileCompletion = async (): Promise<{
         parent_id: data?.parent_id
       }
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error checking profile completion:", error);
     return { complete: false };
   }
@@ -259,12 +256,10 @@ export const completeOAuthProfile = async (
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Profile completion error:", error);
-    return {
-      success: false,
-      error: error.message || "Gagal melengkapi profil. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Gagal melengkapi profil. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -280,16 +275,13 @@ export const signOut = async (): Promise<{
     localStorage.removeItem("supabase.auth.token");
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Logout error:", error);
 
     localStorage.removeItem("supabase.auth.token");
 
-    return {
-      success: false,
-      error:
-        error.message || "Terjadi kesalahan saat logout. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Terjadi kesalahan saat logout. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -324,12 +316,10 @@ export const updateProfile = async (
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Profile update error:", error);
-    return {
-      success: false,
-      error: error.message || "Gagal memperbarui profil. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Gagal memperbarui profil. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -368,12 +358,10 @@ export const updatePassword = async (
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Password update error:", error);
-    return {
-      success: false,
-      error: error.message || "Gagal memperbarui password. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Gagal memperbarui password. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -397,13 +385,10 @@ export const resendConfirmationEmail = async (
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Resend confirmation email error:", error);
-    return {
-      success: false,
-      error:
-        error.message || "Gagal mengirim email konfirmasi. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Gagal mengirim email konfirmasi. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -423,14 +408,11 @@ export const sendPasswordResetEmail = async (
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Password reset email error:", error);
-    return {
-      success: false,
-      error:
-        error.message ||
-        "Gagal mengirim email reset password. Silakan coba lagi."
-    };
+    const message =
+      getErrorMessage(error) || "Gagal mengirim email reset password. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -461,12 +443,10 @@ export const deactivateAccount = async (): Promise<{
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Account deactivation error:", error);
-    return {
-      success: false,
-      error: error.message || "Gagal menonaktifkan akun. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Gagal menonaktifkan akun. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -485,13 +465,10 @@ export const reactivateAccount = async (
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Account reactivation error:", error);
-    return {
-      success: false,
-      error:
-        error.message || "Gagal mengaktifkan kembali akun. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Gagal mengaktifkan kembali akun. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };
 
@@ -513,12 +490,9 @@ export const sendReauthenticationToken = async (
     if (error) throw error;
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Reauthentication token error:", error);
-    return {
-      success: false,
-      error:
-        error.message || "Gagal mengirim token autentikasi. Silakan coba lagi."
-    };
+    const message = getErrorMessage(error) || "Gagal mengirim token autentikasi. Silakan coba lagi.";
+    return { success: false, error: message };
   }
 };

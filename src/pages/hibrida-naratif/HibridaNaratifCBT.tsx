@@ -176,10 +176,10 @@ const HibridaNaratifCBT: React.FC = () => {
     { session: 2, title: 'Mengenali Tanda-Tanda Dini Risiko Bunuh Diri Bagi Mahasiswa', description: 'Identifikasi tanda dini, tindakan preventif, dan refleksi adaptif.' },
     { session: 3, title: 'Pengembangan Keterampilan Koping Adaptif Bagi Mahasiswa', description: 'Transformasi koping maladaptif menjadi strategi adaptif.' },
     { session: 4, title: 'Perilaku Mencari Bantuan Bagi Mahasiswa', description: 'Membangun kesiapan mencari dan mengakses dukungan.' },
-    { session: 5, title: 'Pengurangan Stigma Bagi Mahasiswa', description: 'Segera.' },
-    { session: 6, title: 'Penguatan Jaringan Dukungan Sosial Bagi Mahasiswa', description: 'Segera.' },
-    { session: 7, title: 'Penyediaan Informasi tentang Sumber Daya Bagi Mahasiswa', description: 'Segera.' },
-    { session: 8, title: 'Evaluasi dan Tindak Lanjut Bagi Mahasiswa', description: 'Segera.' }
+    { session: 5, title: 'Pengurangan Stigma Bagi Mahasiswa', description: 'Mengidentifikasi dampak stigma dan merancang langkah pengurangannya.' },
+    { session: 6, title: 'Penguatan Jaringan Dukungan Sosial Bagi Mahasiswa', description: 'Memetakan macam dukungan dan sumber-sumbernya yang relevan.' },
+    { session: 7, title: 'Penyediaan Informasi tentang Sumber Daya Bagi Mahasiswa', description: 'Menyusun informasi sumber daya yang akurat dan mudah diakses.' },
+    { session: 8, title: 'Evaluasi dan Tindak Lanjut Bagi Mahasiswa', description: 'Merangkum perubahan, tantangan, dan rencana tindak lanjut.' }
   ] as const;
 
   // Load psiko progress (optional future usage) – kept separate for clarity
@@ -477,9 +477,9 @@ const HibridaNaratifCBT: React.FC = () => {
                             <div className="flex items-center gap-4">
                               <div className={`flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg ${available ? 'bg-indigo-600' : 'bg-muted'}`}>{m.session}</div>
                               <div className="flex-1">
-                                <div className="flex items-start justify_between mb-2">
+                                <div className="flex items-start justify-between mb-2">
                                   <h3 className="font-semibold text-lg">Sesi {m.session}: {m.title}</h3>
-                                  <Badge variant={available ? 'default' : 'secondary'}>{available ? 'Tersedia' : 'Terkunci'}</Badge>
+                                  <Badge variant={available ? 'default' : 'secondary'} className="whitespace-nowrap">{available ? 'Tersedia' : 'Terkunci'}</Badge>
                                 </div>
                                 <p className="text-muted-foreground mb-3">{m.description}</p>
                                 <div className="flex items-center justify-between">
@@ -546,10 +546,9 @@ const HibridaNaratifCBT: React.FC = () => {
                   <div className="grid gap-4">
                     {psikoModules.map(pm => {
                       const done = !!psikoProgress[pm.session]?.assignmentDone;
-                      const futureModule = pm.session > 4; // belum tersedia kontennya
-                      // Sequential unlocking: sesi 1 selalu tersedia; sesi n butuh meeting & assignment sesi sebelumnya selesai
-                      const previousCompleted = pm.session === 1 ? true : !!(psikoProgress[pm.session - 1]?.meetingDone && psikoProgress[pm.session - 1]?.assignmentDone);
-                      const available = isAdmin ? !futureModule : (!futureModule && previousCompleted);
+                      const futureModule = pm.session > 8; // semua sesi 1–8 tersedia
+                      // Untuk saat ini, sesi psikoedukasi 1–8 dapat dibuka tanpa penguncian berantai
+                      const available = isAdmin ? !futureModule : !futureModule;
                       const lockedByProgress = !available && !futureModule; // terkunci karena urutan (bukan karena future)
                       const displayTitle = futureModule ? 'Segera' : pm.title;
                       const route = `/hibrida-cbt/psikoedukasi/sesi/${pm.session}`;

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ClipboardList, ArrowLeft, FileText, Download, Send, Users, Upload, Trash2, Edit, ExternalLink, BookOpen, CheckCircle, UserCheck, SendHorizontal, Link as LinkIcon, Plus, X, ChevronLeft, ChevronRight, MessageCircle, Globe, Folder, Link2, PlayCircle } from "lucide-react";
+import { ClipboardList, ArrowLeft, FileText, Download, Send, Users, Upload, Trash2, Edit, ExternalLink, BookOpen, CheckCircle, UserCheck, SendHorizontal, Link as LinkIcon, Plus, X, ChevronLeft, ChevronRight, MessageCircle, Globe, Folder, Link2, PlayCircle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -24,9 +24,10 @@ interface SessionInfo {
 
 interface GuidanceMaterials {
   guidance_text: string | null;
-  guidance_pdf_url: string | null;
-  guidance_audio_url: string | null;
-  guidance_video_url: string | null;
+  // Support multiple items; will be serialized to newline-separated strings for storage compatibility
+  guidance_pdf_url: string[];
+  guidance_audio_url: string[];
+  guidance_video_url: string[];
   guidance_links: { title: string; url: string; icon?: string }[];
 }
 
@@ -62,15 +63,20 @@ const UnifiedAssignmentManagement: React.FC = () => {
   // Guidance editing state
   const [guidanceMaterials, setGuidanceMaterials] = useState<GuidanceMaterials>({
     guidance_text: null,
-    guidance_pdf_url: null,
-    guidance_audio_url: null,
-    guidance_video_url: null,
+    guidance_pdf_url: [],
+    guidance_audio_url: [],
+    guidance_video_url: [],
     guidance_links: []
   });
+  // Per-type single selection preview indices for admin (avoid embedding all)
+  const [selectedPdfIndex, setSelectedPdfIndex] = useState<number | null>(null);
+  const [selectedAudioIndex, setSelectedAudioIndex] = useState<number | null>(null);
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState<number | null>(null);
   const [uploadingFile, setUploadingFile] = useState<"pdf" | "audio" | null>(null);
   const [newLinkTitle, setNewLinkTitle] = useState("");
   const [newLinkUrl, setNewLinkUrl] = useState("");
   const [newLinkIcon, setNewLinkIcon] = useState<string>("auto");
+  const [newVideoUrl, setNewVideoUrl] = useState("");
 
   // Answers viewing state
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -136,13 +142,29 @@ const UnifiedAssignmentManagement: React.FC = () => {
         .eq("session_number", session.number)
         .single();
 
-      if (error) throw error;
-      
+  if (error) throw error;
+
+      const toArray = (val: string | null): string[] => {
+        if (!val) return [];
+        const s = String(val).trim();
+        if (!s) return [];
+        if (s.startsWith("[") && s.endsWith("]")) {
+          try {
+            const arr = JSON.parse(s);
+            if (Array.isArray(arr)) return arr.filter(Boolean);
+          } catch {
+            // noop for invalid JSON
+            void 0;
+          }
+        }
+        return s.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+      };
+
       setGuidanceMaterials({
         guidance_text: data?.guidance_text || null,
-        guidance_pdf_url: data?.guidance_pdf_url || null,
-        guidance_audio_url: data?.guidance_audio_url || null,
-        guidance_video_url: data?.guidance_video_url || null,
+        guidance_pdf_url: toArray((data as any)?.guidance_pdf_url || null),
+        guidance_audio_url: toArray((data as any)?.guidance_audio_url || null),
+        guidance_video_url: toArray((data as any)?.guidance_video_url || null),
         guidance_links: (data?.guidance_links as any) || []
       });
     } catch (error: any) {
@@ -259,14 +281,15 @@ const UnifiedAssignmentManagement: React.FC = () => {
     if (!selectedSession) return;
 
     try {
+      const serialize = (arr: string[]): string | null => arr.length ? arr.join("\n") : null;
       const table = selectedSession.program === "hibrida" ? "hibrida_meetings" : "psikoedukasi_meetings";
       const { error } = await supabase
         .from(table)
         .update({
           guidance_text: guidanceMaterials.guidance_text,
-          guidance_pdf_url: guidanceMaterials.guidance_pdf_url,
-          guidance_audio_url: guidanceMaterials.guidance_audio_url,
-          guidance_video_url: guidanceMaterials.guidance_video_url,
+          guidance_pdf_url: serialize(guidanceMaterials.guidance_pdf_url),
+          guidance_audio_url: serialize(guidanceMaterials.guidance_audio_url),
+          guidance_video_url: serialize(guidanceMaterials.guidance_video_url),
           guidance_links: guidanceMaterials.guidance_links as any
         })
         .eq("session_number", selectedSession.number);
@@ -307,9 +330,9 @@ const UnifiedAssignmentManagement: React.FC = () => {
         .getPublicUrl(filePath);
 
       if (type === "pdf") {
-        setGuidanceMaterials(prev => ({ ...prev, guidance_pdf_url: publicUrl }));
+        setGuidanceMaterials(prev => ({ ...prev, guidance_pdf_url: [...prev.guidance_pdf_url, publicUrl] }));
       } else {
-        setGuidanceMaterials(prev => ({ ...prev, guidance_audio_url: publicUrl }));
+        setGuidanceMaterials(prev => ({ ...prev, guidance_audio_url: [...prev.guidance_audio_url, publicUrl] }));
       }
 
       toast.success(`File ${type.toUpperCase()} berhasil diunggah`);
@@ -320,14 +343,13 @@ const UnifiedAssignmentManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteFile = async (type: "pdf" | "audio") => {
+  const handleDeleteFile = async (type: "pdf" | "audio", index: number) => {
     if (!selectedSession) return;
-    
-    const url = type === "pdf" ? guidanceMaterials.guidance_pdf_url : guidanceMaterials.guidance_audio_url;
+    const list = type === "pdf" ? guidanceMaterials.guidance_pdf_url : guidanceMaterials.guidance_audio_url;
+    const url = list[index];
     if (!url) return;
 
     try {
-      // Extract path from URL
       const pathMatch = url.match(/session-materials\/(.+)$/);
       if (pathMatch) {
         await supabase.storage
@@ -336,9 +358,11 @@ const UnifiedAssignmentManagement: React.FC = () => {
       }
 
       if (type === "pdf") {
-        setGuidanceMaterials(prev => ({ ...prev, guidance_pdf_url: null }));
+        setGuidanceMaterials(prev => ({ ...prev, guidance_pdf_url: prev.guidance_pdf_url.filter((_, i) => i !== index) }));
+        setSelectedPdfIndex(prev => (prev === null ? null : prev === index ? null : prev > index ? prev - 1 : prev));
       } else {
-        setGuidanceMaterials(prev => ({ ...prev, guidance_audio_url: null }));
+        setGuidanceMaterials(prev => ({ ...prev, guidance_audio_url: prev.guidance_audio_url.filter((_, i) => i !== index) }));
+        setSelectedAudioIndex(prev => (prev === null ? null : prev === index ? null : prev > index ? prev - 1 : prev));
       }
 
       toast.success(`File ${type.toUpperCase()} berhasil dihapus`);
@@ -400,6 +424,52 @@ const UnifiedAssignmentManagement: React.FC = () => {
       return "link";
     } catch {
       return "link";
+    }
+  };
+
+  // Normalize a variety of YouTube URL formats (watch, youtu.be, shorts, embed) into embeddable URL
+  const toYouTubeEmbedUrl = (url: string): string => {
+    try {
+      const u = new URL(url);
+      const host = u.hostname.replace(/^www\./, "");
+
+      const parseStartSeconds = (): number | null => {
+        const t = u.searchParams.get("t") || u.searchParams.get("start");
+        if (!t) return null;
+        const match = /^((\d+)h)?((\d+)m)?((\d+)(s)?)?$/.exec(t);
+        if (match) {
+          const hours = match[2] ? parseInt(match[2], 10) : 0;
+          const mins = match[4] ? parseInt(match[4], 10) : 0;
+          const secs = match[6] ? parseInt(match[6], 10) : 0;
+          return hours * 3600 + mins * 60 + secs;
+        }
+        const asInt = parseInt(t, 10);
+        return isNaN(asInt) ? null : asInt;
+      };
+
+      let videoId: string | null = null;
+
+      if (host.endsWith("youtu.be")) {
+        videoId = u.pathname.split("/").filter(Boolean)[0] || null;
+      } else if (host.endsWith("youtube.com")) {
+        const parts = u.pathname.split("/").filter(Boolean);
+        if (parts[0] === "watch") {
+          videoId = u.searchParams.get("v");
+        } else if (parts[0] === "embed" && parts[1]) {
+          videoId = parts[1];
+        } else if (parts[0] === "shorts" && parts[1]) {
+          videoId = parts[1];
+        }
+      }
+
+      if (videoId) {
+        const start = parseStartSeconds();
+        const startQuery = typeof start === "number" && start > 0 ? `?start=${start}` : "";
+        return `https://www.youtube.com/embed/${videoId}${startQuery}`;
+      }
+      return url;
+    } catch (_) {
+      return url;
     }
   };
 
@@ -663,37 +733,56 @@ const UnifiedAssignmentManagement: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* PDF Upload */}
+          {/* PDF Upload (Multiple) */}
           <Card>
             <CardHeader>
               <CardTitle>File PDF (Opsional)</CardTitle>
               <CardDescription>Upload dokumen PDF untuk panduan tambahan</CardDescription>
             </CardHeader>
             <CardContent>
-              {guidanceMaterials.guidance_pdf_url ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-muted rounded">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span className="text-sm">PDF tersedia</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={() => window.open(guidanceMaterials.guidance_pdf_url!, '_blank')}>
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Buka
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeleteFile("pdf")}>
-                        <Trash2 className="h-3 w-3" />
-                        Hapus
-                      </Button>
-                    </div>
+              <div className="space-y-4">
+                {guidanceMaterials.guidance_pdf_url.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Belum ada PDF. Unggah satu atau lebih dokumen.</p>
+                )}
+                {guidanceMaterials.guidance_pdf_url.length > 0 && (
+                  <div className="space-y-2">
+                    {guidanceMaterials.guidance_pdf_url.map((url, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          <span className="text-sm">PDF {idx + 1}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => window.open(url, '_blank')}>
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Buka
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelectedPdfIndex(prev => (prev === idx ? null : idx))}
+                            aria-pressed={selectedPdfIndex === idx}
+                          >
+                            {selectedPdfIndex === idx ? (
+                              <><EyeOff className="h-3 w-3 mr-1" /> Tutup</>
+                            ) : (
+                              <><Eye className="h-3 w-3 mr-1" /> Pratinjau</>
+                            )}
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteFile("pdf", idx)}>
+                            <Trash2 className="h-3 w-3" />
+                            Hapus
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  {/* Inline preview */}
+                )}
+                {selectedPdfIndex !== null && guidanceMaterials.guidance_pdf_url[selectedPdfIndex] && (
                   <div className="border rounded-lg overflow-hidden">
-                    <PdfInlineViewer fileUrl={guidanceMaterials.guidance_pdf_url!} />
+                    <PdfInlineViewer fileUrl={guidanceMaterials.guidance_pdf_url[selectedPdfIndex]} />
                   </div>
-                </div>
-              ) : (
+                )}
                 <div>
                   <Input
                     type="file"
@@ -703,41 +792,61 @@ const UnifiedAssignmentManagement: React.FC = () => {
                   />
                   {uploadingFile === "pdf" && <p className="text-xs text-muted-foreground mt-2">Mengunggah...</p>}
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Audio Upload */}
+          {/* Audio Upload (Multiple) */}
           <Card>
             <CardHeader>
               <CardTitle>File Audio (Opsional)</CardTitle>
               <CardDescription>Upload file audio MP3/WAV untuk panduan audio</CardDescription>
             </CardHeader>
             <CardContent>
-              {guidanceMaterials.guidance_audio_url ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-muted rounded">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span className="text-sm">Audio tersedia</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={() => window.open(guidanceMaterials.guidance_audio_url!, '_blank')}>
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Buka
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeleteFile("audio")}>
-                        <Trash2 className="h-3 w-3" />
-                        Hapus
-                      </Button>
-                    </div>
+              <div className="space-y-4">
+                {guidanceMaterials.guidance_audio_url.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Belum ada audio. Unggah satu atau lebih berkas.</p>
+                )}
+                {guidanceMaterials.guidance_audio_url.length > 0 && (
+                  <div className="space-y-2">
+                    {guidanceMaterials.guidance_audio_url.map((url, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          <span className="text-sm">Audio {idx + 1}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => window.open(url, '_blank')}>
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Buka
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelectedAudioIndex(prev => (prev === idx ? null : idx))}
+                            aria-pressed={selectedAudioIndex === idx}
+                          >
+                            {selectedAudioIndex === idx ? (
+                              <><EyeOff className="h-3 w-3 mr-1" /> Tutup</>
+                            ) : (
+                              <><PlayCircle className="h-3 w-3 mr-1" /> Putar</>
+                            )}
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteFile("audio", idx)}>
+                            <Trash2 className="h-3 w-3" />
+                            Hapus
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                )}
+                {selectedAudioIndex !== null && guidanceMaterials.guidance_audio_url[selectedAudioIndex] && (
                   <audio controls className="w-full">
-                    <source src={guidanceMaterials.guidance_audio_url!} />
+                    <source src={guidanceMaterials.guidance_audio_url[selectedAudioIndex]} />
                     Browser Anda tidak mendukung pemutar audio.
                   </audio>
-                </div>
-              ) : (
+                )}
                 <div>
                   <Input
                     type="file"
@@ -747,22 +856,75 @@ const UnifiedAssignmentManagement: React.FC = () => {
                   />
                   {uploadingFile === "audio" && <p className="text-xs text-muted-foreground mt-2">Mengunggah...</p>}
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Video URL */}
+          {/* Video URL (Multiple YouTube links) */}
           <Card>
             <CardHeader>
               <CardTitle>Link Video YouTube (Opsional)</CardTitle>
-              <CardDescription>Masukkan URL video YouTube untuk ditampilkan sebagai iframe</CardDescription>
+              <CardDescription>Tambah satu atau lebih URL video YouTube untuk ditampilkan sebagai iframe</CardDescription>
             </CardHeader>
             <CardContent>
-              <Input
-                placeholder="https://www.youtube.com/watch?v=..."
-                value={guidanceMaterials.guidance_video_url || ""}
-                onChange={(e) => setGuidanceMaterials(prev => ({ ...prev, guidance_video_url: e.target.value }))}
-              />
+              <div className="space-y-3">
+                {guidanceMaterials.guidance_video_url.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Belum ada video. Tambahkan satu atau lebih URL YouTube.</p>
+                )}
+                {guidanceMaterials.guidance_video_url.map((url, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input value={url} onChange={(e) => setGuidanceMaterials(prev => ({ ...prev, guidance_video_url: prev.guidance_video_url.map((u, i) => i === idx ? e.target.value : u) }))} />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedVideoIndex(prev => (prev === idx ? null : idx))}
+                      aria-pressed={selectedVideoIndex === idx}
+                    >
+                      {selectedVideoIndex === idx ? (
+                        <><EyeOff className="h-4 w-4 mr-1" /> Tutup</>
+                      ) : (
+                        <><Eye className="h-4 w-4 mr-1" /> Pratinjau</>
+                      )}
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => {
+                      setGuidanceMaterials(prev => ({ ...prev, guidance_video_url: prev.guidance_video_url.filter((_, i) => i !== idx) }));
+                      setSelectedVideoIndex(prev => (prev === null ? null : prev === idx ? null : prev > idx ? prev - 1 : prev));
+                    }}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    value={newVideoUrl}
+                    onChange={(e) => setNewVideoUrl(e.target.value)}
+                  />
+                  <Button size="sm" onClick={() => {
+                    const v = newVideoUrl.trim();
+                    if (!v) return;
+                    setGuidanceMaterials(prev => ({ ...prev, guidance_video_url: [...prev.guidance_video_url, v] }));
+                    setNewVideoUrl("");
+                  }}>
+                    Tambah
+                  </Button>
+                </div>
+                {selectedVideoIndex !== null && guidanceMaterials.guidance_video_url[selectedVideoIndex] && (
+                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      width="1440"
+                      height="810"
+                      src={toYouTubeEmbedUrl(guidanceMaterials.guidance_video_url[selectedVideoIndex])}
+                      title={`Pratinjau Video ${selectedVideoIndex + 1}`}
+                      className="absolute top-0 left-0 w-full h-full rounded-lg"
+                      frameBorder={0}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 

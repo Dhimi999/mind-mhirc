@@ -802,7 +802,21 @@ const HibridaPortalSesi: React.FC = () => {
 										</CardHeader>
 										<CardContent className="p-6">
 											{/* If super-admin and there are per-group schedules, show all groups */}
-											{isSuperAdmin && schedule?.has_group_schedules && allGroupSchedules ? (
+											{dataLoading ? (
+												<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+													{Array.from({ length: 3 }).map((_, i) => (
+														<div key={i} className="rounded border p-3 bg-muted/30 animate-pulse">
+															<div className="flex items-center justify-between mb-2">
+																<div className="h-3 bg-gray-200 rounded w-16" />
+																<div className="h-4 bg-gray-200 rounded w-10" />
+															</div>
+															<div className="h-3 bg-gray-200 rounded w-32 mb-2" />
+															<div className="h-3 bg-gray-200 rounded w-24 mb-2" />
+															<div className="h-3 bg-gray-200 rounded w-20" />
+														</div>
+													))}
+												</div>
+											) : isSuperAdmin && schedule?.has_group_schedules && allGroupSchedules ? (
 												<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 													{(['A','B','C'] as const).map(k => (
 														<div key={k} className="rounded border p-3 bg-muted/30">
@@ -826,25 +840,37 @@ const HibridaPortalSesi: React.FC = () => {
 															<span className="px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-800 border border-purple-200">Grup {groupAssignment}</span>
 														)}
 													</div>
-													<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-														<div className="flex items-center gap-2 text-sm">
-															<div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
-															<span className="text-muted-foreground">Tanggal:</span>
-															<span className="font-medium">{schedule?.date || 'TBD'}</span>
+													{dataLoading ? (
+														<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+															{Array.from({ length: 3 }).map((_, i) => (
+																<div key={i} className="flex items-center gap-2 text-sm animate-pulse">
+																	<div className="w-2 h-2 bg-gray-300 rounded-full" />
+																	<div className="h-3 bg-gray-200 rounded w-20" />
+																	<div className="h-3 bg-gray-200 rounded w-24" />
+																</div>
+															))}
 														</div>
-														<div className="flex items-center gap-2 text-sm">
-															<div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
-															<span className="text-muted-foreground">Waktu:</span>
-															<span className="font-medium">{schedule?.time || 'TBD'}</span>
+													) : (
+														<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+															<div className="flex items-center gap-2 text-sm">
+																<div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
+																<span className="text-muted-foreground">Tanggal:</span>
+																<span className="font-medium">{schedule?.date || 'TBD'}</span>
+															</div>
+															<div className="flex items-center gap-2 text-sm">
+																<div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
+																<span className="text-muted-foreground">Waktu:</span>
+																<span className="font-medium">{schedule?.time || 'TBD'}</span>
+															</div>
+															<div className="flex items-center gap-2 text-sm">
+																<div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
+																<span className="text-muted-foreground">Link:</span>
+																{schedule?.link ? (
+																	<a className="text-indigo-700 underline font-medium" href={normalizeHref(schedule.link)} target="_blank" rel="noreferrer">Tersedia</a>
+																) : <span className="font-medium">TBD</span>}
+															</div>
 														</div>
-														<div className="flex items-center gap-2 text-sm">
-															<div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
-															<span className="text-muted-foreground">Link:</span>
-															{schedule?.link ? (
-																<a className="text-indigo-700 underline font-medium" href={normalizeHref(schedule.link)} target="_blank" rel="noreferrer">Tersedia</a>
-															) : <span className="font-medium">TBD</span>}
-														</div>
-													</div>
+													)}
 												</>
 											)}
 											<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

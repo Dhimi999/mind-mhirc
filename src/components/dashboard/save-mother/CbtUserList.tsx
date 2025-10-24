@@ -93,15 +93,15 @@ const CbtUserList: React.FC = () => {
 
   // Navigasi ke halaman rekap modul untuk user tertentu
   const handleViewModules = (userId: string) => {
-    // Pastikan rute ini sesuai dengan konfigurasi router Anda
-    navigate(`/dashboard/save-mother/assignments/cbt/review/${userId}`);
+    // Rute kanonik baru menggunakan safe-mother (rute lama tetap didukung di router)
+    navigate(`/dashboard/safe-mother/assignments/cbt/review/${userId}`);
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <Button
         variant="ghost"
-        onClick={() => navigate("/dashboard/save-mother/assignments/cbt")}
+        onClick={() => navigate("/dashboard/safe-mother/assignments/cbt")}
         className="mb-6"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />

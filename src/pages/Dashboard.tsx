@@ -63,12 +63,12 @@ import HibridaAccountManagement from "@/components/dashboard/hibrida-cbt/Hibrida
 import UnifiedAssignmentManagement from "@/components/dashboard/hibrida-cbt/UnifiedAssignmentManagement";
 import HibridaMeetingManagement from "@/components/dashboard/hibrida-cbt/HibridaMeetingManagement";
 import PsikoedukasiManagement from "@/components/dashboard/safe-mother/PsikoedukasiManagement";
-import SaveMotherAccountManagement from "@/components/dashboard/save-mother/SaveMotherAccountManagement";
-import SaveMotherAssignmentManagement from "@/components/dashboard/save-mother/SaveMotherAssignmentManagement";
-import SaveMotherMeetingManagement from "@/components/dashboard/save-mother/SaveMotherMeetingManagement";
-import CbtUserList from "@/components/dashboard/save-mother/CbtUserList";
-import CbtModuleReview from "@/components/dashboard/save-mother/CbtModuleReview";
-import CbtAnswerDetail from "@/components/dashboard/save-mother/CbtAnswerDetail";
+import SaveMotherAccountManagement from "@/components/dashboard/safe-mother/SaveMotherAccountManagement";
+import SaveMotherAssignmentManagement from "@/components/dashboard/safe-mother/SaveMotherAssignmentManagement";
+import SaveMotherMeetingManagement from "@/components/dashboard/safe-mother/SaveMotherMeetingManagement";
+import CbtUserList from "@/components/dashboard/safe-mother/CbtUserList";
+import CbtModuleReview from "@/components/dashboard/safe-mother/CbtModuleReview";
+import CbtAnswerDetail from "@/components/dashboard/safe-mother/CbtAnswerDetail";
 
 // Variabel global untuk menentukan role user
 let id = "";
@@ -441,21 +441,21 @@ const Dashboard = () => {
                           Manajemen Psikoedukasi
                         </Link>
                         <Link
-                          to="/dashboard/save-mother/account"
+                          to="/dashboard/safe-mother/account"
                           className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
                         >
                           <Users className="mr-3 h-5 w-5" />
                           Manajemen Akun
                         </Link>
                         <Link
-                          to="/dashboard/save-mother/assignments"
+                          to="/dashboard/safe-mother/assignments"
                           className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
                         >
                           <ClipboardList className="mr-3 h-5 w-5" />
                           Manajemen Penugasan
                         </Link>
                         <Link
-                          to="/dashboard/save-mother/meetings"
+                          to="/dashboard/safe-mother/meetings"
                           className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
                         >
                           <Calendar className="mr-3 h-5 w-5" />
@@ -672,6 +672,7 @@ const Dashboard = () => {
                 )}
                 {(isAdmin || isProfessional) && (
                   <>
+                    {/* Backward-compatible old paths */}
                     <Route
                       path="save-mother/account/*"
                       element={<SaveMotherAccountManagement />}
@@ -682,6 +683,19 @@ const Dashboard = () => {
                     />
                     <Route
                       path="save-mother/meetings/*"
+                      element={<SaveMotherMeetingManagement />}
+                    />
+                    {/* New canonical paths */}
+                    <Route
+                      path="safe-mother/account/*"
+                      element={<SaveMotherAccountManagement />}
+                    />
+                    <Route
+                      path="safe-mother/assignments/*"
+                      element={<SaveMotherAssignmentManagement />}
+                    />
+                    <Route
+                      path="safe-mother/meetings/*"
                       element={<SaveMotherMeetingManagement />}
                     />
                   </>
@@ -732,6 +746,7 @@ const Dashboard = () => {
                 )}
                 {isAdmin && (
                   <>
+                    {/* Backward-compatible old paths */}
                     <Route
                       path="save-mother/assignments/cbt/users"
                       element={<CbtUserList />}
@@ -742,6 +757,19 @@ const Dashboard = () => {
                     />
                     <Route
                       path="save-mother/assignments/cbt/review/:userId/module/:moduleId"
+                      element={<CbtAnswerDetail />}
+                    />
+                    {/* New canonical paths */}
+                    <Route
+                      path="safe-mother/assignments/cbt/users"
+                      element={<CbtUserList />}
+                    />
+                    <Route
+                      path="safe-mother/assignments/cbt/review/:userId"
+                      element={<CbtModuleReview />}
+                    />
+                    <Route
+                      path="safe-mother/assignments/cbt/review/:userId/module/:moduleId"
                       element={<CbtAnswerDetail />}
                     />
                   </>

@@ -1,8 +1,10 @@
 import { Helmet } from "react-helmet-async";
 import { Users, MessageCircle, Stethoscope, UserCheck, Heart, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import SafeMotherNavbar from "@/components/SafeMotherNavbar";
 import Footer from "@/components/Footer";
 const ForumKonsultasi = () => {
+  const navigate = useNavigate();
   // Workaround JSX typing for Helmet in some TS setups
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const HelmetAny = Helmet as unknown as React.FC<any>;
@@ -139,7 +141,7 @@ const ForumKonsultasi = () => {
                             onClick={
                               isComingSoon
                                 ? undefined
-                                : () => (window.location.href = option.href)
+                                : () => navigate(option.href)
                             }
                             className={`${
                               isComingSoon ? classDisabled : classActive

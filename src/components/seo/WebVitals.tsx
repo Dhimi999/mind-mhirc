@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
+import type { Metric } from 'web-vitals';
 
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -11,7 +12,7 @@ const WebVitals = () => {
     // Import web-vitals dynamically to avoid blocking
     import('web-vitals').then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
       // Send to analytics (you can replace this with your preferred analytics service)
-      const sendToAnalytics = (metric: any) => {
+  const sendToAnalytics = (metric: Metric) => {
         // Example: Google Analytics 4
         if (typeof window !== 'undefined' && window.gtag) {
           window.gtag('event', metric.name, {

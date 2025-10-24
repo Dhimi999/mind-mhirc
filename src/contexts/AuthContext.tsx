@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } else if (error) {
         throw new Error(error);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error during logout:", error);
       toast({
         title: "Gagal Logout",

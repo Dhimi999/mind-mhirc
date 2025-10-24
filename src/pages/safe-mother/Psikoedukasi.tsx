@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import { PlayCircle, FileText, User, Search, Filter, Heart, Plus, Calendar, Settings, Image as ImageIcon } from "lucide-react";
@@ -35,9 +35,34 @@ const Psikoedukasi = () => {
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
   const [editMaterialId, setEditMaterialId] = useState<string | undefined>(undefined);
   const [isProfessional, setIsProfessional] = useState(false);
+  // simple cache using sessionStorage with TTL to avoid refetch on tab refocus
+  const CACHE_KEY = 'safe_mother_materials_cache_v1';
+  const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  const cacheLoadedRef = useRef(false);
+
   useEffect(() => {
-    fetchMaterials();
+    // Load from cache on first mount
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ts: number; data: Material[] };
+        const fresh = Date.now() - parsed.ts < CACHE_TTL_MS;
+        if (fresh && Array.isArray(parsed.data)) {
+          setMaterials(parsed.data);
+          setLoading(false);
+          cacheLoadedRef.current = true;
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    // Always check role when user changes
     checkUserRole();
+    // Fetch only if not loaded from cache yet
+    if (!cacheLoadedRef.current) {
+      fetchMaterials();
+    }
   }, [user]);
 
   const checkUserRole = async () => {
@@ -63,8 +88,12 @@ const Psikoedukasi = () => {
         .order('created_at', { ascending: false });
         
       if (error) throw error;
-      
-      setMaterials((data || []) as Material[]);
+      const list = (data || []) as Material[];
+      setMaterials(list);
+      // update cache
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: list }));
+      } catch {}
     } catch (error: any) {
       toast.error("Gagal memuat materi");
       console.error(error);

@@ -28,8 +28,9 @@ export const uploadAvatar = async (
     const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
     return { url: data.publicUrl, error: null };
-  } catch (error: any) {
-    console.error("Error uploading avatar:", error);
-    return { url: null, error: error.message || "Error uploading file" };
+  } catch (error: unknown) {
+    console.error("Error uploading avatar:\n", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return { url: null, error: message || "Error uploading file" };
   }
 };
