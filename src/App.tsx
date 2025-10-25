@@ -155,6 +155,27 @@ const ScrollToTop = () => {
 };
 
 const AppRoutes = () => {
+  //bagian cek setelah login google dan data tidak lengkap
+  const { user, isLoading, isOAuthProfileIncomplete } = useAuth();
+  // 1. Tampilkan loading jika status auth belum siap
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        {/* Anda bisa menggunakan spinner yang sama seperti di ProtectedRoute */}
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  if (user && isOAuthProfileIncomplete) {
+    // Paksa arahkan ke halaman complete-profile
+    return (
+      <Routes>
+        <Route path="/complete-profile" element={<CompleteOAuthProfile />} />
+        {/* Semua rute lain akan diarahkan ke complete-profile */}
+        <Route path="*" element={<Navigate to="/complete-profile" replace />} />
+      </Routes>
+    );
+  }
   return (
     <>
       <ScrollToTop />
