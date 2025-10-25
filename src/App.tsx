@@ -127,10 +127,14 @@ const ScrollToTop = () => {
 
   useEffect(() => {
     const prev = prevPathRef.current;
-    const isHibrida = pathname.startsWith('/hibrida-cbt');
-    const wasHibrida = prev.startsWith('/hibrida-cbt');
-    const isSession = /\/hibrida-cbt\/(intervensi|psikoedukasi)\/sesi\//.test(pathname);
-    const wasSession = /\/hibrida-cbt\/(intervensi|psikoedukasi)\/sesi\//.test(prev);
+    const isHibrida = pathname.startsWith("/hibrida-cbt");
+    const wasHibrida = prev.startsWith("/hibrida-cbt");
+    const isSession = /\/hibrida-cbt\/(intervensi|psikoedukasi)\/sesi\//.test(
+      pathname
+    );
+    const wasSession = /\/hibrida-cbt\/(intervensi|psikoedukasi)\/sesi\//.test(
+      prev
+    );
 
     // Conditions to scroll:
     // 1. Navigating outside hibrida-cbt area
@@ -139,7 +143,11 @@ const ScrollToTop = () => {
     // 4. First time arriving to hibrida-cbt from outside
     const shouldScroll = !isHibrida || !wasHibrida || isSession || wasSession;
     if (shouldScroll) {
-      try { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }); } catch { window.scrollTo(0,0); }
+      try {
+        window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+      } catch {
+        window.scrollTo(0, 0);
+      }
     }
     prevPathRef.current = pathname;
   }, [pathname]);
@@ -158,33 +166,81 @@ const AppRoutes = () => {
         <Route path="/services/:id" element={<ServiceDetail />} />
         <Route path="/safe-mother" element={<SafeMother />} />
         <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
-  <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
-  <Route path="/safe-mother/forumIbu" element={<ForumIbu />} />
-  <Route path="/safe-mother/privatekonsultasi" element={<Konsultasi />} />
+        <Route path="/safe-mother/forum" element={<ForumKonsultasi />} />
+        <Route path="/safe-mother/forumIbu" element={<ForumIbu />} />
+        <Route path="/safe-mother/privatekonsultasi" element={<Konsultasi />} />
         <Route path="/safe-mother/cbt" element={<CBT />} />
         <Route path="/safe-mother/profil" element={<Profil />} />
-  <Route path="/spiritual-budaya" element={<SpiritualBudaya />} />
-  <Route path="/spiritual-budaya/:tab" element={<SpiritualBudaya />} />
-  <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
-  <Route path="/safe-mother/psikoedukasi/:slug" element={<PsikoedukasiDetail />} />
-  <Route path="/spiritual-budaya/materi/:slug" element={<SpiritualBudayaMateri />} />
-  <Route path="/spiritual-budaya/intervensi/sesi/:sesi" element={<IntervensiPortalSesi />} />
-  <Route path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan" element={<IntervensiPertemuan />} />
-  <Route path="/spiritual-budaya/intervensi/sesi/:sesi/penugasan" element={<IntervensiPenugasan />} />
-    {/* Hibrida Naratif CBT service routes */}
-  <Route path="/hibrida-cbt" element={<HibridaNaratifCBT />} />
-  <Route path="/hibrida-cbt/:tab" element={<HibridaNaratifCBT />} />
-  <Route path="/hibrida-cbt/intervensi/sesi/2" element={<HibridaPortalSesi2 />} />
-  <Route path="/hibrida-cbt/intervensi/sesi/:sesi" element={<HibridaPortalSesi />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/1" element={<PsikoedukasiPortalSesi1 />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/2" element={<PsikoedukasiPortalSesi2 />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/3" element={<PsikoedukasiPortalSesi3 />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/4" element={<PsikoedukasiPortalSesi4 />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/5" element={<PsikoedukasiPortalSesi5 />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/6" element={<PsikoedukasiPortalSesi6 />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/7" element={<PsikoedukasiPortalSesi7 />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/8" element={<PsikoedukasiPortalSesi8 />} />
-  <Route path="/hibrida-cbt/psikoedukasi/sesi/:sesi" element={<PsikoedukasiPortalSesi />} />
+        <Route path="/spiritual-budaya" element={<SpiritualBudaya />} />
+        <Route path="/spiritual-budaya/:tab" element={<SpiritualBudaya />} />
+        <Route path="/safe-mother/psikoedukasi" element={<Psikoedukasi />} />
+        <Route
+          path="/safe-mother/psikoedukasi/:slug"
+          element={<PsikoedukasiDetail />}
+        />
+        <Route
+          path="/spiritual-budaya/materi/:slug"
+          element={<SpiritualBudayaMateri />}
+        />
+        <Route
+          path="/spiritual-budaya/intervensi/sesi/:sesi"
+          element={<IntervensiPortalSesi />}
+        />
+        <Route
+          path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan"
+          element={<IntervensiPertemuan />}
+        />
+        <Route
+          path="/spiritual-budaya/intervensi/sesi/:sesi/penugasan"
+          element={<IntervensiPenugasan />}
+        />
+        {/* Hibrida Naratif CBT service routes */}
+        <Route path="/hibrida-cbt" element={<HibridaNaratifCBT />} />
+        <Route path="/hibrida-cbt/:tab" element={<HibridaNaratifCBT />} />
+        <Route
+          path="/hibrida-cbt/intervensi/sesi/2"
+          element={<HibridaPortalSesi2 />}
+        />
+        <Route
+          path="/hibrida-cbt/intervensi/sesi/:sesi"
+          element={<HibridaPortalSesi />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/sesi/1"
+          element={<PsikoedukasiPortalSesi1 />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/sesi/2"
+          element={<PsikoedukasiPortalSesi2 />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/sesi/3"
+          element={<PsikoedukasiPortalSesi3 />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/sesi/4"
+          element={<PsikoedukasiPortalSesi4 />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/sesi/5"
+          element={<PsikoedukasiPortalSesi5 />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/sesi/6"
+          element={<PsikoedukasiPortalSesi6 />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/sesi/7"
+          element={<PsikoedukasiPortalSesi7 />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/sesi/8"
+          element={<PsikoedukasiPortalSesi8 />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/sesi/:sesi"
+          element={<PsikoedukasiPortalSesi />}
+        />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/about" element={<AboutPage />} />

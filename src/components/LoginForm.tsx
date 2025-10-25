@@ -175,7 +175,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
             title: "Login Berhasil",
             description: "Selamat datang kembali di Mind MHIRC"
           });
-          navigate("/dashboard");
+          navigate("/");
         } else {
           toast({
             title: "Login Gagal",
@@ -208,6 +208,7 @@ const LoginForm = ({ isRegister = false, onToggleMode }: LoginFormProps) => {
           description: error || "Terjadi kesalahan, silahkan coba lagi",
           variant: "destructive"
         });
+        navigate("/dashboard");
       }
     } catch (error) {
       console.error("Google sign-in error:", error);
