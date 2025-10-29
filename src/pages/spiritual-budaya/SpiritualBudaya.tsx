@@ -22,9 +22,17 @@ const SpiritualBudaya = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("pengantar");
   const { isAuthenticated, user } = useAuth();
-  const { role, group, loading: roleLoading } = useSpiritualRole();
+  const { 
+    enrollment, 
+    loading: roleLoading, 
+    requestEnrollment,
+    canAccessIntervensiSB,
+    canAccessPsikoedukasiSB,
+    isSuperAdmin
+  } = useSpiritualRole();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isRequestingEnrollment, setIsRequestingEnrollment] = useState(false);
 
   // Initialize tab from URL; allow viewing restricted tabs but overlay when not authenticated
   useEffect(() => {
@@ -55,13 +63,15 @@ const SpiritualBudaya = () => {
     requireRole = false 
   }) => {
     const hasAccess = requireRole 
-      ? (activeTab === 'intervensi' ? canAccessIntervensi : canAccessPsikoedukasi)
+      ? (activeTab === 'intervensi' ? canAccessIntervensiSB : canAccessPsikoedukasiSB)
       : isAuthenticated;
 
     if (hasAccess) return <>{children}</>;
 
     const message = requireRole && isAuthenticated && !hasAccess
-      ? "Anda tidak memiliki akses ke konten ini. Silakan hubungi administrator."
+      ? enrollment?.status === 'pending'
+        ? "Permintaan pendaftaran Anda sedang diproses. Silakan tunggu persetujuan dari admin."
+        : "Anda belum terdaftar untuk mengakses konten ini. Silakan daftar terlebih dahulu di tab Pengantar."
       : "Halaman ini hanya bisa diakses untuk user terdaftar.";
 
     return (
@@ -87,63 +97,29 @@ const SpiritualBudaya = () => {
     );
   };
 
-  // Role-based access
-  const canAccessIntervensi = isAuthenticated && (role === 'grup-int' || role === 'super-admin');
-  const canAccessPsikoedukasi = isAuthenticated && (role === 'grup-cont' || role === 'super-admin');
-
   // Enrollment state (sb_enrollments)
-  const [enrollmentStatus, setEnrollmentStatus] = useState<"pending" | "approved" | "rejected" | null>(null);
-  const [enrollmentLoading, setEnrollmentLoading] = useState(false);
-  const [requesting, setRequesting] = useState(false);
-
-  useEffect(() => {
-    const fetchEnrollment = async () => {
-      if (!user?.id) { setEnrollmentStatus(null); return; }
-      setEnrollmentLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('sb_enrollments' as any)
-          .select('enrollment_status')
-          .eq('user_id', user.id)
-          .maybeSingle() as any;
-        if (error) throw error;
-        setEnrollmentStatus((data?.enrollment_status as any) || null);
-      } catch (e) {
-        console.error('Load SB enrollment failed', e);
-        setEnrollmentStatus(null);
-      } finally {
-        setEnrollmentLoading(false);
-      }
-    };
-    fetchEnrollment();
-  }, [user?.id]);
-
   const handleRequestEnrollment = async () => {
     if (!isAuthenticated) {
       navigate('/login?redirect=/spiritual-budaya/pengantar');
       return;
     }
-    setRequesting(true);
-    try {
-      const now = new Date().toISOString();
-      const payload = {
-        user_id: user!.id,
-        role: 'reguler',
-        enrollment_status: 'pending',
-        enrollment_requested_at: now,
-        updated_at: now,
-      } as any;
-      const { error } = await supabase
-        .from('sb_enrollments' as any)
-        .upsert(payload, { onConflict: 'user_id' }) as any;
-      if (error) throw error;
-      setEnrollmentStatus('pending');
-      toast({ title: 'Pendaftaran Dikirim', description: 'Permintaan Anda telah diterima. Mohon tunggu persetujuan admin.' });
-    } catch (e) {
-      console.error('Request enrollment error', e);
-      toast({ title: 'Gagal Mendaftar', description: 'Terjadi kesalahan saat mengirim permintaan.', variant: 'destructive' });
-    } finally {
-      setRequesting(false);
+
+    setIsRequestingEnrollment(true);
+    const result = await requestEnrollment();
+    setIsRequestingEnrollment(false);
+
+    if (result.success) {
+      toast({
+        title: "Pendaftaran Berhasil",
+        description: "Permintaan pendaftaran Anda telah dikirim. Silakan tunggu persetujuan dari admin.",
+        variant: "default"
+      });
+    } else {
+      toast({
+        title: "Pendaftaran Gagal",
+        description: result.error || "Terjadi kesalahan saat mendaftar.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -348,48 +324,64 @@ const SpiritualBudaya = () => {
                           Login & Daftar
                         </Button>
                       </>
-                    ) : enrollmentLoading ? (
+                    ) : roleLoading ? (
                       <p className="text-sm text-muted-foreground">Memuat status...</p>
-                    ) : enrollmentStatus === 'pending' ? (
+                    ) : (!enrollment || (enrollment.status === 'pending' && !enrollment.enrollmentRequestedAt)) ? (
+                      <>
+                        <p className="text-sm text-muted-foreground mb-3">Daftar untuk mengikuti program intervensi.</p>
+                        <Button 
+                          className="w-full bg-amber-600 hover:bg-amber-700" 
+                          onClick={handleRequestEnrollment}
+                          disabled={isRequestingEnrollment}
+                        >
+                          {isRequestingEnrollment ? 'Mendaftar...' : 'Daftar Sekarang'}
+                        </Button>
+                      </>
+                    ) : enrollment?.status === 'pending' ? (
                       <>
                         <Badge className="mb-2 bg-amber-100 text-amber-800 border-amber-300">Menunggu Persetujuan</Badge>
                         <p className="text-xs text-muted-foreground">Permintaan Anda sedang diproses admin.</p>
                       </>
-                    ) : enrollmentStatus === 'approved' ? (
+                    ) : enrollment?.status === 'approved' ? (
                       <>
                         <Badge className="mb-2 bg-green-100 text-green-800 border-green-300">Terdaftar</Badge>
-                        <p className="text-xs text-muted-foreground">Akses aktif. Silakan lanjut ke tab Intervensi.</p>
+                        <p className="text-xs text-muted-foreground">Anda telah terdaftar dalam program.</p>
                       </>
-                    ) : enrollmentStatus === 'rejected' ? (
+                    ) : enrollment?.status === 'rejected' ? (
                       <>
                         <Badge className="mb-2 bg-red-100 text-red-800 border-red-300">Ditolak</Badge>
                         <p className="text-xs text-muted-foreground">Hubungi admin untuk informasi lebih lanjut.</p>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm text-muted-foreground mb-3">Ajukan pendaftaran untuk mengaktifkan akses.</p>
-                        <Button className="w-full bg-amber-600 hover:bg-amber-700" onClick={handleRequestEnrollment} disabled={requesting}>
-                          {requesting ? 'Mendaftar...' : 'Daftar Sekarang'}
-                        </Button>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Terdaftar</Badge>
+                        <p className="text-xs text-muted-foreground">Klik "Daftar Sekarang" untuk mulai mendaftar.</p>
                       </>
                     )}
                   </div>
 
                   <div className="rounded-xl border p-5">
-                    <h4 className="font-semibold mb-2">Status Akses</h4>
-                    {(!isAuthenticated || enrollmentLoading) ? (
+                    <h4 className="font-semibold mb-2">Langkah 2 — Status</h4>
+                    {!isAuthenticated || roleLoading ? (
                       <p className="text-sm text-muted-foreground">-</p>
-                    ) : enrollmentStatus === 'approved' ? (
+                    ) : enrollment?.status === 'approved' ? (
                       <>
                         <Badge className="mb-2 bg-green-100 text-green-800 border-green-300">Aktif</Badge>
-                        <p className="text-xs text-muted-foreground">Akses aktif untuk program Spiritual & Budaya.</p>
+                        <p className="text-xs text-muted-foreground">
+                          Aktif untuk: {
+                            isSuperAdmin ? 'Super-Admin (Semua Akses)' :
+                            enrollment.role === 'grup-int' ? 'Intervensi' :
+                            enrollment.role === 'grup-cont' ? 'Psikoedukasi' :
+                            'Reguler'
+                          }
+                        </p>
                       </>
-                    ) : enrollmentStatus === 'pending' ? (
+                    ) : enrollment?.status === 'pending' ? (
                       <>
                         <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Aktif</Badge>
-                        <p className="text-xs text-muted-foreground">Menunggu persetujuan admin.</p>
+                        <p className="text-xs text-muted-foreground">Daftar untuk mengaktifkan akses.</p>
                       </>
-                    ) : enrollmentStatus === 'rejected' ? (
+                    ) : enrollment?.status === 'rejected' ? (
                       <>
                         <Badge className="mb-2 bg-red-100 text-red-800 border-red-300">Ditolak</Badge>
                         <p className="text-xs text-muted-foreground">Hubungi admin untuk informasi lebih lanjut.</p>
@@ -397,29 +389,38 @@ const SpiritualBudaya = () => {
                     ) : (
                       <>
                         <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Aktif</Badge>
-                        <p className="text-xs text-muted-foreground">Ajukan pendaftaran untuk mengaktifkan.</p>
+                        <p className="text-xs text-muted-foreground">Daftar untuk mengaktifkan akses.</p>
                       </>
                     )}
                   </div>
 
                   <div className="rounded-xl border p-5">
-                    <h4 className="font-semibold mb-2">Grouping</h4>
-                    {(!isAuthenticated || roleLoading) ? (
+                    <h4 className="font-semibold mb-2">Langkah 3 — Grouping</h4>
+                    {!isAuthenticated || roleLoading ? (
                       <p className="text-sm text-muted-foreground">-</p>
-                    ) : role === 'super-admin' ? (
+                    ) : enrollment?.status === 'approved' && enrollment?.group ? (
                       <>
-                        <Badge className="mb-2 bg-purple-100 text-purple-800 border-purple-300">Super-Admin</Badge>
-                        <p className="text-xs text-muted-foreground">Akses penuh.</p>
+                        <Badge className="mb-2 bg-purple-100 text-purple-800 border-purple-300">
+                          Grup {enrollment.group}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground">
+                          Anda tergabung dalam Grup {enrollment.group}
+                        </p>
                       </>
-                    ) : group ? (
+                    ) : enrollment?.status === 'approved' ? (
                       <>
-                        <Badge className="mb-2 bg-purple-100 text-purple-800 border-purple-300">Grup {group}</Badge>
-                        <p className="text-xs text-muted-foreground">Anda tergabung dalam Grup {group}.</p>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Dikelompokkan</Badge>
+                        <p className="text-xs text-muted-foreground">Grup akan ditentukan oleh admin.</p>
+                      </>
+                    ) : enrollment?.status === 'rejected' ? (
+                      <>
+                        <Badge className="mb-2 bg-red-100 text-red-800 border-red-300">Ditolak</Badge>
+                        <p className="text-xs text-muted-foreground">Hubungi admin untuk informasi lebih lanjut.</p>
                       </>
                     ) : (
                       <>
                         <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Dikelompokkan</Badge>
-                        <p className="text-xs text-muted-foreground">Grup akan ditentukan admin.</p>
+                        <p className="text-xs text-muted-foreground">Grup akan ditentukan oleh admin.</p>
                       </>
                     )}
                   </div>
