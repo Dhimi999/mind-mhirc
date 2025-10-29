@@ -81,15 +81,38 @@ export const useSpiritualRole = () => {
     if (!user?.id) return { success: false, error: 'User not authenticated' };
 
     try {
-      // Call the enroll-program edge function
-      const { data, error } = await supabase.functions.invoke('enroll-program', {
-        body: { program: 'spiritual-budaya' }
-      });
+      // Try to update existing enrollment to pending
+      const now = new Date().toISOString();
+      const { error: updateError } = await supabase
+        .from('sb_enrollments' as any)
+        .update({
+          enrollment_status: 'pending',
+          enrollment_requested_at: now,
+          updated_at: now
+        })
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
-      if (!data?.success) {
-        return { success: false, error: data?.message || 'Failed to enroll' };
+      // Ensure row exists; if not, insert new pending enrollment
+      const { data: existing, error: selectError } = await supabase
+        .from('sb_enrollments' as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (selectError) throw selectError;
+      if (!existing) {
+        const { error: insertError } = await supabase
+          .from('sb_enrollments' as any)
+          .insert({
+            user_id: user.id,
+            role: 'reguler',
+            enrollment_status: 'pending',
+            enrollment_requested_at: now,
+            updated_at: now
+          });
+        if (insertError) throw insertError;
       }
 
       await fetchEnrollment();

@@ -65,22 +65,44 @@ export const useHibridaRole = () => {
     if (!user?.id) return { success: false, error: 'User not authenticated' };
 
     try {
-      // Call the enroll-program edge function
-      const { data, error } = await supabase.functions.invoke('enroll-program', {
-        body: { program: 'hibrida-cbt' }
-      });
+      // First try to update an existing row to pending
+      const { error: updateError } = await supabase
+        .from('cbt_hibrida_enrollments' as any)
+        .update({ 
+          enrollment_status: 'pending',
+          enrollment_requested_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
-      if (!data?.success) {
-        return { success: false, error: data?.message || 'Failed to enroll' };
+      // Ensure a row exists; if none, insert one
+      const { data: existing, error: selectError } = await supabase
+        .from('cbt_hibrida_enrollments' as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (selectError) throw selectError;
+      if (!existing) {
+        const { error: insertError } = await supabase
+          .from('cbt_hibrida_enrollments' as any)
+          .insert({
+            user_id: user.id,
+            role: 'reguler',
+            enrollment_status: 'pending',
+            enrollment_requested_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        if (insertError) throw insertError;
       }
 
       await fetchEnrollment();
       return { success: true };
     } catch (error: any) {
       console.error('Error requesting enrollment:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error?.message || 'Failed to request enrollment' };
     }
   };
 
