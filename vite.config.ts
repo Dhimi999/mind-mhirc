@@ -1,0 +1,72 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+import { componentTagger } from "lovable-tagger";
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+// Load prerender plugin via CJS to avoid ESM require issues
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const _prerenderMod = require('vite-plugin-prerender')
+const prerender = _prerenderMod.default || _prerenderMod
+
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => {
+  const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true'
+  // To avoid Puppeteer missing libs on Vercel, run prerender only when explicitly enabled
+  const shouldPrerender = mode === 'production' && !isVercel && process.env.PRERENDER === '1'
+  return ({
+  server: {
+    host: "::",
+    port: 8080,
+  },
+  plugins: [
+    react(),
+    mode === 'development' && componentTagger(),
+    // Enable SPA prerender for SEO only when explicitly enabled and not on Vercel
+    shouldPrerender && prerender({
+      staticDir: path.resolve(__dirname, 'dist'),
+      routes: [
+        '/',
+        '/about',
+        '/privacy',
+        '/cookies',
+        '/tests',
+        '/services',
+        '/spiritual-budaya',
+        '/hibrida-cbt',
+        '/safe-mother',
+        '/blog',
+        // tab variants for better coverage (optional but helpful for SEO)
+        '/spiritual-budaya/pengantar',
+        '/spiritual-budaya/jelajah',
+        '/spiritual-budaya/intervensi',
+        '/spiritual-budaya/psikoedukasi',
+        '/hibrida-cbt/pengantar',
+        '/hibrida-cbt/jelajah',
+        '/hibrida-cbt/intervensi-hibrida',
+        '/hibrida-cbt/psikoedukasi',
+      ],
+    }),
+  ].filter(Boolean),
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          charts: ['recharts'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom'],
+  },
+  })
+});
