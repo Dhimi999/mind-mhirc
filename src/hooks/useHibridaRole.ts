@@ -29,10 +29,10 @@ export const useHibridaRole = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('hibrida_enrollments')
+  .from('cbt_hibrida_enrollments' as any)
         .select('role, group_assignment, enrollment_status, enrollment_requested_at, approved_at')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching Hibrida enrollment:', error);
@@ -42,11 +42,11 @@ export const useHibridaRole = () => {
 
       if (data) {
         setEnrollment({
-          role: data.role as HibridaRole,
-          group: data.group_assignment as HibridaGroup,
-          status: data.enrollment_status as EnrollmentStatus,
-          enrollmentRequestedAt: data.enrollment_requested_at,
-          approvedAt: data.approved_at
+          role: (data as any).role as HibridaRole,
+          group: (data as any).group_assignment as HibridaGroup,
+          status: (data as any).enrollment_status as EnrollmentStatus,
+          enrollmentRequestedAt: (data as any).enrollment_requested_at,
+          approvedAt: (data as any).approved_at
         });
       }
     } catch (error) {
@@ -66,7 +66,7 @@ export const useHibridaRole = () => {
 
     try {
       const { data: updateData, error: updateError, status: updateStatus } = await supabase
-        .from('hibrida_enrollments')
+  .from('cbt_hibrida_enrollments' as any)
         .update({ 
           enrollment_status: 'pending',
           enrollment_requested_at: new Date().toISOString()
@@ -76,12 +76,9 @@ export const useHibridaRole = () => {
       if (updateError) throw updateError;
 
       // If no row was updated (e.g., older users without auto-created row), insert one
-      // Supabase returns 204 No Content for successful update without returning data
-      // We check by re-fetching or attempting an insert on conflict
       const ensureRow = async () => {
-        // Try to select to verify existence
         const { data: existing, error: selectError } = await supabase
-          .from('hibrida_enrollments')
+          .from('cbt_hibrida_enrollments' as any)
           .select('id')
           .eq('user_id', user.id)
           .maybeSingle();
@@ -89,9 +86,8 @@ export const useHibridaRole = () => {
         if (selectError) throw selectError;
         if (existing) return;
 
-        // Insert pending row
         const { error: insertError } = await supabase
-          .from('hibrida_enrollments')
+          .from('cbt_hibrida_enrollments' as any)
           .insert({
             user_id: user.id,
             role: 'reguler',
@@ -102,7 +98,6 @@ export const useHibridaRole = () => {
       };
 
       await ensureRow();
-
       await fetchEnrollment();
       return { success: true };
     } catch (error: any) {

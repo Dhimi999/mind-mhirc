@@ -273,6 +273,297 @@ export type Database = {
         }
         Relationships: []
       }
+      cbt_hibrida_assignments: {
+        Row: {
+          answers: Json
+          created_at: string | null
+          id: string
+          session_number: number
+          submitted: boolean | null
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string | null
+          id?: string
+          session_number: number
+          submitted?: boolean | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string | null
+          id?: string
+          session_number?: number
+          submitted?: boolean | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cbt_hibrida_enrollments: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          enrollment_requested_at: string | null
+          enrollment_status: Database["public"]["Enums"]["enrollment_status"]
+          group_assignment: Database["public"]["Enums"]["hibrida_group"] | null
+          id: string
+          role: Database["public"]["Enums"]["hibrida_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          enrollment_requested_at?: string | null
+          enrollment_status?: Database["public"]["Enums"]["enrollment_status"]
+          group_assignment?: Database["public"]["Enums"]["hibrida_group"] | null
+          id?: string
+          role?: Database["public"]["Enums"]["hibrida_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          enrollment_requested_at?: string | null
+          enrollment_status?: Database["public"]["Enums"]["enrollment_status"]
+          group_assignment?: Database["public"]["Enums"]["hibrida_group"] | null
+          id?: string
+          role?: Database["public"]["Enums"]["hibrida_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cbt_hibrida_meetings: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          description: string | null
+          guidance_audio_url: string | null
+          guidance_links: Json | null
+          guidance_pdf_url: string | null
+          guidance_text: string | null
+          guidance_video_url: string | null
+          id: string
+          link: string | null
+          materials: Json | null
+          session_number: number
+          time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          guidance_audio_url?: string | null
+          guidance_links?: Json | null
+          guidance_pdf_url?: string | null
+          guidance_text?: string | null
+          guidance_video_url?: string | null
+          id?: string
+          link?: string | null
+          materials?: Json | null
+          session_number: number
+          time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          guidance_audio_url?: string | null
+          guidance_links?: Json | null
+          guidance_pdf_url?: string | null
+          guidance_text?: string | null
+          guidance_video_url?: string | null
+          id?: string
+          link?: string | null
+          materials?: Json | null
+          session_number?: number
+          time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cbt_hibrida_user_progress: {
+        Row: {
+          assignment_done: boolean | null
+          counselor_name: string | null
+          counselor_response: string | null
+          created_at: string | null
+          id: string
+          meeting_done: boolean | null
+          responded_at: string | null
+          session_number: number
+          session_opened: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assignment_done?: boolean | null
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          meeting_done?: boolean | null
+          responded_at?: string | null
+          session_number: number
+          session_opened?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assignment_done?: boolean | null
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          meeting_done?: boolean | null
+          responded_at?: string | null
+          session_number?: number
+          session_opened?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cbt_psikoedukasi_assignments: {
+        Row: {
+          answers: Json
+          created_at: string | null
+          id: string
+          session_number: number
+          submitted: boolean | null
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string | null
+          id?: string
+          session_number: number
+          submitted?: boolean | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string | null
+          id?: string
+          session_number?: number
+          submitted?: boolean | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cbt_psikoedukasi_meetings: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          description: string | null
+          guidance_audio_url: string | null
+          guidance_links: Json | null
+          guidance_pdf_url: string | null
+          guidance_text: string | null
+          guidance_video_url: string | null
+          id: string
+          link: string | null
+          materials: Json | null
+          session_number: number
+          time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          guidance_audio_url?: string | null
+          guidance_links?: Json | null
+          guidance_pdf_url?: string | null
+          guidance_text?: string | null
+          guidance_video_url?: string | null
+          id?: string
+          link?: string | null
+          materials?: Json | null
+          session_number: number
+          time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          guidance_audio_url?: string | null
+          guidance_links?: Json | null
+          guidance_pdf_url?: string | null
+          guidance_text?: string | null
+          guidance_video_url?: string | null
+          id?: string
+          link?: string | null
+          materials?: Json | null
+          session_number?: number
+          time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cbt_psikoedukasi_user_progress: {
+        Row: {
+          assignment_done: boolean | null
+          counselor_name: string | null
+          counselor_response: string | null
+          created_at: string | null
+          id: string
+          meeting_done: boolean | null
+          responded_at: string | null
+          session_number: number
+          session_opened: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assignment_done?: boolean | null
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          meeting_done?: boolean | null
+          responded_at?: string | null
+          session_number: number
+          session_opened?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assignment_done?: boolean | null
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          meeting_done?: boolean | null
+          responded_at?: string | null
+          session_number?: number
+          session_opened?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cbt_user_answers: {
         Row: {
           answer: string | null
@@ -766,171 +1057,6 @@ export type Database = {
         }
         Relationships: []
       }
-      hibrida_assignments: {
-        Row: {
-          answers: Json
-          created_at: string | null
-          id: string
-          session_number: number
-          submitted: boolean | null
-          submitted_at: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          answers?: Json
-          created_at?: string | null
-          id?: string
-          session_number: number
-          submitted?: boolean | null
-          submitted_at?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          answers?: Json
-          created_at?: string | null
-          id?: string
-          session_number?: number
-          submitted?: boolean | null
-          submitted_at?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      hibrida_enrollments: {
-        Row: {
-          approved_at: string | null
-          approved_by: string | null
-          created_at: string | null
-          enrollment_requested_at: string | null
-          enrollment_status: Database["public"]["Enums"]["enrollment_status"]
-          group_assignment: Database["public"]["Enums"]["hibrida_group"] | null
-          id: string
-          role: Database["public"]["Enums"]["hibrida_role"]
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          approved_at?: string | null
-          approved_by?: string | null
-          created_at?: string | null
-          enrollment_requested_at?: string | null
-          enrollment_status?: Database["public"]["Enums"]["enrollment_status"]
-          group_assignment?: Database["public"]["Enums"]["hibrida_group"] | null
-          id?: string
-          role?: Database["public"]["Enums"]["hibrida_role"]
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          approved_at?: string | null
-          approved_by?: string | null
-          created_at?: string | null
-          enrollment_requested_at?: string | null
-          enrollment_status?: Database["public"]["Enums"]["enrollment_status"]
-          group_assignment?: Database["public"]["Enums"]["hibrida_group"] | null
-          id?: string
-          role?: Database["public"]["Enums"]["hibrida_role"]
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      hibrida_meetings: {
-        Row: {
-          created_at: string | null
-          date: string | null
-          description: string | null
-          guidance_audio_url: string | null
-          guidance_links: Json | null
-          guidance_pdf_url: string | null
-          guidance_text: string | null
-          guidance_video_url: string | null
-          id: string
-          link: string | null
-          materials: Json | null
-          session_number: number
-          time: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          date?: string | null
-          description?: string | null
-          guidance_audio_url?: string | null
-          guidance_links?: Json | null
-          guidance_pdf_url?: string | null
-          guidance_text?: string | null
-          guidance_video_url?: string | null
-          id?: string
-          link?: string | null
-          materials?: Json | null
-          session_number: number
-          time?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          date?: string | null
-          description?: string | null
-          guidance_audio_url?: string | null
-          guidance_links?: Json | null
-          guidance_pdf_url?: string | null
-          guidance_text?: string | null
-          guidance_video_url?: string | null
-          id?: string
-          link?: string | null
-          materials?: Json | null
-          session_number?: number
-          time?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      hibrida_user_progress: {
-        Row: {
-          assignment_done: boolean | null
-          counselor_name: string | null
-          counselor_response: string | null
-          created_at: string | null
-          id: string
-          meeting_done: boolean | null
-          responded_at: string | null
-          session_number: number
-          session_opened: boolean | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          assignment_done?: boolean | null
-          counselor_name?: string | null
-          counselor_response?: string | null
-          created_at?: string | null
-          id?: string
-          meeting_done?: boolean | null
-          responded_at?: string | null
-          session_number: number
-          session_opened?: boolean | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          assignment_done?: boolean | null
-          counselor_name?: string | null
-          counselor_response?: string | null
-          created_at?: string | null
-          id?: string
-          meeting_done?: boolean | null
-          responded_at?: string | null
-          session_number?: number
-          session_opened?: boolean | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           account_type: string | null
@@ -1015,7 +1141,97 @@ export type Database = {
           },
         ]
       }
-      psikoedukasi_assignments: {
+      safe_mother_materials: {
+        Row: {
+          author_id: string
+          author_name: string
+          category: string
+          content: string | null
+          created_at: string
+          description: string
+          hd_image_url: string | null
+          id: string
+          slug: string | null
+          thumbnail_url: string | null
+          title: string
+          type: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          author_id: string
+          author_name: string
+          category: string
+          content?: string | null
+          created_at?: string
+          description: string
+          hd_image_url?: string | null
+          id?: string
+          slug?: string | null
+          thumbnail_url?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          category?: string
+          content?: string | null
+          created_at?: string
+          description?: string
+          hd_image_url?: string | null
+          id?: string
+          slug?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      sb_enrollments: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          enrollment_requested_at: string | null
+          enrollment_status: Database["public"]["Enums"]["enrollment_status"]
+          group_assignment: Database["public"]["Enums"]["hibrida_group"] | null
+          id: string
+          role: Database["public"]["Enums"]["hibrida_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          enrollment_requested_at?: string | null
+          enrollment_status?: Database["public"]["Enums"]["enrollment_status"]
+          group_assignment?: Database["public"]["Enums"]["hibrida_group"] | null
+          id?: string
+          role?: Database["public"]["Enums"]["hibrida_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          enrollment_requested_at?: string | null
+          enrollment_status?: Database["public"]["Enums"]["enrollment_status"]
+          group_assignment?: Database["public"]["Enums"]["hibrida_group"] | null
+          id?: string
+          role?: Database["public"]["Enums"]["hibrida_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sb_intervensi_assignments: {
         Row: {
           answers: Json
           created_at: string | null
@@ -1048,7 +1264,7 @@ export type Database = {
         }
         Relationships: []
       }
-      psikoedukasi_meetings: {
+      sb_intervensi_meetings: {
         Row: {
           created_at: string | null
           date: string | null
@@ -1099,7 +1315,7 @@ export type Database = {
         }
         Relationships: []
       }
-      psikoedukasi_user_progress: {
+      sb_intervensi_user_progress: {
         Row: {
           assignment_done: boolean | null
           counselor_name: string | null
@@ -1141,54 +1357,129 @@ export type Database = {
         }
         Relationships: []
       }
-      safe_mother_materials: {
+      sb_psikoedukasi_assignments: {
         Row: {
-          author_id: string
-          author_name: string
-          category: string
-          content: string | null
-          created_at: string
-          description: string
-          hd_image_url: string | null
+          answers: Json
+          created_at: string | null
           id: string
-          slug: string | null
-          thumbnail_url: string | null
-          title: string
-          type: string
-          updated_at: string
-          video_url: string | null
+          session_number: number
+          submitted: boolean | null
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
-          author_id: string
-          author_name: string
-          category: string
-          content?: string | null
-          created_at?: string
-          description: string
-          hd_image_url?: string | null
+          answers?: Json
+          created_at?: string | null
           id?: string
-          slug?: string | null
-          thumbnail_url?: string | null
-          title: string
-          type: string
-          updated_at?: string
-          video_url?: string | null
+          session_number: number
+          submitted?: boolean | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
-          author_id?: string
-          author_name?: string
-          category?: string
-          content?: string | null
-          created_at?: string
-          description?: string
-          hd_image_url?: string | null
+          answers?: Json
+          created_at?: string | null
           id?: string
-          slug?: string | null
-          thumbnail_url?: string | null
-          title?: string
-          type?: string
-          updated_at?: string
-          video_url?: string | null
+          session_number?: number
+          submitted?: boolean | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sb_psikoedukasi_meetings: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          description: string | null
+          guidance_audio_url: string | null
+          guidance_links: Json | null
+          guidance_pdf_url: string | null
+          guidance_text: string | null
+          guidance_video_url: string | null
+          id: string
+          link: string | null
+          materials: Json | null
+          session_number: number
+          time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          guidance_audio_url?: string | null
+          guidance_links?: Json | null
+          guidance_pdf_url?: string | null
+          guidance_text?: string | null
+          guidance_video_url?: string | null
+          id?: string
+          link?: string | null
+          materials?: Json | null
+          session_number: number
+          time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          guidance_audio_url?: string | null
+          guidance_links?: Json | null
+          guidance_pdf_url?: string | null
+          guidance_text?: string | null
+          guidance_video_url?: string | null
+          id?: string
+          link?: string | null
+          materials?: Json | null
+          session_number?: number
+          time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      sb_psikoedukasi_user_progress: {
+        Row: {
+          assignment_done: boolean | null
+          counselor_name: string | null
+          counselor_response: string | null
+          created_at: string | null
+          id: string
+          meeting_done: boolean | null
+          responded_at: string | null
+          session_number: number
+          session_opened: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assignment_done?: boolean | null
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          meeting_done?: boolean | null
+          responded_at?: string | null
+          session_number: number
+          session_opened?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assignment_done?: boolean | null
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          meeting_done?: boolean | null
+          responded_at?: string | null
+          session_number?: number
+          session_opened?: boolean | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

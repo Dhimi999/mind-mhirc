@@ -22,6 +22,7 @@ import testsData from "@/data/testsData";
 import { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { Helmet } from "react-helmet-async";
+import { getSiteBaseUrl } from "@/lib/utils";
 import WebVitals from "@/components/seo/WebVitals";
 import { RelatedContent } from "@/components/seo/InternalLinking";
 
@@ -222,9 +223,9 @@ const Index = () => {
           content="Pusat riset dan layanan kesehatan mental di Indonesia. Temukan tes psikologi online, layanan konsultasi, dan artikel tepercaya untuk kesejahteraan mental Anda di MIND MHIRC."
         />
 
-        {/* --- URL Konsisten --- */}
-        <link rel="canonical" href="https://mind-mhirc.my.id/" />
-        <meta property="og:url" content="https://mind-mhirc.my.id/" />
+  {/* --- URL Konsisten --- */}
+  <link rel="canonical" href={`${getSiteBaseUrl()}/`} />
+  <meta property="og:url" content={`${getSiteBaseUrl()}/`} />
 
         {/* --- Open Graph Tags (untuk Media Sosial) --- */}
         <meta
@@ -236,11 +237,7 @@ const Index = () => {
           content="Mulai perjalanan kesehatan mental Anda dengan tes, konsultasi, dan edukasi berbasis bukti dari MIND MHIRC."
         />
         <meta property="og:type" content="website" />
-        <meta
-          property="og:image"
-          content="https://mind-mhirc.my.id/hero-image.jpg"
-        />
-        {/* Ganti 'hero-image.jpg' dengan nama file gambar utama Anda */}
+        <meta property="og:image" content={`${getSiteBaseUrl()}/og-image.png`} />
 
         {/* --- Twitter Card Tags (untuk Twitter) --- */}
         <meta name="twitter:card" content="summary_large_image" />
@@ -252,15 +249,10 @@ const Index = () => {
           name="twitter:description"
           content="Mulai perjalanan kesehatan mental Anda dengan tes, konsultasi, dan edukasi berbasis bukti dari MIND MHIRC."
         />
-        <meta
-          name="twitter:image"
-          content="https://mind-mhirc.my.id/hero-image.jpg"
-        />
-        {/* Ganti 'hero-image.jpg' dengan nama file gambar utama Anda */}
+        <meta name="twitter:image" content={`${getSiteBaseUrl()}/og-image.png`} />
       </Helmet>
       <Navbar />
-
-      <main className="flex-1">
+      <main className="flex-1 pt-24">
         <HeroSection />
 
         <section className="py-16 px-4 sm:px-6 bg-gradient-to-r from-primary/5 to-secondary/5 overflow-hidden relative">

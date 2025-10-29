@@ -21,7 +21,6 @@ export interface MeetingSchedule {
   guidance_audio_url: string | null;
   guidance_video_url: string | null;
   guidance_links: Array<{ title: string; url: string }> | null;
-  // metadata about schedule resolution
   group_key_used?: 'A' | 'B' | 'C' | null;
   has_group_schedules?: boolean;
 }
@@ -48,29 +47,26 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
     }
 
     try {
-      // Determine participant group (A/B/C/Admin) if any
       let detectedGroup: 'A' | 'B' | 'C' | 'Admin' | null = null;
       try {
         const { data: enroll, error: enrollErr } = await supabase
-          .from('hibrida_enrollments')
+          .from('cbt_hibrida_enrollments' as any)
           .select('group_assignment, enrollment_status, role')
           .eq('user_id', userId)
           .maybeSingle();
-        if (!enrollErr && enroll && enroll.enrollment_status === 'approved') {
-          detectedGroup = (enroll.group_assignment as any) || null;
+        if (!enrollErr && enroll && (enroll as any).enrollment_status === 'approved') {
+          detectedGroup = ((enroll as any).group_assignment as any) || null;
           setGroupAssignment(detectedGroup);
-          setIsSuperAdmin(enroll.role === 'super-admin');
+          setIsSuperAdmin((enroll as any).role === 'super-admin');
         } else {
           setGroupAssignment(null);
           setIsSuperAdmin(false);
         }
       } catch (e) {
-        // ignore group detection errors
         setGroupAssignment(null);
         setIsSuperAdmin(false);
       }
 
-      // Augment super-admin detection with profiles.is_admin flag
       try {
         const { data: profile, error: profErr } = await supabase
           .from('profiles')
@@ -83,7 +79,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
       } catch {}
 
       const { data: progressData, error: progressError } = await supabase
-        .from("psikoedukasi_user_progress")
+        .from("cbt_psikoedukasi_user_progress" as any)
         .select("*")
         .eq("user_id", userId)
         .eq("session_number", sessionNumber)
@@ -92,7 +88,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
       if (progressError && progressError.code !== "PGRST116") throw progressError;
 
       const { data: meetingData, error: meetingError } = await supabase
-        .from("psikoedukasi_meetings")
+        .from("cbt_psikoedukasi_meetings" as any)
         .select("date, time, link, description, guidance_text, guidance_pdf_url, guidance_audio_url, guidance_video_url, guidance_links")
         .eq("session_number", sessionNumber)
         .maybeSingle();
@@ -101,31 +97,30 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
 
       if (progressData) {
         setProgress({
-          meetingDone: progressData.meeting_done || false,
-          assignmentDone: progressData.assignment_done || false,
-          sessionOpened: progressData.session_opened || false,
-          counselorResponse: progressData.counselor_response || undefined,
-          counselorName: progressData.counselor_name || undefined,
-          respondedAt: progressData.responded_at || undefined
+          meetingDone: (progressData as any).meeting_done || false,
+          assignmentDone: (progressData as any).assignment_done || false,
+          sessionOpened: (progressData as any).session_opened || false,
+          counselorResponse: (progressData as any).counselor_response || undefined,
+          counselorName: (progressData as any).counselor_name || undefined,
+          respondedAt: (progressData as any).responded_at || undefined
         });
       } else {
         await markSessionOpened();
       }
 
       if (meetingData) {
-        // Support per-group meeting schedule encoded as JSON in `link` column
         const tryParse = (raw: string | null) => {
           if (!raw) return null as any;
           try { return JSON.parse(raw); } catch { return null as any; }
         };
-        const rawLink: string | null = meetingData.link;
+        const rawLink: string | null = (meetingData as any).link;
         let parsed = tryParse(rawLink);
         if (!parsed && rawLink) {
           try { parsed = tryParse(decodeURIComponent(rawLink)); } catch {}
         }
-        let date = meetingData.date;
-        let time = meetingData.time;
-        let link = meetingData.link;
+        let date = (meetingData as any).date;
+        let time = (meetingData as any).time;
+        let link = (meetingData as any).link;
         let groupKeyUsed: 'A'|'B'|'C'|null = null;
         let hasGroupSchedules = false;
         if (parsed && (parsed.A || parsed.B || parsed.C)) {
@@ -144,7 +139,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
           date: date || null,
           time: time || null,
           link: link || null,
-          description: meetingData.description || null,
+          description: (meetingData as any).description || null,
           guidance_text: (meetingData as any).guidance_text || null,
           guidance_pdf_url: (meetingData as any).guidance_pdf_url || null,
           guidance_audio_url: (meetingData as any).guidance_audio_url || null,
@@ -173,7 +168,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
 
     try {
       const { error } = await supabase
-        .from("psikoedukasi_user_progress")
+        .from("cbt_psikoedukasi_user_progress" as any)
         .upsert({
           user_id: userId,
           session_number: sessionNumber,
@@ -196,7 +191,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
 
     try {
       const { error } = await supabase
-        .from("psikoedukasi_user_progress")
+        .from("cbt_psikoedukasi_user_progress" as any)
         .upsert({
           user_id: userId,
           session_number: sessionNumber,
@@ -220,7 +215,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
 
     try {
       const { error: assignmentError } = await supabase
-        .from("psikoedukasi_assignments")
+        .from("cbt_psikoedukasi_assignments" as any)
         .upsert({
           user_id: userId,
           session_number: sessionNumber,
@@ -234,7 +229,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
       if (assignmentError) throw assignmentError;
 
       const { error: progressError } = await supabase
-        .from("psikoedukasi_user_progress")
+        .from("cbt_psikoedukasi_user_progress" as any)
         .upsert({
           user_id: userId,
           session_number: sessionNumber,
@@ -261,7 +256,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
 
     try {
       const { data, error } = await supabase
-        .from("psikoedukasi_assignments")
+        .from("cbt_psikoedukasi_assignments" as any)
         .select("answers")
         .eq("user_id", userId)
         .eq("session_number", sessionNumber)
@@ -289,7 +284,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
 
     try {
       await supabase
-        .from("psikoedukasi_assignments")
+        .from("cbt_psikoedukasi_assignments" as any)
         .upsert({
           user_id: userId,
           session_number: sessionNumber,

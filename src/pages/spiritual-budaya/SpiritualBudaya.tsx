@@ -9,17 +9,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSpiritualRole } from "@/hooks/useSpiritualRole";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/spiritual-cultural-hero.jpg";
 import jelajahImage from "@/assets/spiritual-jelajah.jpg";
 import tasksImage from "@/assets/spiritual-tasks.jpg";
+import { getSiteBaseUrl } from "@/lib/utils";
+
 const SpiritualBudaya = () => {
   const { tab } = useParams<{ tab?: string }>();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("pengantar");
-  const { isAuthenticated } = useAuth();
-  type SessionProgress = { meetingDone: boolean; assignmentDone: boolean };
-  const [progressMap, setProgressMap] = useState<Record<number, SessionProgress>>({});
+  const { isAuthenticated, user } = useAuth();
+  const { role, group, loading: roleLoading } = useSpiritualRole();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Initialize tab from URL; allow viewing restricted tabs but overlay when not authenticated
   useEffect(() => {
@@ -43,44 +48,104 @@ const SpiritualBudaya = () => {
     }
   };
 
-  // Guarded wrapper to blur content for non-auth users with an overlay prompt
-  const Guarded: React.FC<{ children: React.ReactNode; label?: string }> = ({ children, label }) => {
-    if (isAuthenticated) return <>{children}</>;
+  // Guarded wrapper with role-based access control
+  const Guarded: React.FC<{ children: React.ReactNode; label?: string; requireRole?: boolean }> = ({ 
+    children, 
+    label, 
+    requireRole = false 
+  }) => {
+    const hasAccess = requireRole 
+      ? (activeTab === 'intervensi' ? canAccessIntervensi : canAccessPsikoedukasi)
+      : isAuthenticated;
+
+    if (hasAccess) return <>{children}</>;
+
+    const message = requireRole && isAuthenticated && !hasAccess
+      ? "Anda tidak memiliki akses ke konten ini. Silakan hubungi administrator."
+      : "Halaman ini hanya bisa diakses untuk user terdaftar.";
+
     return (
       <div className="relative">
-        {/* Show only the upper half of the content (50vh), hide the rest, and disable interactions */}
         <div className="relative max-h-[50vh] overflow-hidden pointer-events-none select-none">
           <div className="blur-sm">{children}</div>
-          {/* Subtle fade at the bottom to indicate more content is available when logged in */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white/95 dark:from-black/70 to-transparent" />
         </div>
-
-        {/* Centered overlay message within the visible area */}
         <div className="absolute inset-0 flex items-center justify-center px-4 z-20" aria-live="polite">
           <div className="mx-auto rounded-xl border bg-white/90 dark:bg-black/60 backdrop-blur-md p-4 md:p-5 max-w-xl text-center shadow-lg">
-            <p className="mb-2 font-medium">{label || "Halaman ini hanya bisa diakses untuk user terdaftar."}</p>
-            <p className="text-sm text-muted-foreground mb-3">Silakan login untuk membuka konten ini.</p>
-            <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => navigate(`/login?redirect=/spiritual-budaya/${activeTab}`)}>
-              Login untuk Mengakses
-            </Button>
+            <p className="mb-2 font-medium">{label || message}</p>
+            {!isAuthenticated && (
+              <>
+                <p className="text-sm text-muted-foreground mb-3">Silakan login untuk membuka konten ini.</p>
+                <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => navigate(`/login?redirect=/spiritual-budaya/${activeTab}`)}>
+                  Login untuk Mengakses
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
     );
   };
 
-  // Load/save progress from localStorage
+  // Role-based access
+  const canAccessIntervensi = isAuthenticated && (role === 'grup-int' || role === 'super-admin');
+  const canAccessPsikoedukasi = isAuthenticated && (role === 'grup-cont' || role === 'super-admin');
+
+  // Enrollment state (sb_enrollments)
+  const [enrollmentStatus, setEnrollmentStatus] = useState<"pending" | "approved" | "rejected" | null>(null);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+
   useEffect(() => {
+    const fetchEnrollment = async () => {
+      if (!user?.id) { setEnrollmentStatus(null); return; }
+      setEnrollmentLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('sb_enrollments' as any)
+          .select('enrollment_status')
+          .eq('user_id', user.id)
+          .maybeSingle() as any;
+        if (error) throw error;
+        setEnrollmentStatus((data?.enrollment_status as any) || null);
+      } catch (e) {
+        console.error('Load SB enrollment failed', e);
+        setEnrollmentStatus(null);
+      } finally {
+        setEnrollmentLoading(false);
+      }
+    };
+    fetchEnrollment();
+  }, [user?.id]);
+
+  const handleRequestEnrollment = async () => {
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/spiritual-budaya/pengantar');
+      return;
+    }
+    setRequesting(true);
     try {
-      const raw = localStorage.getItem("spiritualInterventionProgress");
-      if (raw) setProgressMap(JSON.parse(raw));
-    } catch {}
-  }, []);
-  useEffect(() => {
-    try {
-      localStorage.setItem("spiritualInterventionProgress", JSON.stringify(progressMap));
-    } catch {}
-  }, [progressMap]);
+      const now = new Date().toISOString();
+      const payload = {
+        user_id: user!.id,
+        role: 'reguler',
+        enrollment_status: 'pending',
+        enrollment_requested_at: now,
+        updated_at: now,
+      } as any;
+      const { error } = await supabase
+        .from('sb_enrollments' as any)
+        .upsert(payload, { onConflict: 'user_id' }) as any;
+      if (error) throw error;
+      setEnrollmentStatus('pending');
+      toast({ title: 'Pendaftaran Dikirim', description: 'Permintaan Anda telah diterima. Mohon tunggu persetujuan admin.' });
+    } catch (e) {
+      console.error('Request enrollment error', e);
+      toast({ title: 'Gagal Mendaftar', description: 'Terjadi kesalahan saat mengirim permintaan.', variant: 'destructive' });
+    } finally {
+      setRequesting(false);
+    }
+  };
 
   // meetingSchedule dipindahkan ke halaman portal sesi
   const treatmentModules = [{
@@ -157,11 +222,21 @@ const SpiritualBudaya = () => {
     articles: 10,
     slug: "komunitas-dukungan"
   }];
+  const base = getSiteBaseUrl();
   return <div className="min-h-screen flex flex-col">
       <Helmet>
         <title>Spiritual & Budaya - Intervensi Digital Berbasis Spiritual & Budaya | Mind MHIRC</title>
         <meta name="description" content="Program intervensi digital berbasis spiritual dan budaya yang selaras dengan nilai kearifan lokal Indonesia untuk mendukung kesehatan jiwa." />
-        <link rel="canonical" href="https://mind-mhirc.my.id/spiritual-budaya" />
+        <link rel="canonical" href={`${base}${activeTab ? `/spiritual-budaya/${activeTab}` : '/spiritual-budaya'}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Spiritual & Budaya | Mind MHIRC" />
+        <meta property="og:description" content="Intervensi digital berbasis spiritual dan budaya untuk kesehatan jiwa." />
+        <meta property="og:url" content={`${base}${activeTab ? `/spiritual-budaya/${activeTab}` : '/spiritual-budaya'}`} />
+        <meta property="og:image" content={`${base}/og-image.png`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Spiritual & Budaya | Mind MHIRC" />
+        <meta name="twitter:description" content="Intervensi digital berbasis spiritual dan budaya untuk kesehatan jiwa." />
+        <meta name="twitter:image" content={`${base}/og-image.png`} />
       </Helmet>
 
       <Navbar />
@@ -264,24 +339,89 @@ const SpiritualBudaya = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="rounded-xl border p-5">
-                    <h4 className="font-semibold mb-1">Langkah 1 — Eksplor</h4>
-                    <p className="text-sm text-muted-foreground mb-3">Baca materi pengantar dan artikel singkat.</p>
-                    <Button variant="outline" onClick={() => setTabAndUrl("jelajah")}>Buka Eksplor</Button>
+                  <div className="rounded-xl border p-5 bg-gradient-to-br from-amber-50 to-orange-50">
+                    <h4 className="font-semibold mb-2">Langkah 1 — Daftar</h4>
+                    {!isAuthenticated ? (
+                      <>
+                        <p className="text-sm text-muted-foreground mb-3">Login dan daftar untuk mengikuti program.</p>
+                        <Button className="w-full bg-amber-600 hover:bg-amber-700" onClick={() => navigate('/login?redirect=/spiritual-budaya/pengantar')}>
+                          Login & Daftar
+                        </Button>
+                      </>
+                    ) : enrollmentLoading ? (
+                      <p className="text-sm text-muted-foreground">Memuat status...</p>
+                    ) : enrollmentStatus === 'pending' ? (
+                      <>
+                        <Badge className="mb-2 bg-amber-100 text-amber-800 border-amber-300">Menunggu Persetujuan</Badge>
+                        <p className="text-xs text-muted-foreground">Permintaan Anda sedang diproses admin.</p>
+                      </>
+                    ) : enrollmentStatus === 'approved' ? (
+                      <>
+                        <Badge className="mb-2 bg-green-100 text-green-800 border-green-300">Terdaftar</Badge>
+                        <p className="text-xs text-muted-foreground">Akses aktif. Silakan lanjut ke tab Intervensi.</p>
+                      </>
+                    ) : enrollmentStatus === 'rejected' ? (
+                      <>
+                        <Badge className="mb-2 bg-red-100 text-red-800 border-red-300">Ditolak</Badge>
+                        <p className="text-xs text-muted-foreground">Hubungi admin untuk informasi lebih lanjut.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground mb-3">Ajukan pendaftaran untuk mengaktifkan akses.</p>
+                        <Button className="w-full bg-amber-600 hover:bg-amber-700" onClick={handleRequestEnrollment} disabled={requesting}>
+                          {requesting ? 'Mendaftar...' : 'Daftar Sekarang'}
+                        </Button>
+                      </>
+                    )}
                   </div>
+
                   <div className="rounded-xl border p-5">
-                    <h4 className="font-semibold mb-1">Langkah 2 — Intervensi</h4>
-                    <p className="text-sm text-muted-foreground mb-3">Ikuti sesi secara berurutan.</p>
-                    <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => setTabAndUrl("intervensi")}>
-                      Mulai Intervensi
-                    </Button>
+                    <h4 className="font-semibold mb-2">Status Akses</h4>
+                    {(!isAuthenticated || enrollmentLoading) ? (
+                      <p className="text-sm text-muted-foreground">-</p>
+                    ) : enrollmentStatus === 'approved' ? (
+                      <>
+                        <Badge className="mb-2 bg-green-100 text-green-800 border-green-300">Aktif</Badge>
+                        <p className="text-xs text-muted-foreground">Akses aktif untuk program Spiritual & Budaya.</p>
+                      </>
+                    ) : enrollmentStatus === 'pending' ? (
+                      <>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Aktif</Badge>
+                        <p className="text-xs text-muted-foreground">Menunggu persetujuan admin.</p>
+                      </>
+                    ) : enrollmentStatus === 'rejected' ? (
+                      <>
+                        <Badge className="mb-2 bg-red-100 text-red-800 border-red-300">Ditolak</Badge>
+                        <p className="text-xs text-muted-foreground">Hubungi admin untuk informasi lebih lanjut.</p>
+                      </>
+                    ) : (
+                      <>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Aktif</Badge>
+                        <p className="text-xs text-muted-foreground">Ajukan pendaftaran untuk mengaktifkan.</p>
+                      </>
+                    )}
                   </div>
+
                   <div className="rounded-xl border p-5">
-                    <h4 className="font-semibold mb-1">Langkah 3 — Psikoedukasi</h4>
-                    <p className="text-sm text-muted-foreground mb-3">Baca materi pendukung singkat.</p>
-                    <Button variant="outline" onClick={() => setTabAndUrl("psikoedukasi")}>
-                      Buka Psikoedukasi
-                    </Button>
+                    <h4 className="font-semibold mb-2">Grouping</h4>
+                    {(!isAuthenticated || roleLoading) ? (
+                      <p className="text-sm text-muted-foreground">-</p>
+                    ) : role === 'super-admin' ? (
+                      <>
+                        <Badge className="mb-2 bg-purple-100 text-purple-800 border-purple-300">Super-Admin</Badge>
+                        <p className="text-xs text-muted-foreground">Akses penuh.</p>
+                      </>
+                    ) : group ? (
+                      <>
+                        <Badge className="mb-2 bg-purple-100 text-purple-800 border-purple-300">Grup {group}</Badge>
+                        <p className="text-xs text-muted-foreground">Anda tergabung dalam Grup {group}.</p>
+                      </>
+                    ) : (
+                      <>
+                        <Badge className="mb-2 bg-gray-100 text-gray-800 border-gray-300">Belum Dikelompokkan</Badge>
+                        <p className="text-xs text-muted-foreground">Grup akan ditentukan admin.</p>
+                      </>
+                    )}
                   </div>
                 </div>
               </TabsContent>
@@ -347,7 +487,7 @@ const SpiritualBudaya = () => {
 
               {/* Intervensi Tab */}
               <TabsContent value="intervensi" className="space-y-8">
-                <Guarded label="Konten Intervensi hanya tersedia bagi pengguna terdaftar.">
+                <Guarded label="Konten Intervensi hanya tersedia bagi peserta grup intervensi." requireRole={true}>
                 <div className="text-center mb-12">
                   <h2 className="text-3xl font-bold mb-4">Intervensi & Treatment Modules</h2>
                   <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -413,8 +553,8 @@ const SpiritualBudaya = () => {
                                       <p className="text-sm font-medium">Pertemuan Daring</p>
                                       <p className="text-xs text-muted-foreground">Sesi sinkron dengan fasilitator</p>
                                     </div>
-                                    <Badge className={progressMap[module.session]?.meetingDone ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-900'}>
-                                      {progressMap[module.session]?.meetingDone ? 'Sudah selesai' : 'Belum selesai'}
+                                    <Badge className="bg-amber-200 text-amber-900">
+                                      Lihat di Portal
                                     </Badge>
                                   </div>
                                 </div>
@@ -424,8 +564,8 @@ const SpiritualBudaya = () => {
                                       <p className="text-sm font-medium">Penugasan</p>
                                       <p className="text-xs text-muted-foreground">Latihan terstruktur pasca pertemuan</p>
                                     </div>
-                                    <Badge className={progressMap[module.session]?.assignmentDone ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-900'}>
-                                      {progressMap[module.session]?.assignmentDone ? 'Sudah selesai' : 'Belum selesai'}
+                                    <Badge className="bg-amber-200 text-amber-900">
+                                      Lihat di Portal
                                     </Badge>
                                   </div>
                                 </div>
@@ -465,52 +605,58 @@ const SpiritualBudaya = () => {
 
               {/* Psikoedukasi Tab */}
               <TabsContent value="psikoedukasi" className="space-y-8">
-                <Guarded label="Konten Psikoedukasi hanya tersedia bagi pengguna terdaftar.">
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl font-bold mb-4">Psikoedukasi</h2>
-                  <p className="text-muted-foreground max-w-2xl mx-auto">
-                    Dapatkan pengetahuan dan edukasi seputar kesehatan mental, spiritual, dan budaya yang relevan untuk mendukung kesejahteraan Anda.
-                  </p>
-                </div>
-                <div className="relative mb-8 rounded-2xl overflow-hidden">
-                  <img src={heroImage} alt="Psikoedukasi" className="w-full h-64 object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                    <div className="p-8 text-white">
-                      <h3 className="text-2xl font-bold mb-2">Materi Psikoedukasi</h3>
-                      <p className="text-white/90">Informasi, tips, dan edukasi untuk memperkuat pemahaman Anda tentang kesehatan mental dan spiritual.</p>
+                <Guarded label="Konten Psikoedukasi hanya tersedia bagi peserta grup psikoedukasi." requireRole={true}>
+                  <div className="text-center mb-12">
+                    <h2 className="text-3xl font-bold mb-4">Psikoedukasi</h2>
+                    <p className="text-muted-foreground max-w-2xl mx-auto">
+                      8 modul psikoedukasi terstruktur dengan penugasan reflektif untuk memperkuat pemahaman spiritual-budaya.
+                    </p>
+                  </div>
+                  <div className="relative mb-8 rounded-2xl overflow-hidden">
+                    <img src={heroImage} alt="Psikoedukasi" className="w-full h-64 object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                      <div className="p-8 text-white">
+                        <h3 className="text-2xl font-bold mb-2">Portal Psikoedukasi</h3>
+                        <p className="text-white/90">Pelajari konsep — refleksi — terapkan.</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Placeholder konten psikoedukasi, bisa diisi materi sesuai kebutuhan */}
-                  <Card className="group hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-start gap-4">
-                        <div className="bg-amber-100 p-3 rounded-lg">
-                          <Brain className="h-6 w-6 text-amber-600" />
-                        </div>
-                        <div className="flex-1">
-                          <CardTitle className="group-hover:text-amber-600 transition-colors">
-                            Apa itu Psikoedukasi?
-                          </CardTitle>
-                          <CardDescription className="mt-2">
-                            Psikoedukasi adalah proses pemberian edukasi dan informasi kepada individu atau kelompok mengenai kesehatan mental, spiritual, dan budaya untuk meningkatkan pemahaman dan keterampilan dalam menghadapi tantangan hidup.
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="bg-green-300">
-                          Edukasi
-                        </Badge>
-                        <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700">
-                          Baca Selengkapnya →
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                  <div className="grid gap-4">
+                    {[1,2,3,4,5,6,7,8].map((session) => {
+                      const titles: Record<number, string> = {
+                        1: 'Spiritualitas & Kesejahteraan',
+                        2: 'Budaya & Identitas Diri',
+                        3: 'Kearifan Lokal & Coping',
+                        4: 'Komunitas & Dukungan',
+                        5: 'Praktik Spiritual Harian',
+                        6: 'Resiliensi Budaya',
+                        7: 'Harmoni & Keseimbangan',
+                        8: 'Keberlanjutan & Implementasi',
+                      };
+                      const title = titles[session];
+                      return (
+                        <Card key={session} className="group transition-all hover:shadow-lg border-amber-200 bg-amber-50/40">
+                          <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                              <div className="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg bg-amber-600">{session}</div>
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between mb-1">
+                                  <h3 className="font-semibold text-lg">Modul {session}: {title}</h3>
+                                  <Badge className="bg-amber-200 text-amber-900">Tersedia</Badge>
+                                </div>
+                                <div className="flex items-center justify-between mt-2">
+                                  <span className="text-xs text-muted-foreground">Penugasan reflektif</span>
+                                  <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => navigate(`/spiritual-budaya/psikoedukasi/sesi/${session}`)}>
+                                    Buka Sesi
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </Guarded>
               </TabsContent>
             </Tabs>

@@ -39,3 +39,18 @@ export function parseComments(comments: Json | null): Array<{ name: string; emai
   
   return [];
 }
+
+// Resolve the canonical/site base URL
+export function getSiteBaseUrl(): string {
+  try {
+    const envBase = (import.meta as any)?.env?.VITE_SITE_BASE_URL as string | undefined;
+    if (envBase && typeof envBase === 'string' && envBase.trim()) {
+      return envBase.replace(/\/$/, '');
+    }
+  } catch {}
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin.replace(/\/$/, '');
+  }
+  // Final fallback to your primary domain (adjust as needed)
+  return 'https://www.mentalstatus.zone.id';
+}

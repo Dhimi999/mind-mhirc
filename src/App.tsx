@@ -41,9 +41,16 @@ import CBT from "./pages/safe-mother/CBT";
 import Profil from "./pages/safe-mother/Profil";
 import SpiritualBudaya from "./pages/spiritual-budaya/SpiritualBudaya";
 import SpiritualBudayaMateri from "./pages/spiritual-budaya/SpiritualBudayaMateri";
-import IntervensiPertemuan from "./pages/spiritual-budaya/IntervensiPertemuan";
-import IntervensiPenugasan from "./pages/spiritual-budaya/IntervensiPenugasan";
-import IntervensiPortalSesi from "./pages/spiritual-budaya/IntervensiPortalSesi";
+import SpiritualIntervensiPortalSesi from "./pages/spiritual-budaya/SpiritualIntervensiPortalSesi";
+import SpiritualPsikoedukasiPortalSesi from "./pages/spiritual-budaya/SpiritualPsikoedukasiPortalSesi";
+import SpiritualPsikoedukasiPortalSesi1 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi1";
+import SpiritualPsikoedukasiPortalSesi2 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi2";
+import SpiritualPsikoedukasiPortalSesi3 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi3";
+import SpiritualPsikoedukasiPortalSesi4 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi4";
+import SpiritualPsikoedukasiPortalSesi5 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi5";
+import SpiritualPsikoedukasiPortalSesi6 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi6";
+import SpiritualPsikoedukasiPortalSesi7 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi7";
+import SpiritualPsikoedukasiPortalSesi8 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi8";
 import HibridaNaratifCBT from "./pages/hibrida-naratif/HibridaNaratifCBT";
 import HibridaPortalSesi from "./pages/hibrida-naratif/HibridaPortalSesi";
 import HibridaPortalSesi2 from "./pages/hibrida-naratif/HibridaPortalSesi2";
@@ -205,15 +212,43 @@ const AppRoutes = () => {
         />
         <Route
           path="/spiritual-budaya/intervensi/sesi/:sesi"
-          element={<IntervensiPortalSesi />}
+          element={<SpiritualIntervensiPortalSesi />}
         />
         <Route
-          path="/spiritual-budaya/intervensi/sesi/:sesi/pertemuan"
-          element={<IntervensiPertemuan />}
+          path="/spiritual-budaya/psikoedukasi/sesi/1"
+          element={<SpiritualPsikoedukasiPortalSesi1 />}
         />
         <Route
-          path="/spiritual-budaya/intervensi/sesi/:sesi/penugasan"
-          element={<IntervensiPenugasan />}
+          path="/spiritual-budaya/psikoedukasi/sesi/2"
+          element={<SpiritualPsikoedukasiPortalSesi2 />}
+        />
+        <Route
+          path="/spiritual-budaya/psikoedukasi/sesi/3"
+          element={<SpiritualPsikoedukasiPortalSesi3 />}
+        />
+        <Route
+          path="/spiritual-budaya/psikoedukasi/sesi/4"
+          element={<SpiritualPsikoedukasiPortalSesi4 />}
+        />
+        <Route
+          path="/spiritual-budaya/psikoedukasi/sesi/5"
+          element={<SpiritualPsikoedukasiPortalSesi5 />}
+        />
+        <Route
+          path="/spiritual-budaya/psikoedukasi/sesi/6"
+          element={<SpiritualPsikoedukasiPortalSesi6 />}
+        />
+        <Route
+          path="/spiritual-budaya/psikoedukasi/sesi/7"
+          element={<SpiritualPsikoedukasiPortalSesi7 />}
+        />
+        <Route
+          path="/spiritual-budaya/psikoedukasi/sesi/8"
+          element={<SpiritualPsikoedukasiPortalSesi8 />}
+        />
+        <Route
+          path="/spiritual-budaya/psikoedukasi/sesi/:sesi"
+          element={<SpiritualPsikoedukasiPortalSesi />}
         />
         {/* Hibrida Naratif CBT service routes */}
         <Route path="/hibrida-cbt" element={<HibridaNaratifCBT />} />

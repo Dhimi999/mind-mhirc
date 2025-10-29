@@ -57,14 +57,14 @@ const HibridaMeetingManagement: React.FC = () => {
 
   const fetchMeetings = async () => {
     try {
-      const table = program === 'hibrida' ? 'hibrida_meetings' : 'psikoedukasi_meetings';
+  const table = program === 'hibrida' ? 'cbt_hibrida_meetings' : 'cbt_psikoedukasi_meetings';
       const { data, error } = await supabase
-        .from(table)
+        .from(table as any)
         .select("*")
         .order("session_number", { ascending: true });
 
       if (error) throw error;
-      setMeetings(data || []);
+      setMeetings(data as any || []);
     } catch (error: any) {
       toast.error("Gagal memuat jadwal pertemuan");
       console.error(error);
@@ -97,15 +97,15 @@ const HibridaMeetingManagement: React.FC = () => {
     if (!editingMeeting) return;
 
     try {
-      const table = program === 'hibrida' ? 'hibrida_meetings' : 'psikoedukasi_meetings';
-      const payload: any = {
+  const table = program === 'hibrida' ? 'cbt_hibrida_meetings' : 'cbt_psikoedukasi_meetings';
+      const payload = {
         date: formData.date || null,
         time: formData.time || null,
         link: usePerGroup ? JSON.stringify(groupSchedules) : (formData.link || null),
         description: formData.description || null
       };
       const { error } = await supabase
-        .from(table)
+        .from(table as any)
         .update(payload)
         .eq("id", editingMeeting.id);
 

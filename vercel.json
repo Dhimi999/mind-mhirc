@@ -1,9 +1,12 @@
 {
-  "rewrites": [
+  "redirects": [
     {
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
-    },
+      "destination": "/api/sitemap",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
     {
       "source": "/robots.txt",
       "destination": "/robots.txt"

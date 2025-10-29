@@ -15,6 +15,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ServiceCard from "@/components/ServiceCard";
 import { Helmet } from "react-helmet-async"; // Jangan lupa import
+import { getSiteBaseUrl } from "@/lib/utils";
 
 const Services = () => {
   // Helper to render multiple labels/links per program with consistent tones
@@ -163,6 +164,7 @@ const Services = () => {
 
   // Dynamic program services section dihapus sementara sesuai permintaan pengguna
 
+  const base = getSiteBaseUrl();
   return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
@@ -176,8 +178,8 @@ const Services = () => {
         />
 
         {/* --- URL Konsisten untuk Halaman 'Services' --- */}
-        <link rel="canonical" href="https://mind-mhirc.my.id/services" />
-        <meta property="og:url" content="https://mind-mhirc.my.id/services" />
+  <link rel="canonical" href={`${base}/services`} />
+  <meta property="og:url" content={`${base}/services`} />
 
         {/* --- Open Graph Tags (untuk Media Sosial) --- */}
         <meta
@@ -190,10 +192,7 @@ const Services = () => {
         />
         <meta property="og:type" content="website" />
         {/* Ganti dengan URL gambar yang merepresentasikan layanan Anda */}
-        <meta
-          property="og:image"
-          content="https://mind-mhirc.my.id/image-services.jpg"
-        />
+  <meta property="og:image" content={`${base}/og-image.png`} />
 
         {/* --- Twitter Card Tags (untuk Twitter) --- */}
         <meta name="twitter:card" content="summary_large_image" />
@@ -205,10 +204,7 @@ const Services = () => {
           name="twitter:description"
           content="Temukan dukungan yang tepat melalui layanan konsultasi, workshop, dan program kesehatan mental khusus dari Mind MHIRC untuk individu, keluarga, dan organisasi."
         />
-        <meta
-          name="twitter:image"
-          content="https://mind-mhirc.my.id/image-services.jpg"
-        />
+        <meta name="twitter:image" content={`${base}/og-image.png`} />
       </Helmet>
 
       <Navbar />

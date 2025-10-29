@@ -57,7 +57,7 @@ import MessageManagement from "@/components/dashboard/MessageManagement";
 import TestListResults from "@/components/dashboard/TestListResults";
 import TestResultsTable from "@/components/dashboard/TestResultsTable";
 import SpiritualAccountManagement from "../components/dashboard/spiritual-budaya/SpiritualAccountManagement";
-import SpiritualAssignmentManagement from "../components/dashboard/spiritual-budaya/SpiritualAssignmentManagement";
+import SpiritualUnifiedAssignmentManagement from "../components/dashboard/spiritual-budaya/SpiritualUnifiedAssignmentManagement";
 import SpiritualMeetingManagement from "../components/dashboard/spiritual-budaya/SpiritualMeetingManagement";
 import HibridaAccountManagement from "@/components/dashboard/hibrida-cbt/HibridaAccountManagement";
 import UnifiedAssignmentManagement from "@/components/dashboard/hibrida-cbt/UnifiedAssignmentManagement";
@@ -69,6 +69,7 @@ import SaveMotherMeetingManagement from "@/components/dashboard/safe-mother/Save
 import CbtUserList from "@/components/dashboard/safe-mother/CbtUserList";
 import CbtModuleReview from "@/components/dashboard/safe-mother/CbtModuleReview";
 import CbtAnswerDetail from "@/components/dashboard/safe-mother/CbtAnswerDetail";
+import { Helmet } from "react-helmet-async";
 
 // Variabel global untuk menentukan role user
 let id = "";
@@ -266,6 +267,10 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+        <title>Dashboard | Mind MHIRC</title>
+      </Helmet>
       <div className="flex-1 pt-1">
         <div className="flex min-h-screen">
           {isSidebarOpen && (
@@ -644,7 +649,7 @@ const Dashboard = () => {
                     />
                     <Route
                       path="spiritual-budaya/assignments/*"
-                      element={<SpiritualAssignmentManagement />}
+                      element={<SpiritualUnifiedAssignmentManagement />}
                     />
                     <Route
                       path="spiritual-budaya/meetings/*"

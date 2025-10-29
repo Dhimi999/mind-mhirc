@@ -135,14 +135,14 @@ const UnifiedAssignmentManagement: React.FC = () => {
 
   const fetchGuidanceMaterials = async (session: SessionInfo) => {
     try {
-      const table = session.program === "hibrida" ? "hibrida_meetings" : "psikoedukasi_meetings";
+  const table = session.program === "hibrida" ? "cbt_hibrida_meetings" : "cbt_psikoedukasi_meetings";
       const { data, error } = await supabase
-        .from(table)
+        .from(table as any)
         .select("guidance_text, guidance_pdf_url, guidance_audio_url, guidance_video_url, guidance_links")
         .eq("session_number", session.number)
-        .single();
+        .maybeSingle();
 
-  if (error) throw error;
+      if (error) throw error;
 
       const toArray = (val: string | null): string[] => {
         if (!val) return [];
@@ -161,11 +161,11 @@ const UnifiedAssignmentManagement: React.FC = () => {
       };
 
       setGuidanceMaterials({
-        guidance_text: data?.guidance_text || null,
+        guidance_text: (data as any)?.guidance_text || null,
         guidance_pdf_url: toArray((data as any)?.guidance_pdf_url || null),
         guidance_audio_url: toArray((data as any)?.guidance_audio_url || null),
         guidance_video_url: toArray((data as any)?.guidance_video_url || null),
-        guidance_links: (data?.guidance_links as any) || []
+        guidance_links: ((data as any)?.guidance_links as any) || []
       });
     } catch (error: any) {
       console.error("Error fetching guidance:", error);
@@ -176,12 +176,12 @@ const UnifiedAssignmentManagement: React.FC = () => {
   const fetchSessionAssignments = async (session: SessionInfo, includeDraftsOverride?: boolean) => {
     setLoading(true);
     try {
-      const table = session.program === "hibrida" ? "hibrida_assignments" : "psikoedukasi_assignments";
-      const progressTable = session.program === "hibrida" ? "hibrida_user_progress" : "psikoedukasi_user_progress";
+  const table = session.program === "hibrida" ? "cbt_hibrida_assignments" : "cbt_psikoedukasi_assignments";
+  const progressTable = session.program === "hibrida" ? "cbt_hibrida_user_progress" : "cbt_psikoedukasi_user_progress";
       const includeDrafts = includeDraftsOverride ?? (statusTab === "all" || statusTab === "draft");
 
       let query = supabase
-        .from(table)
+        .from(table as any)
         .select("*")
         .eq("session_number", session.number)
         .order("submitted_at", { ascending: false });
@@ -195,13 +195,13 @@ const UnifiedAssignmentManagement: React.FC = () => {
       if (assignmentsError) throw assignmentsError;
 
       const { data: progressData, error: progressError } = await supabase
-        .from(progressTable)
+        .from(progressTable as any)
         .select("*")
         .eq("session_number", session.number);
 
       if (progressError) throw progressError;
 
-  const userIds = [...new Set(assignmentsData?.map(a => a.user_id) || [])];
+  const userIds = [...new Set(assignmentsData?.map((a: any) => a.user_id) || [])];
       if (userIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from("profiles")
@@ -216,25 +216,25 @@ const UnifiedAssignmentManagement: React.FC = () => {
         });
         setProfiles(profilesMap);
 
-        // Fetch kelompok from hibrida_enrollments for all users
+        // Fetch kelompok from CBT_Hibrida_enrollments for all users
         const { data: enrollments, error: enrollmentsError } = await supabase
-          .from("hibrida_enrollments")
+          .from("cbt_hibrida_enrollments" as any)
           .select("user_id, group_assignment")
           .in("user_id", userIds);
 
         if (enrollmentsError) throw enrollmentsError;
 
         const groupMap: Record<string, string | null> = {};
-        enrollments?.forEach(e => {
+        enrollments?.forEach((e: any) => {
           groupMap[e.user_id as string] = (e.group_assignment as any) || null;
         });
         setGroups(groupMap);
       }
 
-  setAssignments(assignmentsData || []);
+      setAssignments(assignmentsData as any || []);
 
       const progressMap: Record<string, UserProgress> = {};
-      progressData?.forEach(p => {
+      progressData?.forEach((p: any) => {
         progressMap[p.user_id] = p;
       });
       setProgress(progressMap);
@@ -249,16 +249,16 @@ const UnifiedAssignmentManagement: React.FC = () => {
   const fetchAllParticipants = async (session: SessionInfo) => {
     setLoading(true);
     try {
-      const progressTable = session.program === "hibrida" ? "hibrida_user_progress" : "psikoedukasi_user_progress";
+  const progressTable = session.program === "hibrida" ? "cbt_hibrida_user_progress" : "cbt_psikoedukasi_user_progress";
 
       const { data: progressData, error: progressError } = await supabase
-        .from(progressTable)
+        .from(progressTable as any)
         .select("user_id, session_opened, meeting_done, assignment_done")
         .eq("session_number", session.number);
 
       if (progressError) throw progressError;
 
-      const userIds = [...new Set(progressData?.map(p => p.user_id) || [])];
+      const userIds = [...new Set(progressData?.map((p: any) => p.user_id) || [])];
       
       if (userIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
@@ -282,9 +282,9 @@ const UnifiedAssignmentManagement: React.FC = () => {
 
     try {
       const serialize = (arr: string[]): string | null => arr.length ? arr.join("\n") : null;
-      const table = selectedSession.program === "hibrida" ? "hibrida_meetings" : "psikoedukasi_meetings";
+  const table = selectedSession.program === "hibrida" ? "cbt_hibrida_meetings" : "cbt_psikoedukasi_meetings";
       const { error } = await supabase
-        .from(table)
+        .from(table as any)
         .update({
           guidance_text: guidanceMaterials.guidance_text,
           guidance_pdf_url: serialize(guidanceMaterials.guidance_pdf_url),
@@ -485,9 +485,9 @@ const UnifiedAssignmentManagement: React.FC = () => {
     if (!selectedAssignment || !selectedProgress || !selectedSession) return;
 
     try {
-      const table = selectedSession.program === "hibrida" ? "hibrida_user_progress" : "psikoedukasi_user_progress";
+  const table = selectedSession.program === "hibrida" ? "cbt_hibrida_user_progress" : "cbt_psikoedukasi_user_progress";
       const { error } = await supabase
-        .from(table)
+        .from(table as any)
         .update({
           counselor_response: counselorResponse,
           counselor_name: user?.full_name || "Konselor",
@@ -513,12 +513,12 @@ const UnifiedAssignmentManagement: React.FC = () => {
     }
 
     try {
-      const table = selectedSession.program === "hibrida" ? "hibrida_user_progress" : "psikoedukasi_user_progress";
+  const table = selectedSession.program === "hibrida" ? "cbt_hibrida_user_progress" : "cbt_psikoedukasi_user_progress";
       const userIds = assignments.map(a => a.user_id);
 
       for (const userId of userIds) {
         await supabase
-          .from(table)
+          .from(table as any)
           .upsert({
             user_id: userId,
             session_number: selectedSession.number,

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LoginForm from "@/components/LoginForm";
+import { Helmet } from "react-helmet-async";
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -17,6 +18,10 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+        <title>Login | Mind MHIRC</title>
+      </Helmet>
       <Navbar />
 
       <main className="flex-1 pt-24">

@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/spiritual-cultural-hero.jpg"; // Placeholder reuse
 import jelajahImage from "@/assets/spiritual-jelajah.jpg"; // Placeholder reuse
 import tasksImage from "@/assets/spiritual-tasks.jpg"; // Placeholder reuse
+import { getSiteBaseUrl } from "@/lib/utils";
 
 // Halaman layanan: Hibrida Naratif CBT
 // Struktur mirip Spiritual & Budaya namun konten lebih umum (naratif + CBT)
@@ -193,7 +194,16 @@ const HibridaNaratifCBT: React.FC = () => {
       <Helmet>
         <title>Hibrida Naratif CBT | Mind MHIRC</title>
         <meta name="description" content="Program intervensi digital Hibrida Naratif CBT: menggabungkan kekuatan terapi naratif dan CBT untuk membangun regulasi emosi, fleksibilitas kognitif, dan ketahanan psikologis." />
-        <link rel="canonical" href="https://mind-mhirc.my.id/hibrida-cbt" />
+        <link rel="canonical" href={`${getSiteBaseUrl()}${activeTab ? `/hibrida-cbt/${activeTab}` : '/hibrida-cbt'}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Hibrida Naratif CBT | Mind MHIRC" />
+        <meta property="og:description" content="Intervensi naratif + CBT untuk membangun ketahanan psikologis." />
+        <meta property="og:url" content={`${getSiteBaseUrl()}${activeTab ? `/hibrida-cbt/${activeTab}` : '/hibrida-cbt'}`} />
+        <meta property="og:image" content={`${getSiteBaseUrl()}/og-image.png`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Hibrida Naratif CBT | Mind MHIRC" />
+        <meta name="twitter:description" content="Intervensi naratif + CBT untuk membangun ketahanan psikologis." />
+        <meta name="twitter:image" content={`${getSiteBaseUrl()}/og-image.png`} />
       </Helmet>
       <Navbar />
       <main className="flex-1 pt-24">

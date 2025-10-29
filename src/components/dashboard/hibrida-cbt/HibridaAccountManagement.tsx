@@ -62,7 +62,7 @@ const HibridaAccountManagement: React.FC = () => {
       
       // Fetch enrollments with user profile data
       const { data: enrollmentData, error: enrollmentError } = await supabase
-        .from('hibrida_enrollments')
+        .from('cbt_hibrida_enrollments' as any)
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -75,7 +75,7 @@ const HibridaAccountManagement: React.FC = () => {
       }
 
       // Get user IDs
-      const userIds = enrollmentData.map(e => e.user_id);
+      const userIds = enrollmentData.map((e: any) => e.user_id);
 
       // Fetch profiles
       const { data: profilesData, error: profilesError } = await supabase
@@ -118,7 +118,7 @@ const HibridaAccountManagement: React.FC = () => {
   const handleReject = async (enrollmentId: string) => {
     try {
       const { error } = await supabase
-        .from('hibrida_enrollments')
+        .from('cbt_hibrida_enrollments' as any)
         .update({ 
           enrollment_status: 'rejected',
           approved_at: new Date().toISOString()
@@ -168,10 +168,10 @@ const HibridaAccountManagement: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('hibrida_enrollments')
+        .from('cbt_hibrida_enrollments' as any)
         .update({ 
-          role: newRole,
-          group_assignment: finalGroup || null,
+          role: newRole as 'reguler' | 'grup-int' | 'grup-cont' | 'super-admin',
+          group_assignment: (finalGroup || null) as 'A' | 'B' | 'C' | 'Admin' | null,
           enrollment_status: 'approved',
           approved_at: new Date().toISOString()
         })
@@ -255,7 +255,7 @@ const HibridaAccountManagement: React.FC = () => {
     if (ids.length === 0) return;
     try {
       const { error } = await supabase
-        .from('hibrida_enrollments')
+        .from('CBT_Hibrida_enrollments' as any)
         .update({ enrollment_status: 'rejected', approved_at: new Date().toISOString() })
         .in('id', ids);
       if (error) throw error;
@@ -290,10 +290,10 @@ const HibridaAccountManagement: React.FC = () => {
     }
     try {
       const { error } = await supabase
-        .from('hibrida_enrollments')
+        .from('CBT_Hibrida_enrollments' as any)
         .update({
-          role: bulkRole,
-          group_assignment: finalGroup,
+          role: bulkRole as 'reguler' | 'grup-int' | 'grup-cont' | 'super-admin',
+          group_assignment: finalGroup as 'A' | 'B' | 'C' | 'Admin' | null,
           enrollment_status: 'approved',
           approved_at: new Date().toISOString()
         })

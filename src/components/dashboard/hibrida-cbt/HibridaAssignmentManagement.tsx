@@ -55,24 +55,21 @@ const HibridaAssignmentManagement: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch assignments
       const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from("hibrida_assignments")
+        .from("CBT_Hibrida_assignments" as any)
         .select("*")
         .order("submitted_at", { ascending: false, nullsFirst: true })
         .order("created_at", { ascending: false });
 
       if (assignmentsError) throw assignmentsError;
 
-      // Fetch progress
       const { data: progressData, error: progressError } = await supabase
-        .from("hibrida_user_progress")
+        .from("CBT_Hibrida_user_progress" as any)
         .select("*");
 
       if (progressError) throw progressError;
 
-      // Fetch user profiles
-      const userIds = [...new Set(assignmentsData?.map(a => a.user_id) || [])];
+      const userIds = [...new Set(assignmentsData?.map((a: any) => a.user_id) || [])];
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, full_name")
@@ -80,10 +77,10 @@ const HibridaAssignmentManagement: React.FC = () => {
 
       if (profilesError) throw profilesError;
 
-      setAssignments(assignmentsData || []);
+      setAssignments(assignmentsData as any || []);
       
       const progressMap: Record<string, UserProgress> = {};
-      progressData?.forEach(p => {
+      progressData?.forEach((p: any) => {
         progressMap[`${p.user_id}-${p.session_number}`] = p;
       });
       setProgress(progressMap);
@@ -118,7 +115,7 @@ const HibridaAssignmentManagement: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from("hibrida_user_progress")
+        .from("CBT_Hibrida_user_progress" as any)
         .update({ counselor_response: counselorResponse })
         .eq("id", selectedProgress.id);
 
