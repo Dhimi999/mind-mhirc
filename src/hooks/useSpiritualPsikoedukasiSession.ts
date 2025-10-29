@@ -50,7 +50,7 @@ export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: s
       let detectedGroup: 'A' | 'B' | 'C' | 'Admin' | null = null;
       try {
         const { data: enroll, error: enrollErr } = await supabase
-          .from('sb_spiritual_enrollments' as any)
+          .from('sb_enrollments' as any)
           .select('group_assignment, enrollment_status, role')
           .eq('user_id', userId)
           .maybeSingle();

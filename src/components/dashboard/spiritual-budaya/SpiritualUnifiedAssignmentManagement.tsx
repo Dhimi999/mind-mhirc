@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import PdfInlineViewer from "@/components/common/PdfInlineViewer";
 
-type ProgramType = "hibrida" | "psikoedukasi";
+type ProgramType = "intervensi" | "psikoedukasi";
 
 interface SessionInfo {
   number: number;
@@ -108,10 +108,10 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSession]);
 
-  const hibridaSessions: SessionInfo[] = Array.from({ length: 8 }, (_, i) => ({
+  const intervensiSessions: SessionInfo[] = Array.from({ length: 8 }, (_, i) => ({
     number: i + 1,
-    program: "hibrida" as ProgramType,
-    title: `HN-CBT Sesi ${i + 1}`
+    program: "intervensi" as ProgramType,
+    title: `Intervensi Sesi ${i + 1}`
   }));
 
   const psikoedukasiSessions: SessionInfo[] = Array.from({ length: 8 }, (_, i) => ({
@@ -135,7 +135,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
 
   const fetchGuidanceMaterials = async (session: SessionInfo) => {
     try {
-  const table = session.program === "hibrida" ? "sb_psikoedukasi_meetings" : "sb_psikoedukasi_meetings";
+  const table = session.program === "intervensi" ? "sb_intervensi_meetings" : "sb_psikoedukasi_meetings";
       const { data, error } = await supabase
         .from(table as any)
         .select("guidance_text, guidance_pdf_url, guidance_audio_url, guidance_video_url, guidance_links")
@@ -176,8 +176,8 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
   const fetchSessionAssignments = async (session: SessionInfo, includeDraftsOverride?: boolean) => {
     setLoading(true);
     try {
-  const table = session.program === "hibrida" ? "sb_psikoedukasi_assignments" : "sb_psikoedukasi_assignments";
-  const progressTable = session.program === "hibrida" ? "sb_psikoedukasi_user_progress" : "sb_psikoedukasi_user_progress";
+  const table = session.program === "intervensi" ? "sb_intervensi_assignments" : "sb_psikoedukasi_assignments";
+  const progressTable = session.program === "intervensi" ? "sb_intervensi_user_progress" : "sb_psikoedukasi_user_progress";
       const includeDrafts = includeDraftsOverride ?? (statusTab === "all" || statusTab === "draft");
 
       let query = supabase
@@ -216,9 +216,9 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
         });
         setProfiles(profilesMap);
 
-        // Fetch kelompok from sb_spiritual_enrollments for all users
+        // Fetch kelompok from sb_enrollments for all users
         const { data: enrollments, error: enrollmentsError } = await supabase
-          .from("sb_spiritual_enrollments" as any)
+          .from("sb_enrollments" as any)
           .select("user_id, group_assignment")
           .in("user_id", userIds);
 
@@ -249,7 +249,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
   const fetchAllParticipants = async (session: SessionInfo) => {
     setLoading(true);
     try {
-  const progressTable = session.program === "hibrida" ? "sb_psikoedukasi_user_progress" : "sb_psikoedukasi_user_progress";
+  const progressTable = session.program === "intervensi" ? "sb_intervensi_user_progress" : "sb_psikoedukasi_user_progress";
 
       const { data: progressData, error: progressError } = await supabase
         .from(progressTable as any)
@@ -282,7 +282,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
 
     try {
       const serialize = (arr: string[]): string | null => arr.length ? arr.join("\n") : null;
-  const table = selectedSession.program === "hibrida" ? "sb_psikoedukasi_meetings" : "sb_psikoedukasi_meetings";
+  const table = selectedSession.program === "intervensi" ? "sb_intervensi_meetings" : "sb_psikoedukasi_meetings";
       const { error } = await supabase
         .from(table as any)
         .update({
@@ -485,7 +485,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
     if (!selectedAssignment || !selectedProgress || !selectedSession) return;
 
     try {
-  const table = selectedSession.program === "hibrida" ? "sb_psikoedukasi_user_progress" : "sb_psikoedukasi_user_progress";
+  const table = selectedSession.program === "intervensi" ? "sb_intervensi_user_progress" : "sb_psikoedukasi_user_progress";
       const { error } = await supabase
         .from(table as any)
         .update({
@@ -513,7 +513,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
     }
 
     try {
-  const table = selectedSession.program === "hibrida" ? "sb_psikoedukasi_user_progress" : "sb_psikoedukasi_user_progress";
+  const table = selectedSession.program === "intervensi" ? "sb_intervensi_user_progress" : "sb_psikoedukasi_user_progress";
       const userIds = assignments.map(a => a.user_id);
 
       for (const userId of userIds) {
@@ -567,26 +567,26 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
     return (
       <div>
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold mb-2">Spiritual & Budaya â€” Manajemen Penugasan</h1>
+          <h1 className="text-2xl font-semibold mb-2">Spiritual & Budaya — Manajemen Penugasan</h1>
           <p className="text-muted-foreground">Kelola panduan penugasan, lihat jawaban peserta, dan kirim respons konselor.</p>
         </div>
 
         <div className="space-y-8">
-          {/* HN-CBT Sessions */}
+          {/* Intervensi Spiritual & Budaya Sessions */}
           <div>
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <ClipboardList className="h-5 w-5 text-indigo-600" />
-              HN-CBT (Spiritual & Budaya)
+              Intervensi Spiritual & Budaya
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {hibridaSessions.map(session => (
-                <Card key={`hibrida-${session.number}`} className="hover:shadow-md transition-shadow">
+              {intervensiSessions.map(session => (
+                <Card key={`intervensi-${session.number}`} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg font-bold">
                         {session.number}
                       </div>
-                      <Badge variant="outline" className="text-xs">HN-CBT</Badge>
+                      <Badge variant="outline" className="text-xs">Intervensi</Badge>
                     </div>
                     <CardTitle className="text-base mt-2">Sesi {session.number}</CardTitle>
                   </CardHeader>
@@ -668,7 +668,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
         </div>
         {selectedSession && (
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={() => navigate("/hibrida-cbt")}> 
+            <Button variant="outline" onClick={() => navigate("/intervensi-cbt")}> 
               <span className="hidden sm:inline">Masuk ke halaman Spiritual & Budaya</span>
               <span className="sm:hidden">Masuk ke layanan</span>
             </Button>
@@ -677,7 +677,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
               variant="secondary"
               disabled={selectedSession.number <= 1}
               onClick={() => {
-                const sessions = selectedSession.program === "hibrida" ? hibridaSessions : psikoedukasiSessions;
+                const sessions = selectedSession.program === "intervensi" ? intervensiSessions : psikoedukasiSessions;
                 const idx = sessions.findIndex(s => s.number === selectedSession.number);
                 if (idx > 0) {
                   const prev = sessions[idx - 1];
@@ -692,7 +692,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
               size="icon"
               disabled={selectedSession.number >= 8}
               onClick={() => {
-                const sessions = selectedSession.program === "hibrida" ? hibridaSessions : psikoedukasiSessions;
+                const sessions = selectedSession.program === "intervensi" ? intervensiSessions : psikoedukasiSessions;
                 const idx = sessions.findIndex(s => s.number === selectedSession.number);
                 if (idx >= 0 && idx < sessions.length - 1) {
                   const next = sessions[idx + 1];
@@ -1026,19 +1026,19 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
               <label className="text-sm">Program</label>
               <select
                 className="border rounded px-2 py-1 bg-background flex-1 sm:flex-none"
-                value={programFilter || "hibrida"}
+                value={programFilter || "intervensi"}
                 onChange={(e) => {
                   const newProg = (e.target.value as ProgramType);
                   setProgramFilter(newProg);
                   if (selectedSession) {
-                    const newTitle = `${newProg === "hibrida" ? "HN-CBT" : "Psikoedukasi"} Sesi ${selectedSession.number}`;
+                    const newTitle = `${newProg === "intervensi" ? "Intervensi Spiritual & Budaya" : "Psikoedukasi"} Sesi ${selectedSession.number}`;
                     const newSession = { ...selectedSession, program: newProg, title: newTitle } as SessionInfo;
                     setSelectedSession(newSession);
                     fetchSessionAssignments(newSession);
                   }
                 }}
               >
-                <option value="hibrida">HN-CBT</option>
+                <option value="intervensi">Intervensi Spiritual & Budaya</option>
                 <option value="psikoedukasi">Psikoedukasi</option>
               </select>
             </div>
@@ -1140,7 +1140,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                             {profiles[assignment.user_id]?.full_name || "Tidak diketahui"}
                           </td>
                           <td className="p-4">
-                            {selectedSession?.program === "hibrida" ? "HN-CBT" : "Psikoedukasi"}
+                            {selectedSession?.program === "intervensi" ? "Intervensi Spiritual & Budaya" : "Psikoedukasi"}
                           </td>
                           <td className="p-4">{groupLabel}</td>
                           <td className="p-4">

@@ -55,6 +55,8 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 		meeting,
 		loading: dataLoading,
 		updateProgress,
+		groupAssignment,
+		isSuperAdmin: isSuperAdminFromHook,
 	} = useSpiritualIntervensiSession(sessionNumber);
 
 	const [previousSessionProgress, setPreviousSessionProgress] = useState<any>(null);
@@ -63,7 +65,7 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 	const [assignment, setAssignment] = useState<SessionAssignment>(defaultAssignment);
 	const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
 
-	const isSuperAdmin = role === 'super-admin';
+	const isSuperAdmin = role === 'super-admin' || isSuperAdminFromHook;
 
 	// Check if user can access this session (sequential access control)
 	useEffect(() => {
@@ -268,10 +270,30 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 														<a href={meeting.link} target='_blank' rel='noopener noreferrer' className='text-amber-600 hover:underline break-all'>{meeting.link}</a>
 													</div>
 												)}
+												{!isSuperAdmin && meeting.has_group_schedules && (groupAssignment === 'A' || groupAssignment === 'B' || groupAssignment === 'C') && (
+													<div className='mt-1'>
+														<Badge className='bg-purple-100 text-purple-900 border border-purple-200'>Grup Anda: {groupAssignment}</Badge>
+													</div>
+												)}
 												{meeting.description && (
 													<div>
 														<p className='text-sm text-muted-foreground mb-2'>Deskripsi</p>
 														<p className='text-sm'>{meeting.description}</p>
+													</div>
+												)}
+												{isSuperAdmin && meeting.has_group_schedules && meeting.all_group_schedules && (
+													<div className='mt-4 border-t pt-4'>
+														<p className='text-sm font-semibold mb-2'>Jadwal per Grup (Super Admin)</p>
+														<div className='grid grid-cols-1 md:grid-cols-3 gap-3 text-sm'>
+															{(['A','B','C'] as const).map(g => (
+																<div key={g} className='rounded border p-3 bg-muted/30'>
+																	<div className='font-semibold mb-1'>Grup {g}</div>
+																	<div>Tanggal: <span className='font-medium'>{meeting.all_group_schedules[g]?.date || '—'}</span></div>
+																	<div>Waktu: <span className='font-medium'>{meeting.all_group_schedules[g]?.time || '—'}</span></div>
+																	<div className='truncate'>Link: {meeting.all_group_schedules[g]?.link ? (<a className='text-amber-700 hover:underline' href={meeting.all_group_schedules[g]!.link} target='_blank' rel='noreferrer'>{meeting.all_group_schedules[g]!.link}</a>) : '—'}</div>
+																</div>
+															))}
+														</div>
 													</div>
 												)}
 												<div className='flex items-center gap-3 pt-2'>

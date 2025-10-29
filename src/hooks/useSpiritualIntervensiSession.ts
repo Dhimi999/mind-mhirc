@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { parseGroupSchedule, pickGroupEntry } from '@/utils/groupSchedule';
 import { useAuth } from '@/contexts/AuthContext';
 
 export type SessionProgress = {
@@ -17,53 +18,125 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
   const [progress, setProgress] = useState<SessionProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [meeting, setMeeting] = useState<any>(null);
+  const [groupAssignment, setGroupAssignment] = useState<'A'|'B'|'C'|'Admin'|null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!user?.id || !sessionNumber) {
       setLoading(false);
       return;
     }
 
-    const fetchData = async () => {
+    try {
+      // Determine group and role from enrollment
       try {
-        // Fetch progress
-        const { data: progressData, error: progressError } = await supabase
-          .from('sb_intervensi_user_progress' as any)
-          .select('*')
+        const { data: enroll, error: enrollErr } = await supabase
+          .from('sb_enrollments' as any)
+          .select('group_assignment, enrollment_status, role')
           .eq('user_id', user.id)
-          .eq('session_number', sessionNumber)
-          .maybeSingle() as any;
-
-        if (progressError && progressError.code !== 'PGRST116') throw progressError;
-
-        if (progressData) {
-          setProgress(progressData as SessionProgress);
+          .maybeSingle();
+        if (!enrollErr && enroll && (enroll as any).enrollment_status === 'approved') {
+          setGroupAssignment(((enroll as any).group_assignment as any) || null);
+          setIsSuperAdmin((enroll as any).role === 'super-admin');
         } else {
-          setProgress({
-            session_number: sessionNumber,
-            meeting_done: false,
-            assignment_done: false,
-          });
+          setGroupAssignment(null);
+          setIsSuperAdmin(false);
+        }
+      } catch {
+        setGroupAssignment(null);
+        setIsSuperAdmin(false);
+      }
+
+      // Additionally treat platform admins as super-admins
+      try {
+        const { data: profile, error: profErr } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (!profErr && profile?.is_admin === true) {
+          setIsSuperAdmin(true);
+        }
+      } catch {}
+
+      // Fetch progress
+      const { data: progressData, error: progressError } = await supabase
+        .from('sb_intervensi_user_progress' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('session_number', sessionNumber)
+        .maybeSingle() as any;
+
+      if (progressError && progressError.code !== 'PGRST116') throw progressError;
+
+      if (progressData) {
+        setProgress(progressData as SessionProgress);
+      } else {
+        setProgress({
+          session_number: sessionNumber,
+          meeting_done: false,
+          assignment_done: false,
+        });
+      }
+
+      // Fetch meeting info and apply group-based schedule selection
+      const { data: meetingData, error: meetingError } = await supabase
+        .from('sb_intervensi_meetings' as any)
+        .select('date, time, link, description, guidance_text, guidance_pdf_url, guidance_audio_url, guidance_video_url, guidance_links')
+        .eq('session_number', sessionNumber)
+        .maybeSingle() as any;
+
+      if (meetingError && meetingError.code !== 'PGRST116') throw meetingError;
+
+      if (meetingData) {
+        const rawLink: string | null = (meetingData as any).link;
+        const parsed = parseGroupSchedule(rawLink);
+        let date = (meetingData as any).date;
+        let time = (meetingData as any).time;
+        let link = (meetingData as any).link;
+        let groupKeyUsed: 'A'|'B'|'C'|null = null;
+        let hasGroupSchedules = false;
+        let allGroupSchedules: Partial<Record<'A'|'B'|'C', { date: string; time: string; link: string }>> | null = null;
+
+        if (parsed) {
+          hasGroupSchedules = true;
+          allGroupSchedules = parsed as any;
+          if (!isSuperAdmin) {
+            const picked = pickGroupEntry(parsed, (groupAssignment as any) ?? null);
+            if (picked.entry) {
+              date = picked.entry.date || null;
+              time = picked.entry.time || null;
+              link = picked.entry.link || null;
+            }
+            groupKeyUsed = picked.usedKey as any;
+          }
         }
 
-        // Fetch meeting info
-        const { data: meetingData, error: meetingError } = await supabase
-          .from('sb_intervensi_meetings' as any)
-          .select('*')
-          .eq('session_number', sessionNumber)
-          .maybeSingle() as any;
-
-        if (meetingError && meetingError.code !== 'PGRST116') throw meetingError;
-        setMeeting(meetingData);
-      } catch (error) {
-        console.error('Error fetching spiritual intervensi session:', error);
-      } finally {
-        setLoading(false);
+        setMeeting({
+          date: date || null,
+          time: time || null,
+          link: link || null,
+          description: (meetingData as any).description || null,
+          guidance_text: (meetingData as any).guidance_text || null,
+          guidance_pdf_url: (meetingData as any).guidance_pdf_url || null,
+          guidance_audio_url: (meetingData as any).guidance_audio_url || null,
+          guidance_video_url: (meetingData as any).guidance_video_url || null,
+          guidance_links: (meetingData as any).guidance_links || null,
+          group_key_used: groupKeyUsed,
+          has_group_schedules: hasGroupSchedules,
+          all_group_schedules: allGroupSchedules,
+        });
+      } else {
+        setMeeting(null);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching spiritual intervensi session:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, sessionNumber, groupAssignment, isSuperAdmin]);
 
-    fetchData();
-  }, [user?.id, sessionNumber]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const updateProgress = async (updates: Partial<SessionProgress>) => {
     if (!user?.id) return;
@@ -119,5 +192,7 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
     meeting,
     loading,
     updateProgress,
+    groupAssignment,
+    isSuperAdmin,
   };
 };

@@ -677,20 +677,6 @@ const Dashboard = () => {
                 )}
                 {(isAdmin || isProfessional) && (
                   <>
-                    {/* Backward-compatible old paths */}
-                    <Route
-                      path="save-mother/account/*"
-                      element={<SaveMotherAccountManagement />}
-                    />
-                    <Route
-                      path="save-mother/assignments/*"
-                      element={<SaveMotherAssignmentManagement />}
-                    />
-                    <Route
-                      path="save-mother/meetings/*"
-                      element={<SaveMotherMeetingManagement />}
-                    />
-                    {/* New canonical paths */}
                     <Route
                       path="safe-mother/account/*"
                       element={<SaveMotherAccountManagement />}
@@ -751,20 +737,6 @@ const Dashboard = () => {
                 )}
                 {isAdmin && (
                   <>
-                    {/* Backward-compatible old paths */}
-                    <Route
-                      path="save-mother/assignments/cbt/users"
-                      element={<CbtUserList />}
-                    />
-                    <Route
-                      path="save-mother/assignments/cbt/review/:userId"
-                      element={<CbtModuleReview />}
-                    />
-                    <Route
-                      path="save-mother/assignments/cbt/review/:userId/module/:moduleId"
-                      element={<CbtAnswerDetail />}
-                    />
-                    {/* New canonical paths */}
                     <Route
                       path="safe-mother/assignments/cbt/users"
                       element={<CbtUserList />}

@@ -17,7 +17,7 @@
   "main": "eslint.config.js",
   "scripts": {
     "dev": "vite",
-  "build": "vite build && node -e \"try{require('fs').unlinkSync('dist/sitemap.xml')}catch(e){}\"",
+    "build": "vite build && node -e \"try{require('fs').unlinkSync('dist/sitemap.xml')}catch(e){}\"",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -67,6 +67,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "core-js": "^3.46.0",
     "date-fns": "^3.6.0",
     "embla-carousel-autoplay": "^8.0.0-rc17",
     "embla-carousel-react": "^8.5.2",
@@ -91,7 +92,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "vite-plugin-prerender": "^1.0.8",
-    "vite-plugin-ssr": "^0.4.142",
+    "vite-plugin-ssr": "^0.4.85",
     "web-vitals": "^5.1.0",
     "zod": "^3.23.8"
   },

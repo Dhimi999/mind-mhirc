@@ -56,7 +56,7 @@ const HibridaAssignmentManagement: React.FC = () => {
   const fetchData = async () => {
     try {
       const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from("CBT_Hibrida_assignments" as any)
+        .from("cbt_hibrida_assignments" as any)
         .select("*")
         .order("submitted_at", { ascending: false, nullsFirst: true })
         .order("created_at", { ascending: false });
@@ -64,7 +64,7 @@ const HibridaAssignmentManagement: React.FC = () => {
       if (assignmentsError) throw assignmentsError;
 
       const { data: progressData, error: progressError } = await supabase
-        .from("CBT_Hibrida_user_progress" as any)
+        .from("cbt_hibrida_user_progress" as any)
         .select("*");
 
       if (progressError) throw progressError;
@@ -115,7 +115,7 @@ const HibridaAssignmentManagement: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from("CBT_Hibrida_user_progress" as any)
+        .from("cbt_hibrida_user_progress" as any)
         .update({ counselor_response: counselorResponse })
         .eq("id", selectedProgress.id);
 

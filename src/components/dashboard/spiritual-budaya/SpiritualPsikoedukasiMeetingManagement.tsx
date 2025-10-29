@@ -19,14 +19,14 @@ interface Meeting {
   materials?: any; // keep compatibility if materials field added
 }
 
-type ProgramType = 'spiritual-hibrida' | 'spiritual-psikoedukasi';
+type ProgramType = 'intervensi' | 'psikoedukasi';
 
 const SpiritualPsikoedukasiMeetingManagement: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [program, setProgram] = useState<ProgramType>('spiritual-psikoedukasi');
+  const [program, setProgram] = useState<ProgramType>('psikoedukasi');
 
   type GroupKey = 'A' | 'B' | 'C';
   type GroupSchedule = { date: string; time: string; link: string };
@@ -57,7 +57,7 @@ const SpiritualPsikoedukasiMeetingManagement: React.FC = () => {
 
   const fetchMeetings = async () => {
     try {
-  const table = program === 'spiritual-hibrida' ? 'sb_hibrida_meetings' : 'sb_psikoedukasi_meetings';
+  const table = program === 'intervensi' ? 'sb_intervensi_meetings' : 'sb_psikoedukasi_meetings';
       const { data, error } = await supabase
         .from(table as any)
         .select("*")
@@ -97,7 +97,7 @@ const SpiritualPsikoedukasiMeetingManagement: React.FC = () => {
     if (!editingMeeting) return;
 
     try {
-  const table = program === 'spiritual-hibrida' ? 'sb_hibrida_meetings' : 'sb_psikoedukasi_meetings';
+  const table = program === 'intervensi' ? 'sb_intervensi_meetings' : 'sb_psikoedukasi_meetings';
       const payload = {
         date: formData.date || null,
         time: formData.time || null,
@@ -143,7 +143,7 @@ const SpiritualPsikoedukasiMeetingManagement: React.FC = () => {
         <div>
           <h1 className="text-2xl font-semibold mb-2">Manajemen Pertemuan</h1>
           <p className="text-muted-foreground text-sm max-w-xl">
-            Kelola jadwal, tautan meeting, dan deskripsi untuk 8 sesi {program === 'spiritual-hibrida' ? 'Intervensi HN-CBT' : 'Intervensi Psikoedukasi'}.
+            Kelola jadwal, tautan meeting, dan deskripsi untuk 8 sesi {program === 'intervensi' ? 'Intervensi' : 'Psikoedukasi'}.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -154,7 +154,7 @@ const SpiritualPsikoedukasiMeetingManagement: React.FC = () => {
               value={program}
               onChange={e => setProgram(e.target.value as ProgramType)}
             >
-              <option value="hibrida">HN-CBT</option>
+              <option value="intervensi">Intervensi</option>
               <option value="psikoedukasi">Psikoedukasi</option>
             </select>
           </div>
@@ -168,7 +168,7 @@ const SpiritualPsikoedukasiMeetingManagement: React.FC = () => {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-lg">{program === 'spiritual-hibrida' ? 'HN-CBT' : 'Psiko'} Sesi {meeting.session_number}</CardTitle>
+                  <CardTitle className="text-lg">{program === 'intervensi' ? 'Intervensi' : 'Psiko'} Sesi {meeting.session_number}</CardTitle>
                   <CardDescription className="text-xs mt-1">
                     {meeting.description || "Belum ada deskripsi"}
                   </CardDescription>

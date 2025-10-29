@@ -144,7 +144,7 @@ const SpiritualPsikoedukasiAssignmentManagement: React.FC = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `hibrida-penugasan-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `spiritual-budaya-psikoedukasi-penugasan-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -171,7 +171,7 @@ const SpiritualPsikoedukasiAssignmentManagement: React.FC = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold mb-2">Spiritual & Budaya â€” Manajemen Penugasan</h1>
+        <h1 className="text-2xl font-semibold mb-2">Spiritual & Budaya — Manajemen Penugasan</h1>
         <p className="text-muted-foreground">
           Kelola dan beri respons untuk penugasan peserta program Spiritual & Budaya.
         </p>

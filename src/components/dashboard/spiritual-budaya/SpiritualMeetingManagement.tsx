@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { parseGroupSchedule } from "@/utils/groupSchedule";
 import { CalendarCheck2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,11 +34,7 @@ const SpiritualMeetingManagement: React.FC = () => {
   type GroupSchedules = Partial<Record<GroupKey, GroupSchedule>>;
   const [groupSchedules, setGroupSchedules] = useState<GroupSchedules>({});
 
-  const parseGroupJson = (raw: string | null): GroupSchedules | null => {
-    if (!raw) return null;
-    try { const o = JSON.parse(raw); if (o && (o.A || o.B || o.C)) return o as any; } catch {}
-    return null;
-  };
+  const parseGroupJson = (raw: string | null): GroupSchedules | null => parseGroupSchedule(raw);
 
   const tableName = program === 'intervensi' ? 'sb_intervensi_meetings' : 'sb_psikoedukasi_meetings';
 
