@@ -166,6 +166,11 @@ const SpiritualIntervensiPortalSesi2: React.FC = () => {
 		await updateProgress({ meeting_done: !progress?.meeting_done });
 	}, [progress, updateProgress]);
 
+	// Fix: Add handler for guide_done checkbox
+	const handleMarkGuideDone = useCallback(async () => {
+		await updateProgress({ guide_done: !progress?.guide_done });
+	}, [progress, updateProgress]);
+
 	if (dataLoading || roleLoading || checkingAccess) {
 		return (
 			<div className="flex flex-col justify-center items-center h-screen">
