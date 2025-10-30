@@ -57,15 +57,74 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 		updateProgress,
 		groupAssignment,
 		isSuperAdmin: isSuperAdminFromHook,
+		loadAssignment: loadAssignmentIntervensi,
+		autoSaveAssignment: autoSaveIntervensi,
+		lastAutoSaveAt,
 	} = useSpiritualIntervensiSession(sessionNumber);
 
 	const [previousSessionProgress, setPreviousSessionProgress] = useState<any>(null);
 	const [checkingAccess, setCheckingAccess] = useState(true);
 
 	const [assignment, setAssignment] = useState<SessionAssignment>(defaultAssignment);
+	// Assignment khusus sesi 1 (struktur baru)
+	const [assignmentS1, setAssignmentS1] = useState({
+		situasi_pemicu: "",
+		pikiran_otomatis: "",
+		emosi: "",
+		perilaku: "",
+		coping: {
+			aktivitas: "",
+			kontak: "",
+			layanan: "",
+			lingkungan: "",
+		},
+		teknik_metagora: "",
+		submitted: false as boolean | undefined,
+	});
 	const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
 
 	const isSuperAdmin = role === 'super-admin' || isSuperAdminFromHook;
+
+	// Load any existing answers on mount
+	useEffect(() => {
+		(async () => {
+			const loaded = await loadAssignmentIntervensi();
+			if (!loaded) return;
+			if (sessionNumber === 1) {
+				setAssignmentS1(prev => ({
+					situasi_pemicu: loaded.situasi_pemicu ?? prev.situasi_pemicu,
+					pikiran_otomatis: loaded.pikiran_otomatis ?? prev.pikiran_otomatis,
+					emosi: loaded.emosi ?? prev.emosi,
+					perilaku: loaded.perilaku ?? prev.perilaku,
+					coping: {
+						aktivitas: loaded.coping?.aktivitas ?? prev.coping.aktivitas,
+						kontak: loaded.coping?.kontak ?? prev.coping.kontak,
+						layanan: loaded.coping?.layanan ?? prev.coping.layanan,
+						lingkungan: loaded.coping?.lingkungan ?? prev.coping.lingkungan,
+					},
+					teknik_metagora: loaded.teknik_metagora ?? prev.teknik_metagora,
+					submitted: prev.submitted,
+				}));
+			} else {
+				setAssignment(prev => ({
+					jawaban_1: loaded.jawaban_1 ?? prev.jawaban_1,
+					jawaban_2: loaded.jawaban_2 ?? prev.jawaban_2,
+					jawaban_3: loaded.jawaban_3 ?? prev.jawaban_3,
+					refleksi: loaded.refleksi ?? prev.refleksi,
+				}));
+			}
+		})();
+	}, [loadAssignmentIntervensi, sessionNumber]);
+
+	// Debounced autosave on changes
+	useEffect(() => {
+		const handler = setTimeout(() => {
+			const payload = sessionNumber === 1 ? assignmentS1 : assignment;
+			autoSaveIntervensi(payload);
+			setAutoSavedAt(lastAutoSaveAt || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }));
+		}, 1200);
+		return () => clearTimeout(handler);
+	}, [assignment, assignmentS1, sessionNumber, autoSaveIntervensi, lastAutoSaveAt]);
 
 	// Check if user can access this session (sequential access control)
 	useEffect(() => {
@@ -111,16 +170,35 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 	}, [progress]);
 
 	const assignmentValid = useMemo(() => {
+		if (sessionNumber === 1) {
+			const a = assignmentS1;
+			return (
+				a.situasi_pemicu.trim() !== "" &&
+				a.pikiran_otomatis.trim() !== "" &&
+				a.emosi.trim() !== "" &&
+				a.perilaku.trim() !== "" &&
+				a.coping.aktivitas.trim() !== "" &&
+				a.coping.kontak.trim() !== "" &&
+				a.coping.layanan.trim() !== "" &&
+				a.coping.lingkungan.trim() !== "" &&
+				a.teknik_metagora.trim() !== ""
+			);
+		}
 		return assignment.jawaban_1.trim() && assignment.jawaban_2.trim() && assignment.refleksi.trim();
-	}, [assignment]);
+	}, [assignment, assignmentS1, sessionNumber]);
 
 	const handleSubmitAssignment = useCallback(async () => {
 		if (!assignmentValid) return;
-		const result = await updateProgress({ assignment_data: assignment, assignment_done: true });
+		const payload = sessionNumber === 1 ? assignmentS1 : assignment;
+		const result = await updateProgress({ assignment_data: payload, assignment_done: true });
 		if (result?.success) {
-			setAssignment(prev => ({ ...prev, submitted: true }));
+			if (sessionNumber === 1) {
+				setAssignmentS1(prev => ({ ...prev, submitted: true }));
+			} else {
+				setAssignment(prev => ({ ...prev, submitted: true }));
+			}
 		}
-	}, [assignmentValid, assignment, updateProgress]);
+	}, [assignmentValid, assignment, assignmentS1, updateProgress, sessionNumber]);
 
 	const handleMarkMeetingDone = useCallback(async () => {
 		await updateProgress({ meeting_done: !progress?.meeting_done });
@@ -167,8 +245,18 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 				<section className='py-12'>
 					<div className='container mx-auto px-6 max-w-6xl'>
 						<div className='grid grid-cols-1 lg:grid-cols-4 gap-8'>
-							{/* Progress Sidebar */}
+							{/* Left column: Tips + Progress */}
 							<div className='lg:col-span-1 space-y-6'>
+								{/* Tips Card (sticky) */}
+								<div className='rounded-xl bg-gradient-to-b from-amber-50 to-white border border-amber-100 p-5 shadow-sm'>
+									<h3 className='font-semibold mb-3 text-sm tracking-wide text-amber-700'>TIPS</h3>
+									<ul className='list-disc pl-5 text-sm text-muted-foreground space-y-2'>
+										<li>Pastikan Anda memiliki koneksi internet yang stabil.</li>
+										<li>Siapkan catatan untuk menulis poin penting.</li>
+										<li>Gabung 5 menit sebelum jadwal dimulai.</li>
+										<li>Hubungi fasilitator jika ada kendala teknis.</li>
+									</ul>
+								</div>
 								<div className='rounded-xl bg-gradient-to-b from-amber-50 to-white border border-amber-100 p-5 shadow-sm sticky top-28'>
 									<h3 className='font-semibold mb-4 text-sm tracking-wide text-amber-700'>PROGRES SESI</h3>
 									<div className='mb-4'>
@@ -179,15 +267,19 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 									</div>
 									<ol className='space-y-3 text-xs'>
 										<li className='flex items-center gap-2'>
-											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.meeting_done ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>1</span>
+											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-green-500 text-white`}>1</span>
+											<span>Sesi Dibuka</span>
+										</li>
+										<li className='flex items-center gap-2'>
+											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.meeting_done ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>2</span>
 											<span>Pertemuan Daring</span>
 										</li>
 										<li className='flex items-center gap-2'>
-											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.assignment_done ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>2</span>
+											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.assignment_done ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>3</span>
 											<span>Penugasan Selesai</span>
 										</li>
 										<li className='flex items-center gap-2'>
-											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.counselor_feedback ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>3</span>
+											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.counselor_feedback ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>4</span>
 											<span>Response Konselor</span>
 										</li>
 									</ol>
@@ -254,33 +346,38 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 									<CardContent>
 										{meeting ? (
 											<div className='space-y-4'>
-												<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-													<div>
-														<p className='text-sm text-muted-foreground'>Tanggal</p>
-														<p className='font-medium'>{meeting.date || 'Belum dijadwalkan'}</p>
-													</div>
-													<div>
-														<p className='text-sm text-muted-foreground'>Waktu</p>
-														<p className='font-medium'>{meeting.time || 'Belum ditentukan'}</p>
-													</div>
-												</div>
-												{meeting.link && (
-													<div>
-														<p className='text-sm text-muted-foreground mb-2'>Link Pertemuan</p>
-														<a href={meeting.link} target='_blank' rel='noopener noreferrer' className='text-amber-600 hover:underline break-all'>{meeting.link}</a>
-													</div>
+												{!(isSuperAdmin && meeting.has_group_schedules) && (
+													<>
+														<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+															<div>
+																<p className='text-sm text-muted-foreground'>Tanggal</p>
+																<p className='font-medium'>{meeting.date || 'Belum dijadwalkan'}</p>
+															</div>
+															<div>
+																<p className='text-sm text-muted-foreground'>Waktu</p>
+																<p className='font-medium'>{meeting.time || 'Belum ditentukan'}</p>
+															</div>
+														</div>
+														{meeting.link && typeof meeting.link === 'string' && (
+															<div>
+																<p className='text-sm text-muted-foreground mb-2'>Link Pertemuan</p>
+																<a href={meeting.link} target='_blank' rel='noopener noreferrer' className='text-amber-600 hover:underline break-all'>{meeting.link}</a>
+															</div>
+														)}
+														{meeting.description && (
+															<div>
+																<p className='text-sm text-muted-foreground mb-2'>Deskripsi</p>
+																<p className='text-sm'>{meeting.description}</p>
+															</div>
+														)}
+													</>
 												)}
 												{!isSuperAdmin && meeting.has_group_schedules && (groupAssignment === 'A' || groupAssignment === 'B' || groupAssignment === 'C') && (
 													<div className='mt-1'>
 														<Badge className='bg-purple-100 text-purple-900 border border-purple-200'>Grup Anda: {groupAssignment}</Badge>
 													</div>
 												)}
-												{meeting.description && (
-													<div>
-														<p className='text-sm text-muted-foreground mb-2'>Deskripsi</p>
-														<p className='text-sm'>{meeting.description}</p>
-													</div>
-												)}
+
 												{isSuperAdmin && meeting.has_group_schedules && meeting.all_group_schedules && (
 													<div className='mt-4 border-t pt-4'>
 														<p className='text-sm font-semibold mb-2'>Jadwal per Grup (Super Admin)</p>
@@ -349,55 +446,75 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 										)}
 										<div className={(!progress?.meeting_done && !progress?.assignment_done) ? 'pointer-events-none opacity-60 select-none' : ''}>
 											<div className='space-y-6'>
-												<div>
-													<label className='block text-sm font-medium mb-2'>1. Nilai spiritual apa yang paling bermakna bagi Anda?</label>
-													<textarea
-														rows={4}
-														className='w-full rounded border p-3 text-sm'
-														placeholder='Jelaskan nilai spiritual yang Anda anut...'
-														value={assignment.jawaban_1}
-														onChange={e => setAssignment(p => ({ ...p, jawaban_1: e.target.value }))}
-														disabled={progress?.assignment_done}
-													/>
-												</div>
-												<div>
-													<label className='block text-sm font-medium mb-2'>2. Bagaimana budaya Anda mempengaruhi cara Anda memandang kesehatan mental?</label>
-													<textarea
-														rows={4}
-														className='w-full rounded border p-3 text-sm'
-														placeholder='Deskripsikan pengaruh budaya terhadap perspektif Anda...'
-														value={assignment.jawaban_2}
-														onChange={e => setAssignment(p => ({ ...p, jawaban_2: e.target.value }))}
-														disabled={progress?.assignment_done}
-													/>
-												</div>
-												<div>
-													<label className='block text-sm font-medium mb-2'>3. Praktik budaya apa yang membantu Anda mengatasi stress? (opsional)</label>
-													<textarea
-														rows={3}
-														className='w-full rounded border p-3 text-sm'
-														placeholder='Contoh: doa, meditasi, ritual tertentu...'
-														value={assignment.jawaban_3}
-														onChange={e => setAssignment(p => ({ ...p, jawaban_3: e.target.value }))}
-														disabled={progress?.assignment_done}
-													/>
-												</div>
-												<div>
-													<label className='block text-sm font-medium mb-2'>Refleksi Pribadi</label>
-													<textarea
-														rows={5}
-														className='w-full rounded border p-3 text-sm'
-														placeholder='Tulis refleksi Anda tentang materi sesi ini...'
-														value={assignment.refleksi}
-														onChange={e => setAssignment(p => ({ ...p, refleksi: e.target.value }))}
-														disabled={progress?.assignment_done}
-													/>
-												</div>
+												{sessionNumber === 1 ? (
+													<>
+														<div>
+															<label className='block text-sm font-medium mb-2'>(1) Situasi Pemicu Krisis</label>
+															<textarea rows={4} className='w-full rounded border p-3 text-sm' placeholder='Jelaskan situasi pemicu krisis yang Anda alami...' value={assignmentS1.situasi_pemicu} onChange={e=> setAssignmentS1(p=> ({ ...p, situasi_pemicu: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>(2) Pikiran otomatis yang muncul sebagai respons terhadap kejadian</label>
+															<textarea rows={4} className='w-full rounded border p-3 text-sm' placeholder='Tuliskan pikiran otomatis yang muncul...' value={assignmentS1.pikiran_otomatis} onChange={e=> setAssignmentS1(p=> ({ ...p, pikiran_otomatis: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>(3) Emosi yang muncul terkait kejadian tersebut</label>
+															<textarea rows={4} className='w-full rounded border p-3 text-sm' placeholder='Tuliskan emosi yang dirasakan...' value={assignmentS1.emosi} onChange={e=> setAssignmentS1(p=> ({ ...p, emosi: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>(4) Perilaku atau respons yang muncul akibat peristiwa tersebut</label>
+															<textarea rows={4} className='w-full rounded border p-3 text-sm' placeholder='Jelaskan perilaku atau respons Anda...' value={assignmentS1.perilaku} onChange={e=> setAssignmentS1(p=> ({ ...p, perilaku: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>(5) Strategi Koping Pribadi yang Sehat</label>
+															<div className='space-y-3'>
+																<div>
+																	<label className='block text-xs text-muted-foreground mb-1'>a. Aktivitas yang dapat mengalihkan diri</label>
+																	<input className='w-full rounded border p-3 text-sm' placeholder='Contoh: berjalan, mendengarkan musik, dll.' value={assignmentS1.coping.aktivitas} onChange={e=> setAssignmentS1(p=> ({ ...p, coping: { ...p.coping, aktivitas: e.target.value } }))} disabled={progress?.assignment_done} />
+																</div>
+																<div>
+																	<label className='block text-xs text-muted-foreground mb-1'>b. Orang yang bisa dihubungi</label>
+																	<input className='w-full rounded border p-3 text-sm' placeholder='Contoh: teman dekat, keluarga, mentor' value={assignmentS1.coping.kontak} onChange={e=> setAssignmentS1(p=> ({ ...p, coping: { ...p.coping, kontak: e.target.value } }))} disabled={progress?.assignment_done} />
+																</div>
+																<div>
+																	<label className='block text-xs text-muted-foreground mb-1'>c. Layanan profesional atau darurat yang dapat diakses</label>
+																	<input className='w-full rounded border p-3 text-sm' placeholder='Contoh: hotline darurat, layanan konseling, rumah sakit' value={assignmentS1.coping.layanan} onChange={e=> setAssignmentS1(p=> ({ ...p, coping: { ...p.coping, layanan: e.target.value } }))} disabled={progress?.assignment_done} />
+																</div>
+																<div>
+																	<label className='block text-xs text-muted-foreground mb-1'>d. Lingkungan aman atau tempat untuk menenangkan diri</label>
+																	<input className='w-full rounded border p-3 text-sm' placeholder='Contoh: kamar, ruang ibadah, taman' value={assignmentS1.coping.lingkungan} onChange={e=> setAssignmentS1(p=> ({ ...p, coping: { ...p.coping, lingkungan: e.target.value } }))} disabled={progress?.assignment_done} />
+																</div>
+															</div>
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>(6) Menggunakan teknik metafora "bingkai dalam film" untuk menggali pikiran dan perasaan lebih dalam</label>
+															<textarea rows={5} className='w-full rounded border p-3 text-sm' placeholder='Tuliskan hasil eksplorasi menggunakan teknik metafora “bingkai dalam film”...' value={assignmentS1.teknik_metagora} onChange={e=> setAssignmentS1(p=> ({ ...p, teknik_metagora: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+													</>
+												) : (
+													<>
+														<div>
+															<label className='block text-sm font-medium mb-2'>1. Nilai spiritual apa yang paling bermakna bagi Anda?</label>
+															<textarea rows={4} className='w-full rounded border p-3 text-sm' placeholder='Jelaskan nilai spiritual yang Anda anut...' value={assignment.jawaban_1} onChange={e => setAssignment(p => ({ ...p, jawaban_1: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>2. Bagaimana budaya Anda mempengaruhi cara Anda memandang kesehatan mental?</label>
+															<textarea rows={4} className='w-full rounded border p-3 text-sm' placeholder='Deskripsikan pengaruh budaya terhadap perspektif Anda...' value={assignment.jawaban_2} onChange={e => setAssignment(p => ({ ...p, jawaban_2: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>3. Praktik budaya apa yang membantu Anda mengatasi stress? (opsional)</label>
+															<textarea rows={3} className='w-full rounded border p-3 text-sm' placeholder='Contoh: doa, meditasi, ritual tertentu...' value={assignment.jawaban_3} onChange={e => setAssignment(p => ({ ...p, jawaban_3: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>Refleksi Pribadi</label>
+															<textarea rows={5} className='w-full rounded border p-3 text-sm' placeholder='Tulis refleksi Anda tentang materi sesi ini...' value={assignment.refleksi} onChange={e => setAssignment(p => ({ ...p, refleksi: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+													</>
+												)}
 												<div className='flex items-center gap-3 pt-2 border-t'>
 													{!progress?.assignment_done && (
 														<>
-															<Button onClick={handleSubmitAssignment} disabled={!assignmentValid || assignment.submitted}>
-																{assignment.submitted ? 'Terkirim ✓' : 'Kirim Penugasan'}
+															<Button onClick={handleSubmitAssignment} disabled={!assignmentValid || (sessionNumber === 1 ? !!assignmentS1.submitted : !!assignment.submitted)}>
+																{(sessionNumber === 1 ? assignmentS1.submitted : assignment.submitted) ? 'Terkirim ✓' : 'Kirim Penugasan'}
 															</Button>
 															{autoSavedAt && <p className='text-xs text-muted-foreground'>Draft tersimpan {autoSavedAt}</p>}
 														</>

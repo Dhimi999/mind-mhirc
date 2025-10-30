@@ -635,20 +635,42 @@ const SpiritualBudaya = () => {
                       };
                       const title = titles[session];
                       return (
-                        <Card key={session} className="group transition-all hover:shadow-lg border-amber-200 bg-amber-50/40">
+                        <Card key={session} className="group transition-all hover:shadow-lg border-amber-200 bg-amber-50/50">
                           <CardContent className="p-6">
                             <div className="flex items-center gap-4">
-                              <div className="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg bg-amber-600">{session}</div>
+                              <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg bg-amber-600">{session}</div>
                               <div className="flex-1">
-                                <div className="flex items-start justify-between mb-1">
+                                <div className="flex items-start justify-between mb-2">
                                   <h3 className="font-semibold text-lg">Modul {session}: {title}</h3>
                                   <Badge className="bg-amber-200 text-amber-900">Tersedia</Badge>
                                 </div>
-                                <div className="flex items-center justify-between mt-2">
-                                  <span className="text-xs text-muted-foreground">Penugasan reflektif</span>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-muted-foreground">Penugasan reflektif</span>
                                   <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => navigate(`/spiritual-budaya/psikoedukasi/sesi/${session}`)}>
                                     Buka Sesi
                                   </Button>
+                                </div>
+
+                                {/* Status dua unsur untuk keselarasan desain */}
+                                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div className="rounded-lg border bg-background p-4">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="text-sm font-medium">Materi Inti</p>
+                                        <p className="text-xs text-muted-foreground">Konsep & bacaan utama</p>
+                                      </div>
+                                      <Badge className="bg-amber-200 text-amber-900">Lihat di Portal</Badge>
+                                    </div>
+                                  </div>
+                                  <div className="rounded-lg border bg-background p-4">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="text-sm font-medium">Penugasan</p>
+                                        <p className="text-xs text-muted-foreground">Refleksi & penerapan</p>
+                                      </div>
+                                      <Badge className="bg-amber-200 text-amber-900">Lihat di Portal</Badge>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>

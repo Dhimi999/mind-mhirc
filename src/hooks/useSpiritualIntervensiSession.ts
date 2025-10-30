@@ -20,6 +20,8 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
   const [meeting, setMeeting] = useState<any>(null);
   const [groupAssignment, setGroupAssignment] = useState<'A'|'B'|'C'|'Admin'|null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
+  // expose assignment helpers for autosave/load
+  const [lastAutoSaveAt, setLastAutoSaveAt] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!user?.id || !sessionNumber) {
@@ -138,6 +140,50 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Load existing assignment answers (draft or submitted)
+  const loadAssignment = useCallback(async () => {
+    if (!user?.id) return null;
+    try {
+      const { data, error } = await supabase
+        .from('sb_intervensi_assignments' as any)
+        .select('answers, submitted, submitted_at')
+        .eq('user_id', user.id)
+        .eq('session_number', sessionNumber)
+        .maybeSingle();
+      if (error && (error as any).code !== 'PGRST116') throw error;
+      const raw = (data as any)?.answers;
+      if (!raw) return null;
+      if (typeof raw === 'string') {
+        try { return JSON.parse(raw); } catch { return null; }
+      }
+      return raw;
+    } catch (e) {
+      console.error('Load intervensi assignment failed', e);
+      return null;
+    }
+  }, [user?.id, sessionNumber]);
+
+  // Autosave draft answers without marking submitted
+  const autoSaveAssignment = useCallback(async (answers: any) => {
+    if (!user?.id) return;
+    try {
+      await supabase
+        .from('sb_intervensi_assignments' as any)
+        .upsert({
+          user_id: user.id,
+          session_number: sessionNumber,
+          answers,
+          submitted: false,
+        }, { onConflict: 'user_id,session_number' });
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      setLastAutoSaveAt(`${hh}:${mm}`);
+    } catch (e) {
+      console.error('Intervensi autosave failed', e);
+    }
+  }, [user?.id, sessionNumber]);
+
   const updateProgress = async (updates: Partial<SessionProgress>) => {
     if (!user?.id) return;
 
@@ -194,5 +240,8 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
     updateProgress,
     groupAssignment,
     isSuperAdmin,
+    loadAssignment,
+    autoSaveAssignment,
+    lastAutoSaveAt,
   };
 };

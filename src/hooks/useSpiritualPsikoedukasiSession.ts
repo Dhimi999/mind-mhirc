@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 export interface SessionProgress {
   meetingDone: boolean;
+  guideDone: boolean;
   assignmentDone: boolean;
   sessionOpened: boolean;
   counselorResponse?: string;
@@ -28,6 +29,7 @@ export interface MeetingSchedule {
 export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: string | undefined) => {
   const [progress, setProgress] = useState<SessionProgress>({
     meetingDone: false,
+    guideDone: false,
     assignmentDone: false,
     sessionOpened: false,
     counselorResponse: undefined,
@@ -98,6 +100,7 @@ export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: s
       if (progressData) {
         setProgress({
           meetingDone: (progressData as any).meeting_done || false,
+          guideDone: (progressData as any).guide_done || false,
           assignmentDone: (progressData as any).assignment_done || false,
           sessionOpened: (progressData as any).session_opened || false,
           counselorResponse: (progressData as any).counselor_response || undefined,
@@ -210,6 +213,30 @@ export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: s
     }
   }, [userId, sessionNumber]);
 
+  const markGuideDone = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const { error } = await supabase
+        .from("sb_psikoedukasi_user_progress" as any)
+        .upsert({
+          user_id: userId,
+          session_number: sessionNumber,
+          guide_done: true,
+          session_opened: true
+        }, {
+          onConflict: "user_id,session_number"
+        });
+
+      if (error) throw error;
+      setProgress(prev => ({ ...prev, guideDone: true }));
+      toast.success("Panduan penugasan ditandai selesai");
+    } catch (error: any) {
+      console.error("Error marking guide done:", error);
+      toast.error("Gagal menandai panduan selesai");
+    }
+  }, [userId, sessionNumber]);
+
   const submitAssignment = useCallback(async (answers: any) => {
     if (!userId) return false;
 
@@ -306,6 +333,7 @@ export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: s
     isSuperAdmin,
     allGroupSchedules,
     markMeetingDone,
+    markGuideDone,
     submitAssignment,
     loadAssignment,
     autoSaveAssignment,

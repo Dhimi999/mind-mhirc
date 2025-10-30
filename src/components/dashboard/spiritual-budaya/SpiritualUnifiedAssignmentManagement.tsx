@@ -1180,29 +1180,90 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
             <div className="space-y-4 py-4">
               <div className="bg-muted/50 rounded-lg p-4">
                 <h4 className="font-semibold mb-2">Jawaban Peserta:</h4>
-                <div className="bg-background p-3 rounded border max-h-[300px] overflow-y-auto">
+                <div className="bg-background p-3 rounded border max-h-[360px] overflow-y-auto">
                   {selectedAssignment?.answers ? (
-                    <div className="space-y-2 text-sm">
-                      {Object.entries(selectedAssignment.answers).map(([key, value]) => (
-                        <div key={key}>
-                          <div className="font-medium">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</div>
-                          <div className="text-muted-foreground break-words">
-                            {typeof value === 'string' || typeof value === 'number' ? (
-                              String(value)
-                            ) : Array.isArray(value) ? (
-                              <ul className="list-disc pl-5">
-                                {value.map((v, i) => (
-                                  <li key={i} className="break-words">{typeof v === 'string' ? v : JSON.stringify(v)}</li>
-                                ))}
-                              </ul>
-                            ) : value && typeof value === 'object' ? (
-                              <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
-                            ) : (
-                              <span>-</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="space-y-3 text-sm">
+                      {selectedSession?.program === 'intervensi' && selectedSession.number === 1 && (
+                        (() => {
+                          const a: any = selectedAssignment?.answers || {};
+                          const hasStructured = typeof a === 'object' && (
+                            'situasi_pemicu' in a || 'pikiran_otomatis' in a || 'emosi' in a || 'perilaku' in a || 'coping' in a || 'teknik_metagora' in a
+                          );
+                          if (hasStructured) {
+                            return (
+                              <div className="space-y-3">
+                                <div>
+                                  <div className="text-[12px] text-muted-foreground mb-1">(1) Situasi Pemicu Krisis</div>
+                                  <div className="font-medium whitespace-pre-wrap">{a.situasi_pemicu || '-'}</div>
+                                </div>
+                                <div>
+                                  <div className="text-[12px] text-muted-foreground mb-1">(2) Pikiran Otomatis</div>
+                                  <div className="font-medium whitespace-pre-wrap">{a.pikiran_otomatis || '-'}</div>
+                                </div>
+                                <div>
+                                  <div className="text-[12px] text-muted-foreground mb-1">(3) Emosi Terkait</div>
+                                  <div className="font-medium whitespace-pre-wrap">{a.emosi || '-'}</div>
+                                </div>
+                                <div>
+                                  <div className="text-[12px] text-muted-foreground mb-1">(4) Perilaku/Respons</div>
+                                  <div className="font-medium whitespace-pre-wrap">{a.perilaku || '-'}</div>
+                                </div>
+                                <div>
+                                  <div className="text-[12px] text-muted-foreground mb-1">(5) Strategi Koping Pribadi yang Sehat</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div>
+                                      <div className="text-[11px] text-muted-foreground">a. Aktivitas</div>
+                                      <div className="whitespace-pre-wrap">{a.coping?.aktivitas || '-'}</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-[11px] text-muted-foreground">b. Kontak</div>
+                                      <div className="whitespace-pre-wrap">{a.coping?.kontak || '-'}</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-[11px] text-muted-foreground">c. Layanan Profesional/Darurat</div>
+                                      <div className="whitespace-pre-wrap">{a.coping?.layanan || '-'}</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-[11px] text-muted-foreground">d. Lingkungan Aman</div>
+                                      <div className="whitespace-pre-wrap">{a.coping?.lingkungan || '-'}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-[12px] text-muted-foreground mb-1">(6) Teknik Metafora "Bingkai dalam Film"</div>
+                                  <div className="font-medium whitespace-pre-wrap">{a.teknik_metagora || '-'}</div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()
+                      )}
+                      {/* Fallback generic renderer (for other sessions/types) */}
+                      {!(selectedSession?.program === 'intervensi' && selectedSession.number === 1) && (
+                        <>
+                          {Object.entries(selectedAssignment.answers).map(([key, value]) => (
+                            <div key={key}>
+                              <div className="font-medium">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div>
+                              <div className="text-muted-foreground break-words">
+                                {typeof value === 'string' || typeof value === 'number' ? (
+                                  String(value)
+                                ) : Array.isArray(value) ? (
+                                  <ul className="list-disc pl-5">
+                                    {value.map((v, i) => (
+                                      <li key={i} className="break-words">{typeof v === 'string' ? v : JSON.stringify(v)}</li>
+                                    ))}
+                                  </ul>
+                                ) : value && typeof value === 'object' ? (
+                                  <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
+                                ) : (
+                                  <span>-</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
                     </div>
                   ) : (
                     <div className="text-sm text-muted-foreground">Tidak ada jawaban</div>

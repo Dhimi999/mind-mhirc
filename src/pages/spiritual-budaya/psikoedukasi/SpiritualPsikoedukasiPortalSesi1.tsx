@@ -57,6 +57,7 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
     progress,
     meetingSchedule: schedule,
     markMeetingDone,
+    markGuideDone,
     submitAssignment: submitAssignmentRemote,
     loadAssignment,
     autoSaveAssignment,
@@ -66,7 +67,6 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
     loading
   } = useSpiritualPsikoedukasiSession(sessionNumber, user?.id);
   const [progressMap, setProgressMap] = useState<Record<number, SessionProgress>>({}); // legacy local kept for backward compatibility
-  const [hasReadGuide, setHasReadGuide] = useState(false);
   const [assignment, setAssignment] = useState<AssignmentData>(defaultAssignment);
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
 
@@ -111,12 +111,8 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
   }, [assignment]);
 
   const overallPercent = useMemo(() => {
-    let total = 0;
-    if (progress.sessionOpened) total += 20;
-    if (progress.meetingDone) total += 30;
-    if (progress.assignmentDone) total += 30;
-    if (progress.counselorResponse) total += 20;
-    return total;
+    const steps = [progress.sessionOpened, progress.meetingDone, progress.guideDone, !!progress.assignmentDone, !!progress.counselorResponse];
+    return steps.filter(Boolean).length * 20;
   }, [progress]);
 
   const assignmentFillPercent = useMemo(() => {
@@ -149,8 +145,8 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
     }
     return (
       <div className="space-y-4 text-sm leading-relaxed">
-        <div className="rounded-lg border-l-4 border-indigo-600 bg-gradient-to-r from-indigo-50 to-white p-4">
-          <p className="font-semibold text-indigo-800 mb-1">Fokus Sesi 1 â€” Pengenalan Tentang Bunuh Diri dan Risiko Terkait Bagi Mahasiswa</p>
+        <div className="rounded-lg border-l-4 border-amber-600 bg-gradient-to-r from-amber-50 to-white p-4">
+          <p className="font-semibold text-amber-800 mb-1">Fokus Sesi 1 — Pengenalan Tentang Bunuh Diri dan Risiko Terkait Bagi Mahasiswa</p>
           <p>Buku Kerja (Workbook) ini dirancang untuk membantu Anda yang sedang menjalani Psikoedukasi Pencegahan Bunuh Diri Bagi Mahasiswa. Pengenalan tentang risiko bunuh diri dan risiko terkait adalah melibatkan penyediaan informasi kepada mahasiswa tentang konsep bunuh diri, faktor risiko, dan tanda-tanda peringatan. Dengan melakukan analisis ini, Anda dapat lebih memahami apa itu bunuh diri dan risiko terjadinya bunuh diri.</p>
         </div>
         <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
@@ -159,8 +155,8 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
           <li>Mengetahui cara mencari bantuan dan sumber daya.</li>
           <li>Melakukan refleksi dan jurnal harian terkait topik ini.</li>
         </ul>
-        <div className="border rounded p-3 bg-indigo-50 text-xs text-indigo-800">Catatan: Jika Anda atau teman Anda mengalami pikiran menyakiti diri, segera cari bantuan profesional.</div>
-        <div className="text-xs text-muted-foreground">Isi bertahap â€” otomatis tersimpan.</div>
+        <div className="border rounded p-3 bg-amber-50 text-xs text-amber-800">Catatan: Jika Anda atau teman Anda mengalami pikiran menyakiti diri, segera cari bantuan profesional.</div>
+        <div className="text-xs text-muted-foreground">Isi bertahap — otomatis tersimpan.</div>
       </div>
     );
   };
@@ -176,18 +172,18 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
       <main className="flex-1 pt-24">
         {/* Hero */}
         <section className="relative overflow-hidden rounded">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800" />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-600 via-orange-700 to-amber-800" />
           <div className="absolute inset-0 opacity-10">
             <img src={heroImage} alt="Psikoedukasi" className="w-full h-full object-cover" />
           </div>
           <div className="relative container mx-auto px-6 py-14">
             <div className="max-w-5xl mx-auto">
               <div className="flex items-center justify-between mb-6">
-                <Link to="/spiritual-budaya/psikoedukasi" className="text-white/90 hover:underline text-sm">â† Kembali</Link>
+                <Link to="/spiritual-budaya/psikoedukasi" className="text-white/90 hover:underline text-sm">← Kembali</Link>
                 <Badge className="bg-white/20 backdrop-blur text-white border border-white/30" variant="secondary">Portal Sesi</Badge>
               </div>
               <h1 className="text-3xl md:text-5xl font-bold mb-3 text-white drop-shadow-sm">Sesi 1: {title}</h1>
-              <p className="text-indigo-100 max-w-2xl">Fokus pada pengenalan bunuh diri, risiko, protektif, dan refleksi personal.</p>
+              <p className="text-amber-100 max-w-2xl">Fokus pada pengenalan bunuh diri, risiko, protektif, dan refleksi personal.</p>
             </div>
           </div>
         </section>
@@ -196,53 +192,53 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               {/* Left Column: Tips above Sticky Progress to avoid collision */}
               <div className="lg:col-span-1 space-y-6">
-                <div className="rounded-xl border border-indigo-100 p-4 text-xs leading-relaxed bg-white/60 backdrop-blur">
-                  <p className="font-semibold mb-1 text-indigo-700">Tips</p>
+                <div className="rounded-xl border border-amber-100 p-4 text-xs leading-relaxed bg-white/60 backdrop-blur">
+                  <p className="font-semibold mb-1 text-amber-700">Tips</p>
                   <p>Gunakan jurnal harian untuk merefleksikan perasaan dan pemikiran Anda setiap hari.</p>
                 </div>
-                <div className="rounded-xl bg-gradient-to-b from-indigo-50 to-white border border-indigo-100 p-5 shadow-sm sticky top-28">
-                  <h3 className="font-semibold mb-4 text-sm tracking-wide text-indigo-700">PROGRES SESI</h3>
+                <div className="rounded-xl bg-gradient-to-b from-amber-50 to-white border border-amber-100 p-5 shadow-sm sticky top-28">
+                  <h3 className="font-semibold mb-4 text-sm tracking-wide text-amber-700">PROGRES SESI</h3>
                   <div className="mb-4">
-                    <div className="h-3 w-full bg-indigo-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full transition-all" style={{ width: `${overallPercent}%` }} />
+                    <div className="h-3 w-full bg-amber-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-amber-600 to-orange-600 rounded-full transition-all" style={{ width: `${overallPercent}%` }} />
                     </div>
-                    <div className="mt-2 text-xs text-indigo-700 font-medium">{overallPercent}% selesai</div>
+                    <div className="mt-2 text-xs text-amber-700 font-medium">{overallPercent}% selesai</div>
                   </div>
                   <ol className="space-y-3 text-xs">
-                    <li className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress.sessionOpened ? 'bg-green-500 text-white' : 'bg-indigo-200 text-indigo-800'}`}>âœ“</span>
-                      <span>Sesi Dibuka</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress.meetingDone ? 'bg-green-500 text-white' : 'bg-indigo-200 text-indigo-800'}`}>1</span>
-                      <span>Pertemuan Daring</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${(progress.meetingDone && hasReadGuide) || progress.assignmentDone ? 'bg-green-500 text-white' : 'bg-indigo-200 text-indigo-800'}`}>2</span>
-                      <span>Panduan & Penugasan</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress.counselorResponse ? 'bg-green-500 text-white' : 'bg-indigo-200 text-indigo-800'}`}>3</span>
-                      <span>Response Konselor</span>
-                    </li>
+                    <li className="flex items-center gap-2"><span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress.sessionOpened ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>1</span><span>Sesi Dibuka</span></li>
+                    <li className="flex items-center gap-2"><span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress.meetingDone ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>2</span><span>Materi Dibaca</span></li>
+                    <li className="flex items-center gap-2"><span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress.guideDone ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>3</span><span>Panduan Penugasan Selesai</span></li>
+                    <li className="flex items-center gap-2"><span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress.assignmentDone ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>4</span><span>Penugasan Selesai</span></li>
+                    <li className="flex items-center gap-2"><span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress.counselorResponse ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>5</span><span>Response Konselor</span></li>
                   </ol>
                 </div>
                 
               </div>
               {/* Right Main */}
               <div className="lg:col-span-3 space-y-8">
-                {/* Pertemuan Daring */}
-                <Card className="border-indigo-100 shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-600 p-1">
+                {/* Panduan Sesi */}
+                <Card className="border-amber-100 shadow-sm">
+                  <CardHeader>
+                    <CardTitle>Panduan Sesi</CardTitle>
+                    <CardDescription>Alur pengerjaan sesi ini</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {renderGuide()}
+                  </CardContent>
+                </Card>
+
+                {/* Informasi Pertemuan Daring */}
+                <Card className="border-amber-100 shadow-sm overflow-hidden">
+                  <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 p-1">
                     <div className="bg-white rounded-sm">
-                      <CardHeader className="bg-gradient-to-r from-indigo-50 to-violet-50">
+                      <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-indigo-600 rounded-lg">
+                          <div className="p-2 bg-amber-600 rounded-lg">
                             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                           </div>
                           <div>
-                            <CardTitle className="text-indigo-800">Pertemuan Daring</CardTitle>
-                            <CardDescription>Sesi sinkron fasilitator</CardDescription>
+                            <CardTitle className="text-amber-800">Informasi Pertemuan Daring</CardTitle>
+                            <CardDescription>Jadwal dan link pertemuan sesi ini</CardDescription>
                           </div>
                         </div>
                       </CardHeader>
@@ -267,12 +263,12 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
                               <div key={k} className="rounded border p-3 bg-muted/30">
                                 <div className="flex items-center justify-between mb-1">
                                   <span className="text-xs text-muted-foreground">Grup</span>
-                                  <span className="px-2 py-0.5 text-[11px] rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">{k}</span>
+                                  <span className="px-2 py-0.5 text-[11px] rounded-full bg-amber-100 text-amber-800 border border-amber-200">{k}</span>
                                 </div>
                                 <div className="text-sm"><span className="text-muted-foreground">Tanggal:</span> <span className="font-medium">{allGroupSchedules[k]?.date || 'TBD'}</span></div>
                                 <div className="text-sm"><span className="text-muted-foreground">Waktu:</span> <span className="font-medium">{allGroupSchedules[k]?.time || 'TBD'}</span></div>
                                 <div className="text-sm"><span className="text-muted-foreground">Link:</span> {allGroupSchedules[k]?.link ? (
-                                  <a className="text-indigo-700 underline font-medium" href={normalizeHref(allGroupSchedules[k]?.link)} target="_blank" rel="noreferrer">Tersedia</a>
+                                  <a className="text-amber-700 underline font-medium" href={normalizeHref(allGroupSchedules[k]?.link)} target="_blank" rel="noreferrer">Tersedia</a>
                                 ) : <span className="font-medium">TBD</span>}</div>
                               </div>
                             ))}
@@ -285,67 +281,64 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
                               )}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm">
-                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{meeting?.date || 'TBD'}</span></div>
-                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{meeting?.time || 'TBD'}</span></div>
-                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{meeting?.link ? <a href={normalizeHref(meeting.link)} target="_blank" rel="noreferrer" className="text-indigo-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-amber-600 rounded-full" /><span className="text-muted-foreground">Tanggal:</span><span className="font-medium">{meeting?.date || 'TBD'}</span></div>
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-amber-600 rounded-full" /><span className="text-muted-foreground">Waktu:</span><span className="font-medium">{meeting?.time || 'TBD'}</span></div>
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 bg-amber-600 rounded-full" /><span className="text-muted-foreground">Link:</span>{meeting?.link ? <a href={normalizeHref(meeting.link)} target="_blank" rel="noreferrer" className="text-amber-700 underline font-medium">Tersedia</a> : <span className="font-medium">TBD</span>}</div>
                             </div>
                           </>
                         )}
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex flex-wrap items-center gap-3">
-                            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" disabled={!meeting?.link} onClick={() => meeting?.link && window.open(meeting.link, '_blank')}>Mulai Pertemuan</Button>
+                            <Button size="sm" className="bg-amber-600 hover:bg-amber-700" disabled={!meeting?.link} onClick={() => meeting?.link && window.open(meeting.link, '_blank')}>Mulai Pertemuan</Button>
                             <Button size="sm" variant={progress.meetingDone ? "destructive" : "outline"} disabled={progress.meetingDone} onClick={() => !progress.meetingDone && markMeetingDone()}>{progress.meetingDone ? 'Sudah Selesai' : 'Tandai Selesai'}</Button>
                           </div>
                           <div className="sm:ml-auto">
-                            <Badge className={progress.meetingDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>{progress.meetingDone ? 'âœ“ Sudah selesai' : 'â³ Belum selesai'}</Badge>
+                            <Badge className={progress.meetingDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>{progress.meetingDone ? '✓ Sudah selesai' : '⏳ Belum selesai'}</Badge>
                           </div>
                         </div>
                       </CardContent>
                     </div>
                   </div>
                 </Card>
-                {/* Panduan */}
-                <Card className="border-indigo-100 shadow-sm">
+                {/* Panduan Penugasan */}
+                <Card className="border-amber-100 shadow-sm">
                   <CardHeader>
-                    <CardTitle>Panduan Sesi</CardTitle>
-                    <CardDescription>Baca & centang konfirmasi sebelum penugasan.</CardDescription>
+                    <CardTitle>Panduan Penugasan</CardTitle>
+                    <CardDescription>Rujukan materi & instruksi singkat</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {renderGuide()}
-                    {progress.meetingDone && (
-                      <div className="mt-4 text-sm space-y-2">
-                        <label className="flex items-start gap-2 cursor-pointer">
-                          <input type="checkbox" checked={hasReadGuide || progress.assignmentDone} onChange={() => setHasReadGuide(v => !v)} disabled={progress.assignmentDone} />
-                          <span>Saya telah membaca dan memahami panduan.</span>
-                        </label>
-                        <label className="flex items-start gap-2 cursor-pointer">
-                          <input type="checkbox" checked={(hasReadGuide && !progress.assignmentDone) || progress.assignmentDone} onChange={() => setHasReadGuide(v => !v)} disabled={!hasReadGuide || progress.assignmentDone} />
-                          <span>Saya akan mengikuti panduan selama mengerjakan sesi.</span>
-                        </label>
-                      </div>
+                    {!progress.meetingDone ? (
+                      <div className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded p-4">Panduan penugasan akan muncul setelah Anda menandai Informasi Pertemuan Daring sebagai selesai.</div>
+                    ) : (
+                      <>
+                        <GuidanceMaterialsDisplay
+                          guidance_text={meeting?.guidance_text}
+                          guidance_pdf_url={meeting?.guidance_pdf_url}
+                          guidance_audio_url={meeting?.guidance_audio_url}
+                          guidance_video_url={meeting?.guidance_video_url}
+                          guidance_links={meeting?.guidance_links}
+                        />
+                        <div className="flex items-center gap-3 pt-3">
+                          {!progress.guideDone && (
+                            <Button size="sm" variant="outline" onClick={markGuideDone}>Tandai Selesai</Button>
+                          )}
+                          <Badge className={progress.guideDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>{progress.guideDone ? '✓ Selesai' : 'Belum Selesai'}</Badge>
+                        </div>
+                      </>
                     )}
                   </CardContent>
                 </Card>
-
-                {/* Guidance Materials */}
-                <GuidanceMaterialsDisplay
-                  guidance_text={meeting?.guidance_text}
-                  guidance_pdf_url={meeting?.guidance_pdf_url}
-                  guidance_audio_url={meeting?.guidance_audio_url}
-                  guidance_video_url={meeting?.guidance_video_url}
-                  guidance_links={meeting?.guidance_links}
-                />
                 {/* Penugasan */}
-                <Card className="border-indigo-100 shadow-md">
+                <Card className="border-amber-100 shadow-md">
                   <CardHeader>
                     <CardTitle>Penugasan</CardTitle>
                     <CardDescription>Refleksi dan analisis risiko bunuh diri</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {!hasReadGuide && !progress.assignmentDone && (
-                      <div className="mb-4 p-3 rounded border border-indigo-300 bg-indigo-50 text-indigo-900 text-sm">Penugasan terkunci. Baca panduan lalu centang konfirmasi.</div>
+                    {!progress.guideDone && !progress.assignmentDone && (
+                      <div className="mb-4 p-3 rounded border border-amber-300 bg-amber-50 text-amber-900 text-sm">Penugasan terkunci. Selesaikan Panduan Penugasan untuk membuka.</div>
                     )}
-                    <div className={(!hasReadGuide && !progress.assignmentDone) ? 'pointer-events-none opacity-60 select-none' : ''}>
+                    <div className={(!progress.guideDone && !progress.assignmentDone) ? 'pointer-events-none opacity-60 select-none' : ''}>
                       <div className="space-y-8">
                         <div>
                           <h4 className="font-semibold mb-3">Identitas Peserta</h4>
@@ -393,10 +386,10 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
                           <textarea rows={5} className="w-full rounded border p-2 text-sm" value={assignment.jurnal} onChange={e => setAssignment(p => ({ ...p, jurnal: e.target.value }))} disabled={progress.assignmentDone} />
                         </div>
                         <div className="flex items-center gap-3 pt-2 border-t">
-                          <Button className="bg-indigo-600 hover:bg-indigo-700" disabled={!assignmentValid || progress.assignmentDone} onClick={handleSubmitAssignment}>
+                          <Button className="bg-amber-600 hover:bg-amber-700" disabled={!assignmentValid || progress.assignmentDone} onClick={handleSubmitAssignment}>
                             {progress.assignmentDone ? 'Terkirim' : 'Kirim & Tandai Selesai'}
                           </Button>
-                          <Badge className={progress.assignmentDone ? 'bg-green-600 text-white' : 'bg-indigo-200 text-indigo-900'}>{progress.assignmentDone ? 'Sudah selesai' : 'Belum selesai'}</Badge>
+                          <Badge className={progress.assignmentDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>{progress.assignmentDone ? 'Sudah selesai' : 'Belum selesai'}</Badge>
                           {autoSavedAt && !progress.assignmentDone && <span className="text-xs text-muted-foreground">Draft tersimpan: {autoSavedAt}</span>}
                         </div>
                         <div className="text-[11px] text-muted-foreground">Progress penugasan: {assignmentFillPercent}%</div>

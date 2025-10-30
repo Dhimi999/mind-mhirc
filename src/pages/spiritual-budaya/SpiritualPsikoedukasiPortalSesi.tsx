@@ -55,7 +55,10 @@ const SpiritualPsikoedukasiPortalSesi: React.FC = () => {
     markMeetingDone,
     submitAssignment: submitAssignmentHook,
     loadAssignment,
-    autoSaveAssignment
+    autoSaveAssignment,
+    groupAssignment,
+    isSuperAdmin: isSuperAdminFromHook,
+    allGroupSchedules,
   } = useSpiritualPsikoedukasiSession(sessionNumber, user?.id);
 
   const [assignment, setAssignment] = useState<AssignmentData>(defaultAssignment);
@@ -63,7 +66,7 @@ const SpiritualPsikoedukasiPortalSesi: React.FC = () => {
   const [previousSessionProgress, setPreviousSessionProgress] = useState<any>(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
 
-  const isSuperAdmin = role === 'super-admin';
+  const isSuperAdmin = role === 'super-admin' || isSuperAdminFromHook;
 
   // Check if user can access this session (sequential access control)
   useEffect(() => {
@@ -128,6 +131,40 @@ const SpiritualPsikoedukasiPortalSesi: React.FC = () => {
     }
   }, [assignmentValid, assignment, submitAssignmentHook]);
 
+  // Load existing answers on mount
+  useEffect(() => {
+    (async () => {
+      const loaded = await loadAssignment();
+      if (!loaded) return;
+      setAssignment(prev => ({
+        konsep: Array.isArray(loaded.konsep) ? [
+          loaded.konsep[0] ?? prev.konsep[0],
+          loaded.konsep[1] ?? prev.konsep[1],
+          loaded.konsep[2] ?? prev.konsep[2],
+        ] : prev.konsep,
+        aplikasi: Array.isArray(loaded.aplikasi) ? [
+          loaded.aplikasi[0] ?? prev.aplikasi[0],
+          loaded.aplikasi[1] ?? prev.aplikasi[1],
+          loaded.aplikasi[2] ?? prev.aplikasi[2],
+        ] : prev.aplikasi,
+        refleksi: typeof loaded.refleksi === 'string' ? loaded.refleksi : prev.refleksi,
+        submitted: !!loaded.submitted || prev.submitted,
+      }));
+    })();
+  }, [loadAssignment]);
+
+  // Debounced autosave
+  useEffect(() => {
+    const t = setTimeout(() => {
+      autoSaveAssignment(assignment);
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      setAutoSavedAt(`${hh}:${mm}`);
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [assignment, autoSaveAssignment]);
+
   const handleMarkMaterialRead = useCallback(async () => {
     await markMeetingDone();
   }, [markMeetingDone]);
@@ -185,10 +222,20 @@ const SpiritualPsikoedukasiPortalSesi: React.FC = () => {
         <section className='py-12'>
           <div className='container mx-auto px-6 max-w-6xl'>
             <div className='grid grid-cols-1 lg:grid-cols-4 gap-8'>
-              {/* Left Progress */}
+              {/* Left column: Tips + Progress */}
               <div className='lg:col-span-1 space-y-6'>
+                {/* Tips Card (non-sticky) */}
+                <div className='rounded-xl bg-gradient-to-b from-amber-50 to-white border border-amber-100 p-5 shadow-sm'>
+                  <h3 className='font-semibold mb-3 text-sm tracking-wide text-amber-700'>TIPS</h3>
+                  <ul className='list-disc pl-5 text-sm text-muted-foreground space-y-2'>
+                    <li>Siapkan waktu dan tempat yang tenang sebelum memulai.</li>
+                    <li>Catat poin penting atau pertanyaan yang muncul.</li>
+                    <li>Refleksikan keterkaitan materi dengan pengalaman pribadi.</li>
+                    <li>Hubungi fasilitator bila menemui kendala.</li>
+                  </ul>
+                </div>
                 <div className='rounded-xl bg-gradient-to-b from-amber-50 to-white border border-amber-100 p-5 shadow-sm sticky top-28'>
-                  <h3 className='font-semibold mb-4 text-sm tracking-wide text-amber-700'>PROGRES MODUL</h3>
+                  <h3 className='font-semibold mb-4 text-sm tracking-wide text-amber-700'>PROGRES SESI</h3>
                   <div className='mb-4'>
                     <div className='h-3 w-full bg-amber-100 rounded-full overflow-hidden'>
                       <div className='h-full bg-gradient-to-r from-amber-600 to-orange-600 rounded-full transition-all' style={{ width: `${overallPercent}%` }} />
@@ -197,15 +244,19 @@ const SpiritualPsikoedukasiPortalSesi: React.FC = () => {
                   </div>
                   <ol className='space-y-3 text-xs'>
                     <li className='flex items-center gap-2'>
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.meetingDone ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>1</span>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-green-500 text-white`}>1</span>
+                      <span>Sesi Dibuka</span>
+                    </li>
+                    <li className='flex items-center gap-2'>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.meetingDone ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>2</span>
                       <span>Materi Dibaca</span>
                     </li>
                     <li className='flex items-center gap-2'>
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.assignmentDone ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>2</span>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.assignmentDone ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>3</span>
                       <span>Penugasan Selesai</span>
                     </li>
                     <li className='flex items-center gap-2'>
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.counselorResponse ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>3</span>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.counselorResponse ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>4</span>
                       <span>Response Konselor</span>
                     </li>
                   </ol>
@@ -260,29 +311,63 @@ const SpiritualPsikoedukasiPortalSesi: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Materi Inti */}
+                {/* Meeting Info (aligned with Intervensi) */}
                 <Card className='border-amber-100 shadow-sm'>
                   <CardHeader>
-                    <CardTitle>Materi Inti</CardTitle>
-                    <CardDescription>Panduan dan materi modul ini</CardDescription>
+                    <CardTitle>Informasi Pertemuan Daring</CardTitle>
+                    <CardDescription>Jadwal dan link pertemuan sesi ini</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <GuidanceMaterialsDisplay 
-                      guidance_text={meetingSchedule?.guidance_text}
-                      guidance_pdf_url={meetingSchedule?.guidance_pdf_url}
-                      guidance_audio_url={meetingSchedule?.guidance_audio_url}
-                      guidance_video_url={meetingSchedule?.guidance_video_url}
-                      guidance_links={meetingSchedule?.guidance_links}
-                      showTitle={false}
-                    />
-                    <div className='flex items-center gap-3 pt-4 mt-4 border-t'>
-                      <Button size='sm' variant={progress?.meetingDone ? 'destructive' : 'outline'} onClick={handleMarkMaterialRead}>
-                        {progress?.meetingDone ? 'Batalkan Centang' : 'Tandai Sudah Dibaca'}
-                      </Button>
-                      <Badge className={progress?.meetingDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>
-                        {progress?.meetingDone ? '✓ Dibaca' : 'Belum Dibaca'}
-                      </Badge>
-                    </div>
+                    {meetingSchedule ? (
+                      <div className='space-y-4'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                          <div>
+                            <p className='text-sm text-muted-foreground'>Tanggal</p>
+                            <p className='font-medium'>{meetingSchedule.date || 'Belum dijadwalkan'}</p>
+                          </div>
+                          <div>
+                            <p className='text-sm text-muted-foreground'>Waktu</p>
+                            <p className='font-medium'>{meetingSchedule.time || 'Belum ditentukan'}</p>
+                          </div>
+                        </div>
+                        {meetingSchedule.link && typeof meetingSchedule.link === 'string' && (
+                          <div>
+                            <p className='text-sm text-muted-foreground mb-2'>Link Pertemuan</p>
+                            <a href={meetingSchedule.link} target='_blank' rel='noopener noreferrer' className='text-amber-600 hover:underline break-all'>{meetingSchedule.link}</a>
+                          </div>
+                        )}
+                        {!isSuperAdmin && meetingSchedule.has_group_schedules && (groupAssignment === 'A' || groupAssignment === 'B' || groupAssignment === 'C') && (
+                          <div className='mt-1'>
+                            <Badge className='bg-purple-100 text-purple-900 border border-purple-200'>Grup Anda: {groupAssignment}</Badge>
+                          </div>
+                        )}
+                        {isSuperAdmin && meetingSchedule.has_group_schedules && allGroupSchedules && (
+                          <div className='mt-4 border-t pt-4'>
+                            <p className='text-sm font-semibold mb-2'>Jadwal per Grup (Super Admin)</p>
+                            <div className='grid grid-cols-1 md:grid-cols-3 gap-3 text-sm'>
+                              {(['A','B','C'] as const).map(g => (
+                                <div key={g} className='rounded border p-3 bg-muted/30'>
+                                  <div className='font-semibold mb-1'>Grup {g}</div>
+                                  <div>Tanggal: <span className='font-medium'>{allGroupSchedules[g]?.date || '—'}</span></div>
+                                  <div>Waktu: <span className='font-medium'>{allGroupSchedules[g]?.time || '—'}</span></div>
+                                  <div className='truncate'>Link: {allGroupSchedules[g]?.link ? (<a className='text-amber-700 hover:underline' href={allGroupSchedules[g]!.link} target='_blank' rel='noreferrer'>{allGroupSchedules[g]!.link}</a>) : '—'}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className='flex items-center gap-3 pt-2'>
+                          <Button size='sm' variant={progress?.meetingDone ? 'destructive' : 'outline'} onClick={handleMarkMaterialRead}>
+                            {progress?.meetingDone ? 'Batalkan Centang' : 'Tandai Sudah Dibaca'}
+                          </Button>
+                          <Badge className={progress?.meetingDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>
+                            {progress?.meetingDone ? '✓ Dibaca' : 'Belum Dibaca'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className='text-sm text-muted-foreground'>Informasi pertemuan belum tersedia.</p>
+                    )}
                   </CardContent>
                 </Card>
 
