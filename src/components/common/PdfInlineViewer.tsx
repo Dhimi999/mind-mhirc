@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import type { DocumentProps, PageProps } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCw, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 // Resolve pdf.js worker to a concrete URL at build-time (Vite)
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -35,10 +36,12 @@ type PdfInlineViewerProps = {
 type RotateAngle = 0 | 90 | 180 | 270;
 
 export default function PdfInlineViewer({ fileUrl, className }: PdfInlineViewerProps) {
+  const isMobile = useIsMobile();
   const [ready, setReady] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.0);
+  // Set default scale: 0.7 for mobile, 1.0 for desktop
+  const [scale, setScale] = useState(isMobile ? 0.7 : 1.0);
   const [rotation, setRotation] = useState<RotateAngle>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -54,7 +57,9 @@ export default function PdfInlineViewer({ fileUrl, className }: PdfInlineViewerP
 
   useEffect(() => {
     setPageNumber(1);
-  }, [fileUrl]);
+    // Reset scale based on device when file URL changes
+    setScale(isMobile ? 0.7 : 1.0);
+  }, [fileUrl, isMobile]);
 
   const onDocumentLoadSuccess = useCallback((pdf: { numPages: number }) => {
     setNumPages(pdf.numPages);

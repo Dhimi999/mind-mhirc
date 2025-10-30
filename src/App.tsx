@@ -45,14 +45,7 @@ import SpiritualIntervensiPortalSesi from "./pages/spiritual-budaya/SpiritualInt
 import SpiritualIntervensiPortalSesi1 from "./pages/spiritual-budaya/intervensi/SpiritualIntervensiPortalSesi1";
 import SpiritualIntervensiPortalSesi2 from "./pages/spiritual-budaya/intervensi/SpiritualIntervensiPortalSesi2";
 import SpiritualPsikoedukasiPortalSesi from "./pages/spiritual-budaya/SpiritualPsikoedukasiPortalSesi";
-import SpiritualPsikoedukasiPortalSesi1 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi1";
-import SpiritualPsikoedukasiPortalSesi2 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi2";
-import SpiritualPsikoedukasiPortalSesi3 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi3";
-import SpiritualPsikoedukasiPortalSesi4 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi4";
-import SpiritualPsikoedukasiPortalSesi5 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi5";
-import SpiritualPsikoedukasiPortalSesi6 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi6";
-import SpiritualPsikoedukasiPortalSesi7 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi7";
-import SpiritualPsikoedukasiPortalSesi8 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi8";
+import SpiritualPsikoedukasiUnified from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiUnified";
 import HibridaNaratifCBT from "./pages/hibrida-naratif/HibridaNaratifCBT";
 import HibridaPortalSesi from "./pages/hibrida-naratif/HibridaPortalSesi";
 import HibridaPortalSesi2 from "./pages/hibrida-naratif/HibridaPortalSesi2";
@@ -224,37 +217,10 @@ const AppRoutes = () => {
           path="/spiritual-budaya/intervensi/sesi/:sesi"
           element={<SpiritualIntervensiPortalSesi />}
         />
+        {/* Unified route for all sesi 1-8 */}
         <Route
-          path="/spiritual-budaya/psikoedukasi/sesi/1"
-          element={<SpiritualPsikoedukasiPortalSesi1 />}
-        />
-        <Route
-          path="/spiritual-budaya/psikoedukasi/sesi/2"
-          element={<SpiritualPsikoedukasiPortalSesi2 />}
-        />
-        <Route
-          path="/spiritual-budaya/psikoedukasi/sesi/3"
-          element={<SpiritualPsikoedukasiPortalSesi3 />}
-        />
-        <Route
-          path="/spiritual-budaya/psikoedukasi/sesi/4"
-          element={<SpiritualPsikoedukasiPortalSesi4 />}
-        />
-        <Route
-          path="/spiritual-budaya/psikoedukasi/sesi/5"
-          element={<SpiritualPsikoedukasiPortalSesi5 />}
-        />
-        <Route
-          path="/spiritual-budaya/psikoedukasi/sesi/6"
-          element={<SpiritualPsikoedukasiPortalSesi6 />}
-        />
-        <Route
-          path="/spiritual-budaya/psikoedukasi/sesi/7"
-          element={<SpiritualPsikoedukasiPortalSesi7 />}
-        />
-        <Route
-          path="/spiritual-budaya/psikoedukasi/sesi/8"
-          element={<SpiritualPsikoedukasiPortalSesi8 />}
+          path="/spiritual-budaya/psikoedukasi/sesi/:sesi"
+          element={<SpiritualPsikoedukasiUnified />}
         />
         <Route
           path="/spiritual-budaya/psikoedukasi/sesi/:sesi"
