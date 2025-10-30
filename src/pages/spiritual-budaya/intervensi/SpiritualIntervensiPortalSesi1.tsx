@@ -208,158 +208,203 @@ const SpiritualIntervensiPortalSesi1: React.FC = () => {
 				<meta name='description' content={pageDescription} />
 			</Helmet>
 			<Navbar />
-
-			{/* Hero */}
-			<div className='relative h-64 bg-gradient-to-r from-amber-600 to-orange-700 flex items-center justify-center'>
-				<div className='absolute inset-0'>
-					<img src={heroImage} alt='Spiritual & Budaya' className='w-full h-full object-cover opacity-20' />
-				</div>
-				<div className='relative z-10 max-w-4xl mx-auto px-6 text-center text-white'>
-					<h1 className='text-4xl font-bold mb-2'>Intervensi Spiritual & Budaya</h1>
-					<p className='text-lg opacity-90'>Sesi {sessionNumber}: {title}</p>
-				</div>
-			</div>
-
-			{/* Main Content */}
-			<div className='flex-1 bg-gray-50 py-8'>
-				<div className='max-w-5xl mx-auto px-6 space-y-6'>
-					{/* Progress & Navigation */}
-					<Card>
-						<CardContent className='pt-6'>
+			<main className='flex-1 pt-24'>
+				{/* Hero */}
+				<section className='relative overflow-hidden rounded'>
+					<div className='absolute inset-0 bg-gradient-to-br from-amber-600 via-orange-700 to-amber-800' />
+					<div className='absolute inset-0 opacity-20'>
+						<img src={heroImage} alt='Spiritual & Budaya' className='w-full h-full object-cover' />
+					</div>
+					<div className='relative container mx-auto px-6 py-12'>
+						<div className='max-w-5xl mx-auto text-white'>
 							<div className='flex items-center justify-between mb-4'>
-								<div className='flex items-center gap-2'>
-									<Badge variant='outline' className='bg-amber-50 text-amber-700 border-amber-200'>
-										Sesi {sessionNumber}/8
-									</Badge>
-									<span className='text-sm text-muted-foreground'>
-										{progressPercentage}% Selesai
-									</span>
+								<Link to='/spiritual-budaya/intervensi' className='text-white/80 hover:underline text-sm'>← Kembali</Link>
+								<Badge className='bg-white/20 backdrop-blur border border-white/30'>Intervensi</Badge>
+							</div>
+							<h1 className='text-3xl md:text-5xl font-bold mb-3'>Sesi {sessionNumber}: {title}</h1>
+							<p className='text-amber-100 max-w-2xl mb-4'>Integrasi nilai spiritual dan budaya dalam kesehatan mental</p>
+						</div>
+					</div>
+				</section>
+
+				<section className='py-12'>
+					<div className='container mx-auto px-6 max-w-6xl'>
+						<div className='grid grid-cols-1 lg:grid-cols-4 gap-8'>
+							{/* Left column: Tips + Progress */}
+							<div className='lg:col-span-1 space-y-6'>
+								{/* Tips Card */}
+								<div className='rounded-xl bg-gradient-to-b from-amber-50 to-white border border-amber-100 p-5 shadow-sm'>
+									<h3 className='font-semibold mb-3 text-sm tracking-wide text-amber-700'>TIPS</h3>
+									<ul className='list-disc pl-5 text-sm text-muted-foreground space-y-2'>
+										<li>Pastikan Anda memiliki koneksi internet yang stabil.</li>
+										<li>Siapkan catatan untuk menulis poin penting.</li>
+										<li>Gabung 5 menit sebelum jadwal dimulai.</li>
+										<li>Hubungi fasilitator jika ada kendala teknis.</li>
+									</ul>
 								</div>
-								<Link to='/spiritual-budaya'>
-									<Button variant='outline' size='sm'>
-										← Kembali ke Dashboard
-									</Button>
-								</Link>
-							</div>
-							<div className='w-full bg-gray-200 rounded-full h-2'>
-								<div
-									className='bg-gradient-to-r from-amber-500 to-orange-600 h-2 rounded-full transition-all duration-500'
-									style={{ width: `${progressPercentage}%` }}
-								/>
-							</div>
-						</CardContent>
-					</Card>
-
-					{/* Panduan Sesi */}
-					<Card className='border-amber-200 bg-amber-50'>
-						<CardHeader>
-							<CardTitle className='flex items-center gap-2'>
-								<span>📖</span> Panduan Sesi
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<p className='text-sm text-gray-700 leading-relaxed'>
-								Pada sesi ini, Anda akan diajak untuk mengenal lebih dalam tentang nilai-nilai spiritual dan budaya yang Anda miliki, 
-								serta bagaimana hal tersebut dapat menjadi sumber kekuatan dalam menghadapi krisis kesehatan mental.
-							</p>
-						</CardContent>
-					</Card>
-
-					{/* Informasi Pertemuan Daring */}
-					{meeting && (
-						<Card>
-							<CardHeader>
-								<CardTitle>Informasi Pertemuan Daring</CardTitle>
-								<CardDescription>Jadwal dan detail pertemuan untuk sesi ini</CardDescription>
-							</CardHeader>
-							<CardContent className='space-y-4'>
-								{isSuperAdmin && meeting.has_group_schedules && meeting.all_group_schedules ? (
-									<div className='space-y-4'>
-										<div className='p-3 rounded border border-blue-200 bg-blue-50 text-blue-900 text-sm'>
-											<strong>Mode Super Admin:</strong> Menampilkan jadwal untuk semua grup.
+								{/* Progress Card (sticky) */}
+								<div className='rounded-xl bg-gradient-to-b from-amber-50 to-white border border-amber-100 p-5 shadow-sm sticky top-28'>
+									<h3 className='font-semibold mb-4 text-sm tracking-wide text-amber-700'>PROGRES SESI</h3>
+									<div className='mb-4'>
+										<div className='h-3 w-full bg-amber-100 rounded-full overflow-hidden'>
+											<div className='h-full bg-gradient-to-r from-amber-600 to-orange-600 rounded-full transition-all' style={{ width: `${progressPercentage}%` }} />
 										</div>
-										{(['A', 'B', 'C'] as const).map(grp => {
-											const sch = (meeting.all_group_schedules as any)?.[grp];
-											return sch ? (
-												<div key={grp} className='border rounded-lg p-4 bg-gray-50'>
-													<h4 className='font-semibold text-amber-700 mb-2'>Grup {grp}</h4>
-													<div className='space-y-2 text-sm'>
-														<p><strong>Tanggal:</strong> {sch.date || '-'}</p>
-														<p><strong>Waktu:</strong> {sch.time || '-'}</p>
-														{sch.link && (
+										<div className='mt-2 text-xs text-amber-700 font-medium'>{progressPercentage}% selesai</div>
+									</div>
+									<ol className='space-y-3 text-xs'>
+										<li className='flex items-center gap-2'>
+											<span className='w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-green-500 text-white'>1</span>
+											<span>Sesi Dibuka</span>
+										</li>
+										<li className='flex items-center gap-2'>
+											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.meeting_done ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>2</span>
+											<span>Pertemuan Daring</span>
+										</li>
+										<li className='flex items-center gap-2'>
+											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.assignment_done ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>3</span>
+											<span>Penugasan Selesai</span>
+										</li>
+										<li className='flex items-center gap-2'>
+											<span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${progress?.counselor_feedback ? 'bg-green-500 text-white' : 'bg-amber-200 text-amber-800'}`}>4</span>
+											<span>Response Konselor</span>
+										</li>
+									</ol>
+								</div>
+							</div>
+
+							{/* Main Content */}
+							<div className='lg:col-span-3 space-y-8'>
+								{/* Panduan Sesi (Static Guide) */}
+								<Card className='border-amber-100 shadow-sm'>
+									<CardHeader>
+										<CardTitle>Panduan Sesi</CardTitle>
+										<CardDescription>Alur pengerjaan sesi ini</CardDescription>
+									</CardHeader>
+									<CardContent>
+										<div className='space-y-4 text-sm leading-relaxed'>
+											<div className='rounded-lg border-l-4 border-amber-600 bg-gradient-to-r from-amber-50 to-white p-4'>
+												<p className='font-semibold text-amber-800 mb-2'>Fokus Sesi {sessionNumber} — {title}</p>
+												<p className='text-muted-foreground'>
+													Integrasi nilai spiritual dan budaya dalam kesehatan mental untuk meningkatkan kesejahteraan psikologis.
+												</p>
+											</div>
+											<div className='bg-muted/50 rounded-lg p-4'>
+												<h5 className='font-semibold mb-3'>Alur Pengerjaan:</h5>
+												<ol className='list-decimal pl-5 space-y-2 text-muted-foreground'>
+													<li>Ikuti <strong>Pertemuan Daring</strong> sesuai jadwal yang ditentukan</li>
+													<li>Tandai pertemuan sebagai <strong>Selesai</strong> setelah mengikuti</li>
+													<li>Baca <strong>Panduan Penugasan</strong> yang tersedia di bawah</li>
+													<li>Kerjakan <strong>Penugasan</strong> dengan mengisi semua pertanyaan yang diperlukan</li>
+													<li>Tekan tombol <strong>Kirim Penugasan</strong> setelah selesai</li>
+													<li>Tunggu <strong>Response Konselor</strong> yang akan muncul setelah penugasan direview</li>
+												</ol>
+											</div>
+											<div className='border rounded p-3 bg-amber-50 text-xs text-amber-800'>
+												💡 <strong>Catatan:</strong> Data Anda otomatis tersimpan saat mengisi penugasan. Anda dapat melanjutkan kapan saja sebelum mengirim.
+											</div>
+										</div>
+									</CardContent>
+								</Card>
+
+								{/* Meeting Info */}
+								<Card className='border-amber-100 shadow-sm'>
+									<CardHeader>
+										<CardTitle>Informasi Pertemuan Daring</CardTitle>
+										<CardDescription>Jadwal dan link pertemuan sesi ini</CardDescription>
+									</CardHeader>
+									<CardContent>
+										{meeting ? (
+											<div className='space-y-4'>
+												{isSuperAdmin && meeting.has_group_schedules && meeting.all_group_schedules ? (
+													<div className='space-y-4'>
+														<div className='p-3 rounded border border-blue-200 bg-blue-50 text-blue-900 text-sm'>
+															<strong>Mode Super Admin:</strong> Menampilkan jadwal untuk semua grup.
+														</div>
+														{(['A', 'B', 'C'] as const).map(grp => {
+															const sch = (meeting.all_group_schedules as any)?.[grp];
+															return sch ? (
+																<div key={grp} className='border rounded-lg p-4 bg-gray-50'>
+																	<h4 className='font-semibold text-amber-700 mb-2'>Grup {grp}</h4>
+																	<div className='space-y-2 text-sm'>
+																		<p><strong>Tanggal:</strong> {sch.date || '-'}</p>
+																		<p><strong>Waktu:</strong> {sch.time || '-'}</p>
+																		{sch.link && (
+																			<div>
+																				<strong>Link:</strong>{' '}
+																				<a href={sch.link} target='_blank' rel='noopener noreferrer' className='text-blue-600 hover:underline break-all'>
+																					{sch.link}
+																				</a>
+																			</div>
+																		)}
+																	</div>
+																</div>
+															) : null;
+														})}
+													</div>
+												) : (
+													<div className='space-y-3'>
+														{meeting.group_key_used && (
+															<Badge variant='outline' className='bg-purple-50 text-purple-700 border-purple-200'>
+																Grup {meeting.group_key_used}
+															</Badge>
+														)}
+														<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
 															<div>
-																<strong>Link:</strong>{' '}
-																<a href={sch.link} target='_blank' rel='noopener noreferrer' className='text-blue-600 hover:underline break-all'>
-																	{sch.link}
+																<p className='text-sm font-semibold text-gray-700'>Tanggal</p>
+																<p className='text-sm text-gray-600'>{meeting.date || '-'}</p>
+															</div>
+															<div>
+																<p className='text-sm font-semibold text-gray-700'>Waktu</p>
+																<p className='text-sm text-gray-600'>{meeting.time || '-'}</p>
+															</div>
+														</div>
+														{meeting.link && (
+															<div>
+																<p className='text-sm font-semibold text-gray-700 mb-1'>Link Pertemuan</p>
+																<a
+																	href={meeting.link}
+																	target='_blank'
+																	rel='noopener noreferrer'
+																	className='text-sm text-blue-600 hover:underline break-all'
+																>
+																	{meeting.link}
 																</a>
 															</div>
 														)}
+														{meeting.description && (
+															<div>
+																<p className='text-sm font-semibold text-gray-700 mb-1'>Deskripsi</p>
+																<p className='text-sm text-gray-600 whitespace-pre-line'>{meeting.description}</p>
+															</div>
+														)}
 													</div>
+												)}
+												<div className='flex items-center gap-2 pt-3 border-t'>
+													<input
+														type='checkbox'
+														id='meetingDone'
+														checked={progress?.meeting_done || false}
+														onChange={handleMarkMeetingDone}
+														className='w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500'
+													/>
+													<label htmlFor='meetingDone' className='text-sm text-gray-700 cursor-pointer'>
+														Tandai pertemuan sudah diikuti
+													</label>
 												</div>
-											) : null;
-										})}
-									</div>
-								) : (
-									<div className='space-y-3'>
-										{meeting.group_key_used && (
-											<Badge variant='outline' className='bg-purple-50 text-purple-700 border-purple-200'>
-												Grup {meeting.group_key_used}
-											</Badge>
+											</div>
+										) : (
+											<p className='text-sm text-muted-foreground'>Belum ada jadwal pertemuan untuk sesi ini.</p>
 										)}
-										<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-											<div>
-												<p className='text-sm font-semibold text-gray-700'>Tanggal</p>
-												<p className='text-sm text-gray-600'>{meeting.date || '-'}</p>
-											</div>
-											<div>
-												<p className='text-sm font-semibold text-gray-700'>Waktu</p>
-												<p className='text-sm text-gray-600'>{meeting.time || '-'}</p>
-											</div>
-										</div>
-										{meeting.link && (
-											<div>
-												<p className='text-sm font-semibold text-gray-700 mb-1'>Link Pertemuan</p>
-												<a
-													href={meeting.link}
-													target='_blank'
-													rel='noopener noreferrer'
-													className='text-sm text-blue-600 hover:underline break-all'
-												>
-													{meeting.link}
-												</a>
-											</div>
-										)}
-										{meeting.description && (
-											<div>
-												<p className='text-sm font-semibold text-gray-700 mb-1'>Deskripsi</p>
-												<p className='text-sm text-gray-600 whitespace-pre-line'>{meeting.description}</p>
-											</div>
-										)}
-									</div>
-								)}
-								<div className='flex items-center gap-2 pt-3 border-t'>
-									<input
-										type='checkbox'
-										id='meetingDone'
-										checked={progress?.meeting_done || false}
-										onChange={handleMarkMeetingDone}
-										className='w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500'
-									/>
-									<label htmlFor='meetingDone' className='text-sm text-gray-700 cursor-pointer'>
-										Tandai pertemuan sudah diikuti
-									</label>
-								</div>
-							</CardContent>
-						</Card>
-					)}
+									</CardContent>
+								</Card>
 
-					{/* Panduan Penugasan */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Panduan Penugasan</CardTitle>
-							<CardDescription>Materi dan panduan untuk mengerjakan penugasan sesi ini</CardDescription>
-						</CardHeader>
-						<CardContent>
+								{/* Panduan Penugasan */}
+								<Card className='border-amber-100 shadow-sm'>
+									<CardHeader>
+										<CardTitle>Panduan Penugasan</CardTitle>
+										<CardDescription>Materi dan panduan untuk mengerjakan penugasan sesi ini</CardDescription>
+									</CardHeader>
+									<CardContent>
 							{meeting?.guidance_text || meeting?.guidance_pdf_url || meeting?.guidance_audio_url || meeting?.guidance_video_url || meeting?.guidance_links ? (
 								<GuidanceMaterialsDisplay
 									guidance_text={meeting.guidance_text}
@@ -433,6 +478,7 @@ const SpiritualIntervensiPortalSesi1: React.FC = () => {
 										{!progress?.assignment_done && (
 											<>
 												<Button 
+													className='bg-amber-600 hover:bg-amber-700'
 													onClick={handleSubmitAssignment} 
 													disabled={!assignmentValid || isSubmitting || !!assignmentS1.submitted}
 												>
@@ -453,46 +499,28 @@ const SpiritualIntervensiPortalSesi1: React.FC = () => {
 
 					{/* Respons Konselor */}
 					{progress?.counselor_feedback && (
-						<Card>
+						<Card className='border-amber-100 shadow-sm'>
 							<CardHeader>
 								<CardTitle>Respons Konselor</CardTitle>
 								<CardDescription>Feedback dari konselor untuk penugasan Anda</CardDescription>
 							</CardHeader>
-						<CardContent>
-							<CounselorResponseDisplay
-								counselorResponse={progress.counselor_feedback}
-								counselorName={progress.counselor_name}
-								respondedAt={progress.updated_at}
-							/>
-						</CardContent>
+							<CardContent>
+								<CounselorResponseDisplay
+									counselorResponse={progress.counselor_feedback}
+									counselorName={progress.counselor_name}
+									respondedAt={progress.updated_at}
+								/>
+							</CardContent>
 						</Card>
 					)}
-
-					{/* Navigation */}
-					<Card>
-						<CardContent className='pt-6'>
-							<div className='flex justify-between items-center'>
-								<Link to='/spiritual-budaya/intervensi'>
-									<Button variant='outline'>
-										← Kembali ke Daftar Sesi
-									</Button>
-								</Link>
-								{sessionNumber < 8 && progress?.assignment_done && (
-									<Link to={`/spiritual-budaya/intervensi/sesi/${sessionNumber + 1}`}>
-										<Button className='bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700'>
-											Lanjut ke Sesi {sessionNumber + 1} →
-										</Button>
-									</Link>
-								)}
-							</div>
-						</CardContent>
-					</Card>
 				</div>
 			</div>
-
-			<Footer />
 		</div>
-	);
+	</section>
+</main>
+<Footer />
+</div>
+);
 };
 
 export default SpiritualIntervensiPortalSesi1;

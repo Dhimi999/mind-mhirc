@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSpiritualPsikoedukasiSession } from "@/hooks/useSpiritualPsikoedukasiSession";
 import { GuidanceMaterialsDisplay } from "@/components/dashboard/hibrida-cbt/GuidanceMaterialsDisplay";
 import { CounselorResponseDisplay } from "@/components/dashboard/hibrida-cbt/CounselorResponseDisplay";
+import { useToast } from "@/hooks/use-toast";
 
 // Use same progress key across psikoedukasi modules (aligned with listing component)
 const PROGRESS_KEY = "spiritualPsikoEduProgress";
@@ -51,6 +52,7 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
   const sessionNumber = 1;
   const title = "Pengenalan Tentang Bunuh Diri dan Risiko Terkait Bagi Mahasiswa";
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Ganti ke hook Supabase untuk progres & meeting
   const {
@@ -69,6 +71,7 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
   const [progressMap, setProgressMap] = useState<Record<number, SessionProgress>>({}); // legacy local kept for backward compatibility
   const [assignment, setAssignment] = useState<AssignmentData>(defaultAssignment);
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load existing draft from Supabase (remote) then merge with localStorage fallback
   useEffect(() => {
@@ -88,14 +91,14 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
 
   // Autosave remote + legacy local
   useEffect(() => {
-    if (progress.assignmentDone) return;
+    if (progress.assignmentDone || isSubmitting) return;
     const h = setTimeout(() => {
       autoSaveAssignment(assignment);
       try { localStorage.setItem(ASSIGNMENT_KEY, JSON.stringify(assignment)); } catch {}
       setAutoSavedAt(new Date().toLocaleTimeString());
     }, 700);
     return () => clearTimeout(h);
-  }, [assignment, progress.assignmentDone, autoSaveAssignment]);
+  }, [assignment, progress.assignmentDone, isSubmitting, autoSaveAssignment]);
 
   const updateProgress = (_patch: Partial<SessionProgress>) => { /* handled remotely via hook now */ };
 
@@ -122,12 +125,35 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
   }, [assignment]);
 
   const handleSubmitAssignment = useCallback(async () => {
-    if (!assignmentValid || progress.assignmentDone) return;
-    const ok = await submitAssignmentRemote(assignment);
-    if (ok) {
-      setAssignment(prev => ({ ...prev, submitted: true }));
+    if (!assignmentValid || progress.assignmentDone || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    try {
+      const ok = await submitAssignmentRemote(assignment);
+      if (ok) {
+        setAssignment(prev => ({ ...prev, submitted: true }));
+        toast({
+          title: "Berhasil!",
+          description: "Penugasan berhasil dikirim ke konselor.",
+        });
+      } else {
+        toast({
+          title: "Gagal",
+          description: "Terjadi kesalahan saat mengirim penugasan. Silakan coba lagi.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Submit assignment error:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengirim penugasan. Periksa koneksi internet Anda.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [assignmentValid, progress.assignmentDone, assignment, submitAssignmentRemote]);
+  }, [assignmentValid, progress.assignmentDone, assignment, submitAssignmentRemote, isSubmitting, toast]);
 
   const meeting = schedule; // alias
 
@@ -386,11 +412,26 @@ const SpiritualSpiritualPsikoedukasiPortalSesi1: React.FC = () => {
                           <textarea rows={5} className="w-full rounded border p-2 text-sm" value={assignment.jurnal} onChange={e => setAssignment(p => ({ ...p, jurnal: e.target.value }))} disabled={progress.assignmentDone} />
                         </div>
                         <div className="flex items-center gap-3 pt-2 border-t">
-                          <Button className="bg-amber-600 hover:bg-amber-700" disabled={!assignmentValid || progress.assignmentDone} onClick={handleSubmitAssignment}>
-                            {progress.assignmentDone ? 'Terkirim' : 'Kirim & Tandai Selesai'}
+                          <Button 
+                            className="bg-amber-600 hover:bg-amber-700" 
+                            disabled={!assignmentValid || progress.assignmentDone || isSubmitting} 
+                            onClick={handleSubmitAssignment}
+                          >
+                            {isSubmitting ? 'Mengirim...' : progress.assignmentDone ? 'Terkirim ✓' : 'Kirim & Tandai Selesai'}
                           </Button>
-                          <Badge className={progress.assignmentDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>{progress.assignmentDone ? 'Sudah selesai' : 'Belum selesai'}</Badge>
-                          {autoSavedAt && !progress.assignmentDone && <span className="text-xs text-muted-foreground">Draft tersimpan: {autoSavedAt}</span>}
+                          {!isSubmitting && (
+                            <>
+                              <Badge className={progress.assignmentDone ? 'bg-green-600 text-white' : 'bg-amber-200 text-amber-900'}>
+                                {progress.assignmentDone ? 'Sudah selesai' : 'Belum selesai'}
+                              </Badge>
+                              {autoSavedAt && !progress.assignmentDone && (
+                                <span className="text-xs text-muted-foreground">Draft tersimpan: {autoSavedAt}</span>
+                              )}
+                            </>
+                          )}
+                          {isSubmitting && (
+                            <p className="text-xs text-muted-foreground">Mengirim penugasan...</p>
+                          )}
                         </div>
                         <div className="text-[11px] text-muted-foreground">Progress penugasan: {assignmentFillPercent}%</div>
                       </div>

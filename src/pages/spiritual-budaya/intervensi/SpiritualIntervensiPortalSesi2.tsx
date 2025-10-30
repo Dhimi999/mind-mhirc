@@ -186,71 +186,158 @@ const SpiritualIntervensiPortalSesi2: React.FC = () => {
 			</Helmet>
 			<Navbar />
 
-			{/* Hero */}
-			<div className='relative h-64 bg-gradient-to-r from-amber-600 to-orange-700 flex items-center justify-center'>
+			{/* Hero Section */}
+			<section className='relative h-72 bg-gradient-to-br from-amber-600 via-orange-700 to-amber-800 overflow-hidden'>
 				<div className='absolute inset-0'>
 					<img src={heroImage} alt='Spiritual & Budaya' className='w-full h-full object-cover opacity-20' />
+					<div className='absolute inset-0 bg-gradient-to-t from-black/40 to-transparent' />
 				</div>
-				<div className='relative z-10 max-w-4xl mx-auto px-6 text-center text-white'>
-					<h1 className='text-4xl font-bold mb-2'>Intervensi Spiritual & Budaya</h1>
-					<p className='text-lg opacity-90'>Sesi {sessionNumber}: {title}</p>
+				<div className='relative z-10 h-full flex items-center justify-center text-center'>
+					<div className='max-w-4xl mx-auto px-6 text-white'>
+						<h1 className='text-5xl font-bold mb-4 drop-shadow-lg'>Intervensi Spiritual & Budaya</h1>
+						<p className='text-xl opacity-95 drop-shadow-md'>Sesi {sessionNumber}: {title}</p>
+					</div>
 				</div>
-			</div>
+			</section>
 
 			{/* Main Content */}
-			<div className='flex-1 bg-gray-50 py-8'>
-				<div className='max-w-5xl mx-auto px-6 space-y-6'>
-					{/* Progress & Navigation */}
-					<Card>
-						<CardContent className='pt-6'>
-							<div className='flex items-center justify-between mb-4'>
-								<div className='flex items-center gap-2'>
-									<Badge variant='outline' className='bg-amber-50 text-amber-700 border-amber-200'>
-										Sesi {sessionNumber}/8
-									</Badge>
-									<span className='text-sm text-muted-foreground'>
-										{progressPercentage}% Selesai
-									</span>
+			<main className='flex-1 pt-12 bg-gray-50'>
+				<section className='py-12'>
+					<div className='container mx-auto px-6 max-w-6xl'>
+						<div className='grid grid-cols-1 lg:grid-cols-4 gap-8'>
+							{/* Left Sidebar */}
+							<div className='lg:col-span-1 space-y-6'>
+								{/* Tips Card */}
+								<Card className='border-amber-100 bg-amber-50/50 shadow-sm'>
+									<CardHeader>
+										<CardTitle className='text-base flex items-center gap-2'>
+											<span>💡</span>
+											Tips Pengerjaan
+										</CardTitle>
+									</CardHeader>
+									<CardContent className='space-y-3 text-sm'>
+										<p className='flex items-start gap-2'>
+											<span className='text-amber-600 font-bold'>1.</span>
+											<span>Bacalah setiap panduan dengan seksama</span>
+										</p>
+										<p className='flex items-start gap-2'>
+											<span className='text-amber-600 font-bold'>2.</span>
+											<span>Ikuti pertemuan daring sesuai jadwal</span>
+										</p>
+										<p className='flex items-start gap-2'>
+											<span className='text-amber-600 font-bold'>3.</span>
+											<span>Kerjakan penugasan dengan jujur dan terbuka</span>
+										</p>
+										<p className='flex items-start gap-2'>
+											<span className='text-amber-600 font-bold'>4.</span>
+											<span>Tandai selesai setelah mengerjakan setiap tahap</span>
+										</p>
+									</CardContent>
+								</Card>
+
+								{/* Progress Card */}
+								<div className='sticky top-28'>
+									<Card className='border-amber-200 shadow-md'>
+										<CardHeader>
+											<CardTitle className='text-base'>Progress Sesi</CardTitle>
+										</CardHeader>
+										<CardContent className='space-y-4'>
+											<div>
+												<div className='flex items-center justify-between mb-2 text-sm'>
+													<span className='text-muted-foreground'>Penyelesaian</span>
+													<span className='font-semibold text-amber-700'>{progressPercentage}%</span>
+												</div>
+												<div className='w-full bg-gray-200 rounded-full h-2.5'>
+													<div
+														className='bg-gradient-to-r from-amber-500 to-orange-600 h-2.5 rounded-full transition-all duration-500'
+														style={{ width: `${progressPercentage}%` }}
+													/>
+												</div>
+											</div>
+											<div className='space-y-2 text-sm'>
+												<div className='flex items-center gap-2'>
+													<div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${progress?.guide_done ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+														{progress?.guide_done ? '✓' : '1'}
+													</div>
+													<span className={progress?.guide_done ? 'text-green-700 font-medium' : 'text-muted-foreground'}>
+														Membaca Panduan
+													</span>
+												</div>
+												<div className='flex items-center gap-2'>
+													<div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${progress?.meeting_done ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+														{progress?.meeting_done ? '✓' : '2'}
+													</div>
+													<span className={progress?.meeting_done ? 'text-green-700 font-medium' : 'text-muted-foreground'}>
+														Mengikuti Pertemuan
+													</span>
+												</div>
+												<div className='flex items-center gap-2'>
+													<div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${progress?.assignment_done ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+														{progress?.assignment_done ? '✓' : '3'}
+													</div>
+													<span className={progress?.assignment_done ? 'text-green-700 font-medium' : 'text-muted-foreground'}>
+														Mengumpulkan Penugasan
+													</span>
+												</div>
+												<div className='flex items-center gap-2'>
+													<div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${progress?.counselor_feedback ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+														{progress?.counselor_feedback ? '✓' : '4'}
+													</div>
+													<span className={progress?.counselor_feedback ? 'text-green-700 font-medium' : 'text-muted-foreground'}>
+														Menerima Feedback
+													</span>
+												</div>
+											</div>
+											<Link to='/spiritual-budaya' className='block'>
+												<Button variant='outline' size='sm' className='w-full'>
+													← Kembali ke Dashboard
+												</Button>
+											</Link>
+										</CardContent>
+									</Card>
 								</div>
-								<Link to='/spiritual-budaya'>
-									<Button variant='outline' size='sm'>
-										← Kembali ke Dashboard
-									</Button>
-								</Link>
 							</div>
-							<div className='w-full bg-gray-200 rounded-full h-2'>
-								<div
-									className='bg-gradient-to-r from-amber-500 to-orange-600 h-2 rounded-full transition-all duration-500'
-									style={{ width: `${progressPercentage}%` }}
-								/>
-							</div>
-						</CardContent>
-					</Card>
 
-					{/* Panduan Sesi */}
-					<Card className='border-amber-200 bg-amber-50'>
-						<CardHeader>
-							<CardTitle className='flex items-center gap-2'>
-								<span>📖</span> Panduan Sesi
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<p className='text-sm text-gray-700 leading-relaxed'>
-								Pada sesi ini, Anda akan mengeksplorasi identitas kultural Anda melalui praktik spiritual berupa doa reflektif, 
-								meditasi nilai, dan jurnal spiritual. Ini adalah kesempatan untuk mendalami hubungan antara nilai-nilai budaya 
-								dan kesejahteraan mental Anda.
-							</p>
-						</CardContent>
-					</Card>
+							{/* Main Content */}
+							<div className='lg:col-span-3 space-y-8'>
+								{/* Panduan Sesi */}
+								<Card className='border-amber-100 shadow-sm'>
+									<CardHeader>
+										<CardTitle className='text-amber-800'>Panduan Sesi {sessionNumber}</CardTitle>
+										<CardDescription>Ikuti langkah-langkah di bawah ini untuk menyelesaikan sesi intervensi</CardDescription>
+									</CardHeader>
+									<CardContent className='space-y-4'>
+										<div className='bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg'>
+											<p className='font-semibold text-amber-900 mb-1'>🎯 Fokus Sesi:</p>
+											<p className='text-amber-800'>{title}</p>
+										</div>
+										<div className='bg-muted/50 p-4 rounded-lg space-y-2'>
+											<p className='font-semibold text-sm'>Alur Pengerjaan:</p>
+											<ol className='list-decimal list-inside space-y-1 text-sm text-muted-foreground'>
+												<li>Baca panduan materi spiritual yang disediakan</li>
+												<li>Tandai "Sudah membaca panduan" setelah selesai</li>
+												<li>Ikuti pertemuan daring sesuai jadwal grup Anda</li>
+												<li>Tandai "Sudah mengikuti pertemuan" setelah selesai</li>
+												<li>Kerjakan penugasan dengan mengisi semua field yang tersedia</li>
+												<li>Klik "Kirim Penugasan" untuk menyimpan hasil kerja</li>
+											</ol>
+										</div>
+										<div className='bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg text-sm'>
+											<p className='text-blue-900'>
+												<strong>Catatan:</strong> Penugasan hanya bisa dikerjakan setelah Anda menandai sudah membaca panduan dan mengikuti pertemuan daring.
+											</p>
+										</div>
+									</CardContent>
+								</Card>
 
-					{/* Informasi Pertemuan Daring */}
-					{meeting && (
-						<Card>
-							<CardHeader>
-								<CardTitle>Informasi Pertemuan Daring</CardTitle>
-								<CardDescription>Jadwal dan detail pertemuan untuk sesi ini</CardDescription>
-							</CardHeader>
-							<CardContent className='space-y-4'>
+								{/* Informasi Pertemuan Daring */}
+								{meeting ? (
+									<Card className='border-amber-100 shadow-sm'>
+										<CardHeader>
+											<CardTitle>Informasi Pertemuan Daring</CardTitle>
+											<CardDescription>Jadwal dan detail pertemuan untuk sesi ini</CardDescription>
+										</CardHeader>
+										<CardContent className='space-y-4'>
 								{isSuperAdmin && meeting.has_group_schedules && meeting.all_group_schedules ? (
 									<div className='space-y-4'>
 										<div className='p-3 rounded border border-blue-200 bg-blue-50 text-blue-900 text-sm'>
@@ -329,10 +416,16 @@ const SpiritualIntervensiPortalSesi2: React.FC = () => {
 								</div>
 							</CardContent>
 						</Card>
+					) : (
+						<Card className='border-gray-200 shadow-sm'>
+							<CardContent className='pt-6'>
+								<p className='text-sm text-muted-foreground text-center'>Informasi pertemuan belum tersedia.</p>
+							</CardContent>
+						</Card>
 					)}
 
 					{/* Panduan Penugasan */}
-					<Card>
+					<Card className='border-amber-100 shadow-sm'>
 						<CardHeader>
 							<CardTitle>Panduan Penugasan</CardTitle>
 							<CardDescription>Materi dan panduan untuk mengerjakan penugasan sesi ini</CardDescription>
@@ -349,11 +442,23 @@ const SpiritualIntervensiPortalSesi2: React.FC = () => {
 							) : (
 								<p className='text-sm text-muted-foreground'>Panduan belum tersedia.</p>
 							)}
+							<div className='flex items-center gap-2 mt-4 pt-4 border-t'>
+								<input
+									type='checkbox'
+									id='guideDone'
+									checked={progress?.guide_done || false}
+									onChange={handleMarkGuideDone}
+									className='w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500'
+								/>
+								<label htmlFor='guideDone' className='text-sm text-gray-700 cursor-pointer'>
+									Sudah membaca panduan
+								</label>
+							</div>
 						</CardContent>
 					</Card>
 
 					{/* Penugasan */}
-					<Card>
+					<Card className='border-amber-100 shadow-sm'>
 						<CardHeader>
 							<CardTitle>Penugasan Sesi {sessionNumber}</CardTitle>
 							<CardDescription>Refleksi spiritual dan budaya melalui praktik pribadi</CardDescription>
@@ -385,6 +490,7 @@ const SpiritualIntervensiPortalSesi2: React.FC = () => {
 										{!progress?.assignment_done && (
 											<>
 												<Button 
+													className='bg-amber-600 hover:bg-amber-700'
 													onClick={handleSubmitAssignment} 
 													disabled={!assignmentValid || isSubmitting || !!assignmentS2.submitted}
 												>
@@ -405,7 +511,7 @@ const SpiritualIntervensiPortalSesi2: React.FC = () => {
 
 					{/* Respons Konselor */}
 					{progress?.counselor_feedback && (
-						<Card>
+						<Card className='border-amber-100 shadow-sm'>
 							<CardHeader>
 								<CardTitle>Respons Konselor</CardTitle>
 								<CardDescription>Feedback dari konselor untuk penugasan Anda</CardDescription>
@@ -419,32 +525,14 @@ const SpiritualIntervensiPortalSesi2: React.FC = () => {
 							</CardContent>
 						</Card>
 					)}
-
-					{/* Navigation */}
-					<Card>
-						<CardContent className='pt-6'>
-							<div className='flex justify-between items-center'>
-								<Link to='/spiritual-budaya/intervensi/sesi/1'>
-									<Button variant='outline'>
-										← Kembali ke Sesi {sessionNumber - 1}
-									</Button>
-								</Link>
-								{sessionNumber < 8 && progress?.assignment_done && (
-									<Link to={`/spiritual-budaya/intervensi/sesi/${sessionNumber + 1}`}>
-										<Button className='bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700'>
-											Lanjut ke Sesi {sessionNumber + 1} →
-										</Button>
-									</Link>
-								)}
-							</div>
-						</CardContent>
-					</Card>
 				</div>
 			</div>
-
-			<Footer />
 		</div>
-	);
+	</section>
+</main>
+<Footer />
+</div>
+);
 };
 
 export default SpiritualIntervensiPortalSesi2;
