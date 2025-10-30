@@ -96,6 +96,10 @@ const SpiritualBudaya = () => {
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [requesting, setRequesting] = useState(false);
 
+  // Intervensi progress state
+  const [intervensiProgress, setIntervensiProgress] = useState<Record<number, boolean>>({});
+  const [progressLoading, setProgressLoading] = useState(false);
+
   useEffect(() => {
     const fetchEnrollment = async () => {
       if (!user?.id) { setEnrollmentStatus(null); return; }
@@ -117,6 +121,38 @@ const SpiritualBudaya = () => {
     };
     fetchEnrollment();
   }, [user?.id]);
+
+  // Fetch intervensi progress untuk menentukan status locked/available
+  useEffect(() => {
+    const fetchIntervensiProgress = async () => {
+      if (!user?.id || !canAccessIntervensi) {
+        setIntervensiProgress({});
+        return;
+      }
+      setProgressLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('sb_intervensi_user_progress' as any)
+          .select('session_number, assignment_done')
+          .eq('user_id', user.id) as any;
+        if (error) throw error;
+        
+        const progressMap: Record<number, boolean> = {};
+        if (data) {
+          data.forEach((item: any) => {
+            progressMap[item.session_number] = item.assignment_done === true;
+          });
+        }
+        setIntervensiProgress(progressMap);
+      } catch (e) {
+        console.error('Load intervensi progress failed', e);
+        setIntervensiProgress({});
+      } finally {
+        setProgressLoading(false);
+      }
+    };
+    fetchIntervensiProgress();
+  }, [user?.id, canAccessIntervensi]);
 
   const handleRequestEnrollment = async () => {
     if (!isAuthenticated) {
@@ -148,54 +184,63 @@ const SpiritualBudaya = () => {
   };
 
   // meetingSchedule dipindahkan ke halaman portal sesi
+  // Determine session status based on progress
+  const getSessionStatus = (sessionNumber: number): "available" | "locked" => {
+    // Sesi 1 selalu tersedia
+    if (sessionNumber === 1) return "available";
+    // Sesi lainnya tersedia jika sesi sebelumnya sudah selesai
+    const prevSessionDone = intervensiProgress[sessionNumber - 1] === true;
+    return prevSessionDone ? "available" : "locked";
+  };
+
   const treatmentModules = [{
     session: 1,
     title: "Identitas Budaya Dan Makna Diri",
     description: "Memahami identitas budaya sebagai fondasi kesehatan mental dan mengeksplorasi makna diri dalam konteks budaya.",
     duration: "60 menit",
-    status: "available"
+    status: getSessionStatus(1)
   }, {
     session: 2,
     title: "Spiritualitas Sebagai Pilar Harapan",
     description: "Menggali kekuatan spiritual sebagai sumber harapan dan ketahanan dalam menghadapi tantangan hidup.",
     duration: "60 menit",
-    status: "locked"
+    status: getSessionStatus(2)
   }, {
     session: 3,
     title: "Ekspresi Emosi Melalui Budaya",
     description: "Belajar mengekspresikan emosi dengan cara-cara yang sehat melalui tradisi dan budaya lokal.",
     duration: "60 menit",
-    status: "locked"
+    status: getSessionStatus(3)
   }, {
     session: 4,
     title: "Mengurai Stigma Melalui Nilai Komunitas",
     description: "Memahami dan mengatasi stigma kesehatan mental dengan memanfaatkan nilai-nilai komunitas.",
     duration: "60 menit",
-    status: "locked"
+    status: getSessionStatus(4)
   }, {
     session: 5,
     title: "Peran Komunitas Dalam Dukungan Emosional",
     description: "Mengoptimalkan peran komunitas sebagai sistem dukungan emosional yang berkelanjutan.",
     duration: "60 menit",
-    status: "locked"
+    status: getSessionStatus(5)
   }, {
     session: 6,
     title: "Ritual Dan Tradisi Sebagai Media Kesembuhan",
     description: "Menerapkan ritual dan tradisi budaya sebagai metode penyembuhan dan pemulihan mental.",
     duration: "60 menit",
-    status: "locked"
+    status: getSessionStatus(6)
   }, {
     session: 7,
     title: "Literasi Spiritual Dan Budaya Kesehatan Jiwa",
     description: "Meningkatkan pemahaman tentang integrasi spiritualitas dan budaya dalam kesehatan mental.",
     duration: "60 menit",
-    status: "locked"
+    status: getSessionStatus(7)
   }, {
     session: 8,
     title: "Komitmen Hidup Dan Prospek Masa Depan",
     description: "Membangun komitmen hidup yang bermakna dan merencanakan masa depan dengan optimisme.",
     duration: "60 menit",
-    status: "locked"
+    status: getSessionStatus(8)
   }];
   const jelajahContent = [{
     title: "Prinsip Dasar Intervensi Spiritual & Budaya",

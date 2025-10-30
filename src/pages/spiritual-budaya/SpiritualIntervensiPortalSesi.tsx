@@ -14,6 +14,7 @@ import { useSpiritualRole } from "@/hooks/useSpiritualRole";
 import { GuidanceMaterialsDisplay } from "@/components/dashboard/hibrida-cbt/GuidanceMaterialsDisplay";
 import { CounselorResponseDisplay } from "@/components/dashboard/hibrida-cbt/CounselorResponseDisplay";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const sessionTitles: Record<number, string> = {
 	1: "Pengenalan Nilai Spiritual & Budaya",
@@ -62,8 +63,10 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 		lastAutoSaveAt,
 	} = useSpiritualIntervensiSession(sessionNumber);
 
+	const { toast } = useToast();
 	const [previousSessionProgress, setPreviousSessionProgress] = useState<any>(null);
 	const [checkingAccess, setCheckingAccess] = useState(true);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const [assignment, setAssignment] = useState<SessionAssignment>(defaultAssignment);
 	// Assignment khusus sesi 1 (struktur baru)
@@ -79,6 +82,13 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 			lingkungan: "",
 		},
 		teknik_metagora: "",
+		submitted: false as boolean | undefined,
+	});
+	// Assignment khusus sesi 2 (Doa, Meditasi, Jurnal)
+	const [assignmentS2, setAssignmentS2] = useState({
+		doa_reflektif: "",
+		meditasi_nilai: "",
+		jurnal_spiritual: "",
 		submitted: false as boolean | undefined,
 	});
 	const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
@@ -105,6 +115,13 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 					teknik_metagora: loaded.teknik_metagora ?? prev.teknik_metagora,
 					submitted: prev.submitted,
 				}));
+			} else if (sessionNumber === 2) {
+				setAssignmentS2(prev => ({
+					doa_reflektif: loaded.doa_reflektif ?? prev.doa_reflektif,
+					meditasi_nilai: loaded.meditasi_nilai ?? prev.meditasi_nilai,
+					jurnal_spiritual: loaded.jurnal_spiritual ?? prev.jurnal_spiritual,
+					submitted: prev.submitted,
+				}));
 			} else {
 				setAssignment(prev => ({
 					jawaban_1: loaded.jawaban_1 ?? prev.jawaban_1,
@@ -116,15 +133,18 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 		})();
 	}, [loadAssignmentIntervensi, sessionNumber]);
 
-	// Debounced autosave on changes
+	// Debounced autosave on changes (skip if already submitted)
 	useEffect(() => {
+		// Don't autosave if assignment already done
+		if (progress?.assignment_done) return;
+		
 		const handler = setTimeout(() => {
-			const payload = sessionNumber === 1 ? assignmentS1 : assignment;
+			const payload = sessionNumber === 1 ? assignmentS1 : sessionNumber === 2 ? assignmentS2 : assignment;
 			autoSaveIntervensi(payload);
 			setAutoSavedAt(lastAutoSaveAt || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }));
 		}, 1200);
 		return () => clearTimeout(handler);
-	}, [assignment, assignmentS1, sessionNumber, autoSaveIntervensi, lastAutoSaveAt]);
+	}, [assignment, assignmentS1, assignmentS2, sessionNumber, autoSaveIntervensi, lastAutoSaveAt, progress?.assignment_done]);
 
 	// Check if user can access this session (sequential access control)
 	useEffect(() => {
@@ -184,21 +204,53 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 				a.teknik_metagora.trim() !== ""
 			);
 		}
+		if (sessionNumber === 2) {
+			const a = assignmentS2;
+			return (
+				a.doa_reflektif.trim() !== "" &&
+				a.meditasi_nilai.trim() !== "" &&
+				a.jurnal_spiritual.trim() !== ""
+			);
+		}
 		return assignment.jawaban_1.trim() && assignment.jawaban_2.trim() && assignment.refleksi.trim();
-	}, [assignment, assignmentS1, sessionNumber]);
+	}, [assignment, assignmentS1, assignmentS2, sessionNumber]);
 
 	const handleSubmitAssignment = useCallback(async () => {
-		if (!assignmentValid) return;
-		const payload = sessionNumber === 1 ? assignmentS1 : assignment;
-		const result = await updateProgress({ assignment_data: payload, assignment_done: true });
-		if (result?.success) {
-			if (sessionNumber === 1) {
-				setAssignmentS1(prev => ({ ...prev, submitted: true }));
+		if (!assignmentValid || isSubmitting) return;
+		
+		setIsSubmitting(true);
+		try {
+			const payload = sessionNumber === 1 ? assignmentS1 : sessionNumber === 2 ? assignmentS2 : assignment;
+			const result = await updateProgress({ assignment_data: payload, assignment_done: true });
+			
+			if (result?.success) {
+				// Set local submitted flag only on success
+				if (sessionNumber === 1) {
+					setAssignmentS1(prev => ({ ...prev, submitted: true }));
+				} else if (sessionNumber === 2) {
+					setAssignmentS2(prev => ({ ...prev, submitted: true }));
+				} else {
+					setAssignment(prev => ({ ...prev, submitted: true }));
+				}
+				toast({
+					title: "Penugasan Berhasil Dikirim",
+					description: "Jawaban Anda telah tersimpan dan menunggu respons konselor.",
+					variant: "default",
+				});
 			} else {
-				setAssignment(prev => ({ ...prev, submitted: true }));
+				throw new Error(result?.error?.message || "Gagal mengirim penugasan");
 			}
+		} catch (error) {
+			console.error("Submit assignment error:", error);
+			toast({
+				title: "Gagal Mengirim Penugasan",
+				description: error instanceof Error ? error.message : "Terjadi kesalahan. Silakan coba lagi.",
+				variant: "destructive",
+			});
+		} finally {
+			setIsSubmitting(false);
 		}
-	}, [assignmentValid, assignment, assignmentS1, updateProgress, sessionNumber]);
+	}, [assignmentValid, isSubmitting, assignment, assignmentS1, assignmentS2, updateProgress, sessionNumber, toast]);
 
 	const handleMarkMeetingDone = useCallback(async () => {
 		await updateProgress({ meeting_done: !progress?.meeting_done });
@@ -490,6 +542,24 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 															<textarea rows={5} className='w-full rounded border p-3 text-sm' placeholder='Tuliskan hasil eksplorasi menggunakan teknik metafora “bingkai dalam film”...' value={assignmentS1.teknik_metagora} onChange={e=> setAssignmentS1(p=> ({ ...p, teknik_metagora: e.target.value }))} disabled={progress?.assignment_done} />
 														</div>
 													</>
+												) : sessionNumber === 2 ? (
+													<>
+														<div>
+															<label className='block text-sm font-medium mb-2'>Bagian 1: Doa Reflektif</label>
+															<p className='text-xs text-muted-foreground mb-2'>Tuliskan doa atau refleksi spiritual Anda terkait dengan perjalanan kesehatan mental yang sedang Anda jalani.</p>
+															<textarea rows={6} className='w-full rounded border p-3 text-sm' placeholder='Tulis doa reflektif Anda di sini...' value={assignmentS2.doa_reflektif} onChange={e=> setAssignmentS2(p=> ({ ...p, doa_reflektif: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>Bagian 2: Meditasi Nilai</label>
+															<p className='text-xs text-muted-foreground mb-2'>Renungkan nilai-nilai spiritual dan budaya yang Anda anut. Bagaimana nilai-nilai tersebut membantu Anda menghadapi tantangan?</p>
+															<textarea rows={6} className='w-full rounded border p-3 text-sm' placeholder='Tulis hasil meditasi nilai Anda di sini...' value={assignmentS2.meditasi_nilai} onChange={e=> setAssignmentS2(p=> ({ ...p, meditasi_nilai: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+														<div>
+															<label className='block text-sm font-medium mb-2'>Bagian 3: Jurnal Spiritual</label>
+															<p className='text-xs text-muted-foreground mb-2'>Tuliskan pengalaman spiritual yang bermakna bagi Anda minggu ini, dan bagaimana hal tersebut memengaruhi kesejahteraan mental Anda.</p>
+															<textarea rows={6} className='w-full rounded border p-3 text-sm' placeholder='Tulis jurnal spiritual Anda di sini...' value={assignmentS2.jurnal_spiritual} onChange={e=> setAssignmentS2(p=> ({ ...p, jurnal_spiritual: e.target.value }))} disabled={progress?.assignment_done} />
+														</div>
+													</>
 												) : (
 													<>
 														<div>
@@ -513,10 +583,14 @@ const SpiritualIntervensiPortalSesi: React.FC = () => {
 												<div className='flex items-center gap-3 pt-2 border-t'>
 													{!progress?.assignment_done && (
 														<>
-															<Button onClick={handleSubmitAssignment} disabled={!assignmentValid || (sessionNumber === 1 ? !!assignmentS1.submitted : !!assignment.submitted)}>
-																{(sessionNumber === 1 ? assignmentS1.submitted : assignment.submitted) ? 'Terkirim ✓' : 'Kirim Penugasan'}
+															<Button 
+																onClick={handleSubmitAssignment} 
+																disabled={!assignmentValid || isSubmitting || (sessionNumber === 1 ? !!assignmentS1.submitted : sessionNumber === 2 ? !!assignmentS2.submitted : !!assignment.submitted)}
+															>
+																{isSubmitting ? 'Mengirim...' : (sessionNumber === 1 ? assignmentS1.submitted : sessionNumber === 2 ? assignmentS2.submitted : assignment.submitted) ? 'Terkirim ✓' : 'Kirim Penugasan'}
 															</Button>
-															{autoSavedAt && <p className='text-xs text-muted-foreground'>Draft tersimpan {autoSavedAt}</p>}
+															{autoSavedAt && !isSubmitting && <p className='text-xs text-muted-foreground'>Draft tersimpan {autoSavedAt}</p>}
+															{isSubmitting && <p className='text-xs text-muted-foreground'>Mengirim penugasan...</p>}
 														</>
 													)}
 													{progress?.assignment_done && (

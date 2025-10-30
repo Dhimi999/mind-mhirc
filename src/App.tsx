@@ -42,6 +42,8 @@ import Profil from "./pages/safe-mother/Profil";
 import SpiritualBudaya from "./pages/spiritual-budaya/SpiritualBudaya";
 import SpiritualBudayaMateri from "./pages/spiritual-budaya/SpiritualBudayaMateri";
 import SpiritualIntervensiPortalSesi from "./pages/spiritual-budaya/SpiritualIntervensiPortalSesi";
+import SpiritualIntervensiPortalSesi1 from "./pages/spiritual-budaya/intervensi/SpiritualIntervensiPortalSesi1";
+import SpiritualIntervensiPortalSesi2 from "./pages/spiritual-budaya/intervensi/SpiritualIntervensiPortalSesi2";
 import SpiritualPsikoedukasiPortalSesi from "./pages/spiritual-budaya/SpiritualPsikoedukasiPortalSesi";
 import SpiritualPsikoedukasiPortalSesi1 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi1";
 import SpiritualPsikoedukasiPortalSesi2 from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiPortalSesi2";
@@ -209,6 +211,14 @@ const AppRoutes = () => {
         <Route
           path="/spiritual-budaya/materi/:slug"
           element={<SpiritualBudayaMateri />}
+        />
+        <Route
+          path="/spiritual-budaya/intervensi/sesi/1"
+          element={<SpiritualIntervensiPortalSesi1 />}
+        />
+        <Route
+          path="/spiritual-budaya/intervensi/sesi/2"
+          element={<SpiritualIntervensiPortalSesi2 />}
         />
         <Route
           path="/spiritual-budaya/intervensi/sesi/:sesi"
