@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export type SessionProgress = {
   session_number: number;
+  session_opened: boolean;
+  guidance_read: boolean;
   meeting_done: boolean;
   assignment_done: boolean;
   assignment_data?: any; // used only for UI; answers stored in sb_intervensi_assignments
@@ -72,10 +74,17 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
       if (progressError && progressError.code !== 'PGRST116') throw progressError;
 
       if (progressData) {
-        setProgress(progressData as SessionProgress);
+        // Map counselor_response to counselor_feedback for consistency
+        const mappedProgress = {
+          ...progressData,
+          counselor_feedback: (progressData as any).counselor_response || undefined,
+        };
+        setProgress(mappedProgress as SessionProgress);
       } else {
         setProgress({
           session_number: sessionNumber,
+          session_opened: false,
+          guidance_read: false,
           meeting_done: false,
           assignment_done: false,
         });
@@ -188,13 +197,15 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
     if (!user?.id) return;
 
     try {
-      // If assignment_data present, write to assignments table first
+      // If assignment_data present, write to BOTH assignments table AND history table
       if (Object.prototype.hasOwnProperty.call(updates, 'assignment_data')) {
         const raw = (updates as any).assignment_data;
         let answers: any = raw;
         if (typeof raw === 'string') {
           try { answers = JSON.parse(raw); } catch { answers = raw; }
         }
+        
+        // Write to assignments table (current/latest)
         const { error: aErr } = await supabase
           .from('sb_intervensi_assignments' as any)
           .upsert({
@@ -205,6 +216,32 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
             submitted_at: new Date().toISOString(),
           }, { onConflict: 'user_id,session_number' });
         if (aErr) throw aErr;
+
+        // Get next submission number
+        const { data: historyCount } = await supabase
+          .from('sb_intervensi_submission_history' as any)
+          .select('submission_number', { count: 'exact', head: false })
+          .eq('user_id', user.id)
+          .eq('session_number', sessionNumber)
+          .order('submission_number', { ascending: false })
+          .limit(1);
+
+        const nextSubmissionNumber = historyCount && historyCount.length > 0 
+          ? ((historyCount[0] as any).submission_number + 1) 
+          : 1;
+
+        // Write to history table (append new submission)
+        const { error: histErr } = await supabase
+          .from('sb_intervensi_submission_history' as any)
+          .insert({
+            user_id: user.id,
+            session_number: sessionNumber,
+            submission_number: nextSubmissionNumber,
+            answers: answers ?? null,
+            submitted_at: new Date().toISOString(),
+          });
+        if (histErr) throw histErr;
+
         // Ensure assignment_done reflected in progress
         (updates as any).assignment_done = true;
         // Remove transient field
@@ -225,13 +262,37 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
 
       if (error) throw error;
 
-      setProgress(data as SessionProgress);
+      // Map counselor_response to counselor_feedback
+      const mappedData = {
+        ...data,
+        counselor_feedback: (data as any).counselor_response || undefined,
+      };
+      setProgress(mappedData as SessionProgress);
       return { success: true };
     } catch (error) {
       console.error('Error updating spiritual intervensi progress:', error);
       return { success: false, error };
     }
   };
+
+  // Fetch submission history
+  const fetchSubmissionHistory = useCallback(async () => {
+    if (!user?.id) return [];
+    try {
+      const { data, error } = await supabase
+        .from('sb_intervensi_submission_history' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('session_number', sessionNumber)
+        .order('submitted_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error('Fetch submission history failed', e);
+      return [];
+    }
+  }, [user?.id, sessionNumber]);
 
   return {
     progress,
@@ -243,5 +304,6 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
     loadAssignment,
     autoSaveAssignment,
     lastAutoSaveAt,
+    fetchSubmissionHistory,
   };
 };

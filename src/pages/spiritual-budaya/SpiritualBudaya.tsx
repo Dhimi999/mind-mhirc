@@ -195,50 +195,50 @@ const SpiritualBudaya = () => {
 
   const treatmentModules = [{
     session: 1,
-    title: "Identitas Budaya Dan Makna Diri",
-    description: "Memahami identitas budaya sebagai fondasi kesehatan mental dan mengeksplorasi makna diri dalam konteks budaya.",
+    title: "Apa Itu Bunuh Diri?",
+    description: "Pengenalan tentang bunuh diri dan risiko terkait.",
     duration: "60 menit",
     status: getSessionStatus(1)
   }, {
     session: 2,
-    title: "Spiritualitas Sebagai Pilar Harapan",
-    description: "Menggali kekuatan spiritual sebagai sumber harapan dan ketahanan dalam menghadapi tantangan hidup.",
+    title: "Risiko Bunuh Diri",
+    description: "Mengenali tanda-tanda dini risiko bunuh diri.",
     duration: "60 menit",
     status: getSessionStatus(2)
   }, {
     session: 3,
-    title: "Ekspresi Emosi Melalui Budaya",
-    description: "Belajar mengekspresikan emosi dengan cara-cara yang sehat melalui tradisi dan budaya lokal.",
+    title: "Keterampilan Koping",
+    description: "Mengembangkan keterampilan koping.",
     duration: "60 menit",
     status: getSessionStatus(3)
   }, {
     session: 4,
-    title: "Mengurai Stigma Melalui Nilai Komunitas",
-    description: "Memahami dan mengatasi stigma kesehatan mental dengan memanfaatkan nilai-nilai komunitas.",
+    title: "Mencari Bantuan",
+    description: "Membangun dan mendorong perilaku mencari bantuan.",
     duration: "60 menit",
     status: getSessionStatus(4)
   }, {
     session: 5,
-    title: "Peran Komunitas Dalam Dukungan Emosional",
-    description: "Mengoptimalkan peran komunitas sebagai sistem dukungan emosional yang berkelanjutan.",
+    title: "Pengurangan Stigma",
+    description: "Mengurangi stigma seputar kesehatan mental melalui pendekatan yang bermakna.",
     duration: "60 menit",
     status: getSessionStatus(5)
   }, {
     session: 6,
-    title: "Ritual Dan Tradisi Sebagai Media Kesembuhan",
-    description: "Menerapkan ritual dan tradisi budaya sebagai metode penyembuhan dan pemulihan mental.",
+    title: "Jaringan Sosial",
+    description: "Penguatan jaringan dukungan sosial.",
     duration: "60 menit",
     status: getSessionStatus(6)
   }, {
     session: 7,
-    title: "Literasi Spiritual Dan Budaya Kesehatan Jiwa",
-    description: "Meningkatkan pemahaman tentang integrasi spiritualitas dan budaya dalam kesehatan mental.",
+    title: "Informasi Sumber Daya",
+    description: "Penyediaan Informasi tentang Sumber Daya.",
     duration: "60 menit",
     status: getSessionStatus(7)
   }, {
     session: 8,
-    title: "Komitmen Hidup Dan Prospek Masa Depan",
-    description: "Membangun komitmen hidup yang bermakna dan merencanakan masa depan dengan optimisme.",
+    title: "Evaluasi & Tindak Lanjut",
+    description: "Evaluasi dan tindak lanjut .",
     duration: "60 menit",
     status: getSessionStatus(8)
   }];

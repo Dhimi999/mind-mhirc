@@ -42,8 +42,7 @@ import Profil from "./pages/safe-mother/Profil";
 import SpiritualBudaya from "./pages/spiritual-budaya/SpiritualBudaya";
 import SpiritualBudayaMateri from "./pages/spiritual-budaya/SpiritualBudayaMateri";
 import SpiritualIntervensiPortalSesi from "./pages/spiritual-budaya/SpiritualIntervensiPortalSesi";
-import SpiritualIntervensiPortalSesi1 from "./pages/spiritual-budaya/intervensi/SpiritualIntervensiPortalSesi1";
-import SpiritualIntervensiPortalSesi2 from "./pages/spiritual-budaya/intervensi/SpiritualIntervensiPortalSesi2";
+import SpiritualIntervensiUnified from "./pages/spiritual-budaya/intervensi/SpiritualIntervensiUnified";
 import SpiritualPsikoedukasiPortalSesi from "./pages/spiritual-budaya/SpiritualPsikoedukasiPortalSesi";
 import SpiritualPsikoedukasiUnified from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiUnified";
 import HibridaNaratifCBT from "./pages/hibrida-naratif/HibridaNaratifCBT";
@@ -205,26 +204,15 @@ const AppRoutes = () => {
           path="/spiritual-budaya/materi/:slug"
           element={<SpiritualBudayaMateri />}
         />
-        <Route
-          path="/spiritual-budaya/intervensi/sesi/1"
-          element={<SpiritualIntervensiPortalSesi1 />}
-        />
-        <Route
-          path="/spiritual-budaya/intervensi/sesi/2"
-          element={<SpiritualIntervensiPortalSesi2 />}
-        />
+        {/* Unified route for Intervensi Sesi 1-8 */}
         <Route
           path="/spiritual-budaya/intervensi/sesi/:sesi"
-          element={<SpiritualIntervensiPortalSesi />}
+          element={<SpiritualIntervensiUnified />}
         />
-        {/* Unified route for all sesi 1-8 */}
+        {/* Unified route for Psikoedukasi Sesi 1-8 */}
         <Route
           path="/spiritual-budaya/psikoedukasi/sesi/:sesi"
           element={<SpiritualPsikoedukasiUnified />}
-        />
-        <Route
-          path="/spiritual-budaya/psikoedukasi/sesi/:sesi"
-          element={<SpiritualPsikoedukasiPortalSesi />}
         />
         {/* Hibrida Naratif CBT service routes */}
         <Route path="/hibrida-cbt" element={<HibridaNaratifCBT />} />

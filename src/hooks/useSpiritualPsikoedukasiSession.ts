@@ -241,6 +241,7 @@ export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: s
     if (!userId) return false;
 
     try {
+      // Write to assignments table (current/latest)
       const { error: assignmentError } = await supabase
         .from("sb_psikoedukasi_assignments" as any)
         .upsert({
@@ -254,6 +255,32 @@ export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: s
         });
 
       if (assignmentError) throw assignmentError;
+
+      // Get next submission number
+      const { data: historyCount } = await supabase
+        .from('sb_psikoedukasi_submission_history' as any)
+        .select('submission_number', { count: 'exact', head: false })
+        .eq('user_id', userId)
+        .eq('session_number', sessionNumber)
+        .order('submission_number', { ascending: false })
+        .limit(1);
+
+      const nextSubmissionNumber = historyCount && historyCount.length > 0 
+        ? ((historyCount[0] as any).submission_number + 1) 
+        : 1;
+
+      // Write to history table (append new submission)
+      const { error: histError } = await supabase
+        .from('sb_psikoedukasi_submission_history' as any)
+        .insert({
+          user_id: userId,
+          session_number: sessionNumber,
+          submission_number: nextSubmissionNumber,
+          answers: answers,
+          submitted_at: new Date().toISOString(),
+        });
+
+      if (histError) throw histError;
 
       const { error: progressError } = await supabase
         .from("sb_psikoedukasi_user_progress" as any)
@@ -269,11 +296,11 @@ export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: s
       if (progressError) throw progressError;
 
       setProgress(prev => ({ ...prev, assignmentDone: true }));
-      toast.success("Penugasan berhasil dikirim");
+      toast.success("Jawaban berhasil dikirim");
       return true;
     } catch (error: any) {
       console.error("Error submitting assignment:", error);
-      toast.error("Gagal mengirim penugasan");
+      toast.error("Gagal mengirim jawaban");
       return false;
     }
   }, [userId, sessionNumber]);
@@ -325,6 +352,24 @@ export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: s
     }
   }, [userId, sessionNumber]);
 
+  const fetchSubmissionHistory = useCallback(async () => {
+    if (!userId) return [];
+    try {
+      const { data, error } = await supabase
+        .from('sb_psikoedukasi_submission_history' as any)
+        .select('*')
+        .eq('user_id', userId)
+        .eq('session_number', sessionNumber)
+        .order('submitted_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error('Fetch psikoedukasi submission history failed', e);
+      return [];
+    }
+  }, [userId, sessionNumber]);
+
   return {
     progress,
     meetingSchedule,
@@ -337,6 +382,7 @@ export const useSpiritualPsikoedukasiSession = (sessionNumber: number, userId: s
     submitAssignment,
     loadAssignment,
     autoSaveAssignment,
+    fetchSubmissionHistory,
     refetch: fetchData
   };
 };
