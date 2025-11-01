@@ -819,7 +819,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                     {showHistory && !selectedHistoryItem && (
                       <div className="space-y-4 mb-6">
                         <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-lg font-semibold text-gray-800">� Riwayat Jawaban ({submissionHistory.length})</h4>
+                          <h4 className="text-lg font-semibold text-gray-800">ï¿½ Riwayat Jawaban ({submissionHistory.length})</h4>
                           <Button
                             variant="ghost"
                             size="sm"
