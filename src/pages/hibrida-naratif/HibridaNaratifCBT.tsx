@@ -5,15 +5,18 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHibridaRole } from "@/hooks/useHibridaRole";
 import { useToast } from "@/hooks/use-toast";
-import heroImage from "@/assets/spiritual-cultural-hero.jpg"; // Placeholder reuse
-import jelajahImage from "@/assets/spiritual-jelajah.jpg"; // Placeholder reuse
-import tasksImage from "@/assets/spiritual-tasks.jpg"; // Placeholder reuse
+import { HibridaSessionCard } from "@/components/hibrida-naratif/HibridaSessionCard";
+import heroImage from "@/assets/hibrida-naratif-hero.jpg"; // Placeholder reuse
+import jelajahImage from "@/assets/hibrida-jelajah.jpg"; // Placeholder reuse
+import tasksImage from "@/assets/hibrida-tasks.jpg"; // Placeholder reuse
 import { getSiteBaseUrl } from "@/lib/utils";
 
 // Halaman layanan: Hibrida Naratif CBT
@@ -136,6 +139,7 @@ const HibridaNaratifCBT: React.FC = () => {
 
   // Module definitions (naratif + CBT focus)
   const treatmentModules = [
+    { session: 0, title: "Pengenalan Layanan dan Persiapan", description: "Memahami gambaran program, menuliskan harapan, dan berkomitmen mengikuti intervensi.", duration: "30 menit" },
     { session: 1, title: "Membangun Aliansi & Cerita Dasar", description: "Menggali narasi pribadi awal dan membangun rasa aman dalam proses.", duration: "60 menit" },
     { session: 2, title: "Mengidentifikasi Pikiran Otomatis", description: "Pengenalan pola pikir otomatis yang mempengaruhi emosi dan perilaku.", duration: "60 menit" },
     { session: 3, title: "Restrukturisasi Kognitif Awal", description: "Menantang distorsi kognitif sederhana dan membangun alternatif realistis.", duration: "60 menit" },
@@ -147,22 +151,22 @@ const HibridaNaratifCBT: React.FC = () => {
   ] as const;
 
   const rawIsAdmin = user?.is_admin === true;
-  const [adminModeEnabled, setAdminModeEnabled] = useState(true);
+  const [adminView, setAdminView] = useState(true); // Default TRUE - admin by default
   // Persist admin preview toggle so admin can switch mode easily
   useEffect(() => {
     if (!rawIsAdmin) return;
     try {
-      const saved = localStorage.getItem("hibridaAdminModeEnabled");
-      if (saved !== null) setAdminModeEnabled(saved === "true");
+      const saved = localStorage.getItem("hibridaAdminView");
+      if (saved !== null) setAdminView(saved === "true");
     } catch {}
   }, [rawIsAdmin]);
   useEffect(() => {
     if (rawIsAdmin) {
-      try { localStorage.setItem("hibridaAdminModeEnabled", String(adminModeEnabled)); } catch {}
+      try { localStorage.setItem("hibridaAdminView", String(adminView)); } catch {}
     }
-  }, [adminModeEnabled, rawIsAdmin]);
-  // Effective admin gating (if toggle off, behave as participant)
-  const isAdmin = rawIsAdmin && adminModeEnabled;
+  }, [adminView, rawIsAdmin]);
+  // Effective admin gating (if toggle ON, behave as admin; if OFF, behave as participant)
+  const isAdmin = isSuperAdmin || (rawIsAdmin && adminView);
 
   const jelajahContent = [
     { title: "Dasar Naratif Therapy", description: "Konsep inti terapi naratif dalam membingkai ulang cerita diri.", icon: Book, articles: 6, slug: "dasar-naratif" },
@@ -171,8 +175,9 @@ const HibridaNaratifCBT: React.FC = () => {
     { title: "Eksperimen Perilaku", description: "Menguji asumsi melalui tindakan terukur dan refleksi.", icon: FileText, articles: 7, slug: "eksperimen-perilaku" }
   ];
 
-  // Psikoedukasi modules list (skeleton) – can expand; all available for now
+  // Psikoedukasi modules list (0-8: Pra-Sesi + 8 sesi inti)
   const psikoModules = [
+    { session: 0, title: 'Mengenal dan Materi Awal Layanan Ini', description: 'Memahami gambaran layanan, menuliskan harapan, dan berkomitmen mengikuti program.' },
     { session: 1, title: 'Pengenalan Tentang Bunuh Diri dan Risiko Terkait Bagi Mahasiswa', description: 'Memahami pengertian, faktor risiko & protektif, serta cara mencari bantuan.' },
     { session: 2, title: 'Mengenali Tanda-Tanda Dini Risiko Bunuh Diri Bagi Mahasiswa', description: 'Identifikasi tanda dini, tindakan preventif, dan refleksi adaptif.' },
     { session: 3, title: 'Pengembangan Keterampilan Koping Adaptif Bagi Mahasiswa', description: 'Transformasi koping maladaptif menjadi strategi adaptif.' },
@@ -188,6 +193,28 @@ const HibridaNaratifCBT: React.FC = () => {
   useEffect(() => {
     try { const raw = localStorage.getItem('hibridaPsikoEduProgress'); if (raw) setPsikoProgress(JSON.parse(raw)); } catch {}
   }, []);
+
+  // Sequential unlocking logic for HN-CBT Intervensi (mirror Spiritual Budaya pattern)
+  const getSessionStatus = (sessionNumber: number): "available" | "locked" => {
+    // Admin always see all sessions available
+    if (isAdmin) return "available";
+    // Session 0 (Pra-Sesi) always available for enrolled users
+    if (sessionNumber === 0) return "available";
+    // Other sessions require previous session to be completed (both meeting & assignment)
+    const prevSessionDone = !!(progressMap[sessionNumber - 1]?.meetingDone && progressMap[sessionNumber - 1]?.assignmentDone);
+    return prevSessionDone ? "available" : "locked";
+  };
+
+  // Sequential unlocking logic for Psikoedukasi (mirror Spiritual Budaya pattern)
+  const getPsikoStatus = (sessionNumber: number): "available" | "locked" => {
+    // Admin always see all sessions available
+    if (isAdmin) return "available";
+    // Session 0 (Pra-Sesi) always available for enrolled users
+    if (sessionNumber === 0) return "available";
+    // Other sessions require previous session to be completed (both meeting & assignment)
+    const prevDone = !!(psikoProgress[sessionNumber - 1]?.meetingDone && psikoProgress[sessionNumber - 1]?.assignmentDone);
+    return prevDone ? "available" : "locked";
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -206,7 +233,7 @@ const HibridaNaratifCBT: React.FC = () => {
         <meta name="twitter:image" content={`${getSiteBaseUrl()}/og-image.png`} />
       </Helmet>
       <Navbar />
-      <main className="flex-1 pt-24">
+  <main className="flex-1 pt-navbar">
         {/* Hero */}
         <section className="relative bg-gradient-to-b from-indigo-50 to-background dark:from-indigo-900/20 overflow-hidden rounded">
           <div className="absolute inset-0 opacity-10">
@@ -214,30 +241,38 @@ const HibridaNaratifCBT: React.FC = () => {
           </div>
             <div className="relative container mx-auto px-6 py-16 rounded-xl">
               <div className="max-w-4xl mx-auto text-center fade-in">
-                <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-br from-indigo-600 to-indigo-800 bg-clip-text text-transparent">
+                <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-br from-teal-600 to-cyan-800 bg-clip-text text-transparent">
                   Hibrida Naratif CBT
                 </h1>
                 <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
                   Program intervensi digital yang menggabungkan kekuatan terapi naratif dan CBT untuk membantu Anda
                   membingkai ulang pengalaman, mengelola pikiran otomatis, dan membangun ketahanan emosional.
                 </p>
-                {rawIsAdmin && (
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="flex flex-wrap items-center gap-3 rounded-full bg-amber-50 border border-amber-300 px-4 py-1.5 shadow-sm">
-                      <span className="text-xs font-semibold text-amber-700 tracking-wide">ADMIN PREVIEW</span>
-                      <button
-                        type="button"
-                        onClick={() => setAdminModeEnabled(v => !v)}
-                        className={`text-xs font-medium px-3 py-1 rounded-full transition-colors border ${adminModeEnabled ? 'bg-amber-600 text-white border-amber-600 hover:bg-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:bg-amber-100'}`}
-                        aria-pressed={adminModeEnabled}
+                {(isSuperAdmin || rawIsAdmin) && (
+                  <div className="mt-6 flex items-center justify-center">
+                    <div className="inline-flex items-center gap-4 rounded-xl bg-white/95 dark:bg-black/70 border border-indigo-200 dark:border-indigo-800 px-4 py-2 shadow-md backdrop-blur-sm">
+                      <div className="flex flex-col">
+                        <Label htmlFor="admin-view-hibrida" className="text-sm font-medium">Pratinjau Peserta</Label>
+                        <span className="text-xs text-muted-foreground">Lihat halaman seperti peserta biasa</span>
+                      </div>
+
+                      <Switch
+                        id="admin-view-hibrida"
+                        checked={adminView}
+                        onCheckedChange={setAdminView}
+                        aria-label="Toggle preview as participant"
+                        className={`relative inline-flex h-8 w-16 rounded-full p-1 transition-colors focus:outline-none ${adminView ? 'bg-indigo-600 border-cyan-700' : 'bg-gray-200 dark:bg-gray-600 border-transparent'}`}
                       >
-                        {adminModeEnabled ? 'Mode Admin Aktif' : 'Mode Peserta' }
-                      </button>
-                      <span className="text-[11px] text-amber-700 hidden md:inline">
-                        {adminModeEnabled ? 'Menampilkan semua sesi' : 'Pratinjau tampilan peserta'}
+                        <span
+                          aria-hidden="true"
+                          className={`inline-block h-7 w-7 rounded-full bg-white shadow transition-transform duration-200 ease-in-out transform ${adminView ? 'translate-x-[calc(100%-28px)]' : 'translate-x-0'}`}
+                        />
+                      </Switch>
+
+                      <span className={`text-sm font-semibold ${adminView ? 'text-teal-700' : 'text-muted-foreground'}`}>
+                        {adminView ? 'Pratinjau aktif' : 'Mode admin'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-amber-600">Toggle untuk melihat perbedaan gating sesi tanpa keluar akun.</p>
                   </div>
                 )}
               </div>
@@ -411,6 +446,37 @@ const HibridaNaratifCBT: React.FC = () => {
                     )}
                   </div>
                 </div>
+
+                {/* IT Contact Section - hanya untuk enrolled users */}
+                {canAccessIntervensiHNCBT || canAccessIntervensiPsikoedukasi ? (
+                  <div className="mt-8 p-6 rounded-xl border bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                      <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Hubungi IT Support
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Jika Anda mengalami kendala teknis, error, atau masalah akses saat menggunakan layanan ini, 
+                      silakan hubungi tim IT kami melalui WhatsApp.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
+                      onClick={() => {
+                        const message = encodeURIComponent(
+                          'Halo! Saya peserta Layanan Hibrida Naratif CBT. Saya ingin melaporkan error yang muncul saat membuka layanan ini, adapun kronologinya ialah sebagai berikut ............... / berikut saya lampirkan foto screenshootnya [lampirkan screenshoot]'
+                        );
+                        window.open(`https://wa.me/62881036592711?text=${message}`, '_blank');
+                      }}
+                    >
+                      <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                      </svg>
+                      Chat via WhatsApp
+                    </Button>
+                  </div>
+                ) : null}
               </TabsContent>
 
               {/* Jelajah */}
@@ -465,8 +531,8 @@ const HibridaNaratifCBT: React.FC = () => {
                   </div>
                   <div className="relative mb-8 rounded-2xl overflow-hidden">
                     <img src={tasksImage} alt="Intervensi Hibrida" className="w-full h-64 object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from_black/60 to-transparent flex items-end">
-                      <div className="p-8 text_white">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                      <div className="p-8 text-white">
                         <h3 className="text-2xl font-bold mb-2">Portal Intervensi</h3>
                         <p className="text-white/90">Modul naratif + CBT progresif</p>
                       </div>
@@ -474,63 +540,20 @@ const HibridaNaratifCBT: React.FC = () => {
                   </div>
                   <div className="grid gap-4">
                     {treatmentModules.map((m) => {
-                      // Sequential unlocking: session 1 always available; session n requires previous meeting & assignment done
-                      const previousCompleted = m.session === 1 ? true : !!(progressMap[m.session - 1]?.meetingDone && progressMap[m.session - 1]?.assignmentDone);
-                      const available = isAdmin ? true : previousCompleted;
+                      // Use standardized sequential unlocking function
+                      const status = getSessionStatus(m.session);
                       return (
-                        <Card
+                        <HibridaSessionCard
                           key={m.session}
-                          className={`group transition-all ${available ? 'hover:shadow-lg border-indigo-200 bg-indigo-50/50' : 'opacity-60 bg-muted/30'}`}
-                          title={!available ? 'Sesi akan terbuka setelah sesi sebelumnya selesai' : undefined}
-                        >
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                              <div className={`flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg ${available ? 'bg-indigo-600' : 'bg-muted'}`}>{m.session}</div>
-                              <div className="flex-1">
-                                <div className="flex items-start justify-between mb-2">
-                                  <h3 className="font-semibold text-lg">Sesi {m.session}: {m.title}</h3>
-                                  <Badge variant={available ? 'default' : 'secondary'} className="whitespace-nowrap">{available ? 'Tersedia' : 'Terkunci'}</Badge>
-                                </div>
-                                <p className="text-muted-foreground mb-3">{m.description}</p>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-muted-foreground">Durasi: {m.duration}</span>
-                                  <Button
-                                    variant={available ? 'default' : 'secondary'}
-                                    disabled={!available}
-                                    className={available ? 'bg-indigo-600 hover:bg-indigo-700' : ''}
-                                    onClick={() => available && navigate(`/hibrida-cbt/intervensi/sesi/${m.session}`)}
-                                  >
-                                    {available ? 'Mulai Sesi' : 'Terkunci'}
-                                  </Button>
-                                </div>
-                                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                  <div className="rounded-lg border bg-background p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <p className="text-sm font-medium">Pertemuan Daring</p>
-                                        <p className="text-xs text-muted-foreground">Diskusi & eksplor naratif</p>
-                                      </div>
-                                      <Badge className={progressMap[m.session]?.meetingDone ? 'bg-green-500 text-white' : 'bg-indigo-200 text-indigo-900'}>
-                                        {progressMap[m.session]?.meetingDone ? 'Selesai' : 'Belum'}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                  <div className="rounded-lg border bg-background p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <p className="text-sm font-medium">Penugasan</p>
-                                        <p className="text-xs text-muted-foreground">Refleksi & eksperimen</p>
-                                      </div>
-                                      <Badge className={progressMap[m.session]?.assignmentDone ? 'bg-green-500 text-white' : 'bg-indigo-200 text-indigo-900'}>
-                                        {progressMap[m.session]?.assignmentDone ? 'Selesai' : 'Belum'}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                          session={m.session}
+                          title={m.title}
+                          status={status}
+                          submissionCount={0}
+                          guideDone={progressMap[m.session]?.meetingDone}
+                          assignmentDone={progressMap[m.session]?.assignmentDone}
+                          onNavigate={() => navigate(`/hibrida-cbt/intervensi/sesi/${m.session}`)}
+                          showProgressIndicators={true}
+                        />
                       );
                     })}
                   </div>
@@ -549,55 +572,26 @@ const HibridaNaratifCBT: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
                       <div className="p-8 text-white">
                         <h3 className="text-2xl font-bold mb-2">Portal Psikoedukasi</h3>
-                        <p className="text-white/90">Pelajari konsep — lakukan refleksi — terapkan.</p>
+                        <p className="text-white/90">Pra-Sesi + 8 sesi: pelajari konsep — lakukan refleksi — terapkan.</p>
                       </div>
                     </div>
                   </div>
                   <div className="grid gap-4">
                     {psikoModules.map(pm => {
-                      const done = !!psikoProgress[pm.session]?.assignmentDone;
-                      const futureModule = pm.session > 8; // semua sesi 1–8 tersedia
-                      // Untuk saat ini, sesi psikoedukasi 1–8 dapat dibuka tanpa penguncian berantai
-                      const available = isAdmin ? !futureModule : !futureModule;
-                      const lockedByProgress = !available && !futureModule; // terkunci karena urutan (bukan karena future)
-                      const displayTitle = futureModule ? 'Segera' : pm.title;
-                      const route = `/hibrida-cbt/psikoedukasi/sesi/${pm.session}`;
+                      // Use standardized sequential unlocking function
+                      const status = getPsikoStatus(pm.session);
                       return (
-                        <Card
+                        <HibridaSessionCard
                           key={pm.session}
-                          className={`group transition-all ${available ? 'hover:shadow-lg border-indigo-200 bg-indigo-50/40' : 'opacity-60 bg-muted/30'} `}
-                          title={futureModule ? 'Segera hadir' : lockedByProgress ? 'Sesi akan terbuka setelah sesi sebelumnya selesai (Pertemuan & Penugasan)' : undefined}
-                        >
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                              <div className={`flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg ${done ? 'bg-green-600' : 'bg-indigo-600'}`}>{pm.session}</div>
-                              <div className="flex-1">
-                                <div className="flex items-start justify-between mb-1">
-                                  <h3 className="font-semibold text-lg">Sesi {pm.session}: {displayTitle}</h3>
-                                  {futureModule ? (
-                                    <Badge className="bg-amber-200 text-amber-900">Segera</Badge>
-                                  ) : (
-                                    <Badge className={done ? 'bg-green-600 text-white' : available ? 'bg-indigo-200 text-indigo-900' : 'bg-gray-300 text-gray-800'}>{done ? 'Selesai' : available ? 'Belum' : 'Terkunci'}</Badge>
-                                  )}
-                                </div>
-                                <p className="text-muted-foreground mb-3 text-sm">{futureModule ? 'Modul psikoedukasi ini akan tersedia selanjutnya.' : pm.description}</p>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-muted-foreground">Penugasan reflektif</span>
-                                  <Button
-                                    className={`bg-indigo-600 hover:bg-indigo-700 ${!available ? 'opacity-80' : ''}`}
-                                    disabled={!available}
-                                    onClick={() => available && navigate(route)}
-                                  >
-                                    {futureModule ? 'Segera' : available ? 'Buka Sesi' : 'Terkunci'}
-                                  </Button>
-                                </div>
-                                {lockedByProgress && (
-                                  <div className="mt-3 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-block">Selesaikan sesi sebelumnya (Pertemuan & Penugasan) untuk membuka.</div>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                          session={pm.session}
+                          title={pm.title}
+                          status={status}
+                          submissionCount={0}
+                          guideDone={psikoProgress[pm.session]?.meetingDone}
+                          assignmentDone={psikoProgress[pm.session]?.assignmentDone}
+                          onNavigate={() => navigate(`/hibrida-cbt/psikoedukasi/sesi/${pm.session}`)}
+                          showProgressIndicators={true}
+                        />
                       );
                     })}
                   </div>

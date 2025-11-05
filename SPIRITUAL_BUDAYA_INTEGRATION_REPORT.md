@@ -649,10 +649,109 @@ await supabase
 - [ ] Test admin approval workflow
 - [ ] Test multiple submission flow (3+ submissions per user)
 - [ ] Verify counselor response delivery
-- [ ] Test on mobile devices (responsive design)
+- [x] **Test on mobile devices (responsive design)** ✅
 - [ ] Check PDF/audio/video file uploads work
 - [ ] Monitor query performance with realistic data volume
-- [ ] Clean up old files (delete deprecated components)
+- [x] **Clean up old files (delete deprecated components)** ✅
+
+---
+
+## 📱 MOBILE RESPONSIVE TESTING RESULTS
+
+### ✅ Completed Actions (November 2, 2025)
+
+**1. Old Files Cleanup** ✅
+- ❌ Deleted: `src/pages/spiritual-budaya/SpiritualIntervensiPortalSesi.tsx` (636 lines)
+- ❌ Deleted: `src/pages/spiritual-budaya/SpiritualPsikoedukasiPortalSesi.tsx`
+- ❌ Deleted: `src/components/dashboard/spiritual-budaya/SpiritualAssignmentManagement.tsx`
+- ❌ Deleted: `src/components/dashboard/spiritual-budaya/SpiritualPsikoedukasiAssignmentManagement.tsx`
+- ✅ Removed unused imports from `src/App.tsx`
+
+**2. Mobile Responsive Improvements** ✅
+
+#### Portal User (Intervensi)
+- ✅ **Action Buttons:** Changed from `flex gap-3` to `flex flex-col sm:flex-row gap-3`
+  - Mobile: Stacked buttons (full width)
+  - Desktop: Side-by-side buttons
+  - Added responsive text: `text-sm sm:text-base`
+
+- ✅ **Navigation Buttons:** Changed from `flex justify-between` to `flex flex-col sm:flex-row sm:justify-between gap-3`
+  - Mobile: Stacked navigation (full width)
+  - Desktop: Left/right alignment
+  - Added responsive text and center alignment on mobile
+  - Hidden empty divs on mobile with `hidden sm:block`
+
+- ✅ **Existing Responsive Features Verified:**
+  - Hero title: `text-3xl md:text-5xl` ✅
+  - Grid layout: `grid-cols-1 lg:grid-cols-4` ✅
+  - Meeting cards: `grid-cols-1 md:grid-cols-3` ✅
+  - Form fields: `grid-cols-1 md:grid-cols-2` ✅
+
+#### Dashboard Admin
+- ✅ **Detail Modal:** Changed from `max-w-4xl` to `max-w-4xl w-[95vw] sm:w-full`
+  - Mobile: Uses 95% viewport width
+  - Desktop: Standard max width
+  - Responsive title: `text-base sm:text-lg`
+  - Responsive description: `text-xs sm:text-sm`
+
+- ✅ **Submission Tabs:** Added `overflow-x-auto flex-nowrap`
+  - Mobile: Horizontal scroll for many tabs
+  - Responsive text: `text-xs sm:text-sm whitespace-nowrap`
+  - Prevents tab wrapping/breaking
+
+- ✅ **Table Display:**
+  - Already has `overflow-x-auto` wrapper ✅
+  - Button text: `hidden sm:inline` (icon only on mobile) ✅
+  - Submission count badge: Always visible ✅
+
+#### Portal User (Psikoedukasi)
+- ✅ **Verified Same Responsive Patterns:**
+  - Hero title: `text-3xl md:text-5xl` ✅
+  - Grid layouts: `grid-cols-1 lg:grid-cols-4`, `md:grid-cols-3`, `md:grid-cols-2` ✅
+  - All existing responsive breakpoints intact ✅
+
+### 📊 Mobile Responsiveness Checklist
+
+| Component | Mobile (< 640px) | Tablet (640-1024px) | Desktop (> 1024px) | Status |
+|-----------|------------------|---------------------|---------------------|--------|
+| **Portal - Hero Section** | Single column, 3xl text | Single column, responsive | 5xl text, full width | ✅ |
+| **Portal - Action Buttons** | Stacked (vertical) | Stacked or side-by-side | Side-by-side | ✅ |
+| **Portal - Navigation** | Stacked (vertical) | Responsive flex | Justify between | ✅ |
+| **Portal - Form Fields** | Single column | 2 columns | 2 columns | ✅ |
+| **Portal - Meeting Cards** | Single column | 3 columns | 3 columns | ✅ |
+| **Dashboard - Table** | Horizontal scroll | Full table | Full table | ✅ |
+| **Dashboard - Modal** | 95vw width | Standard width | Max 4xl | ✅ |
+| **Dashboard - Tabs** | Horizontal scroll | Full display | Full display | ✅ |
+| **Dashboard - Buttons** | Icon only | Full text | Full text | ✅ |
+
+### 🎨 Responsive Design Patterns Used
+
+**Tailwind CSS Breakpoints:**
+- `sm:` - 640px and up (small tablets)
+- `md:` - 768px and up (tablets)
+- `lg:` - 1024px and up (desktops)
+- `xl:` - 1280px and up (large desktops)
+- `2xl:` - 1536px and up (extra large)
+
+**Common Patterns Applied:**
+1. **Flex Direction:** `flex-col sm:flex-row` (stack on mobile, horizontal on desktop)
+2. **Grid Columns:** `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` (adaptive columns)
+3. **Text Size:** `text-sm sm:text-base` (smaller text on mobile)
+4. **Width:** `w-full sm:w-auto` (full width on mobile, auto on desktop)
+5. **Visibility:** `hidden sm:inline` (hide on mobile, show on desktop)
+6. **Overflow:** `overflow-x-auto` (horizontal scroll for tables/tabs)
+
+### ⚠️ Known Limitations
+
+**Not Addressed (Non-critical):**
+- History list items could be further optimized for very small screens (<375px)
+- Some form labels might wrap on narrow devices (iPhone SE)
+- PDF previews in guidance materials may need aspect ratio adjustment
+
+**Acceptable Trade-offs:**
+- Tables scroll horizontally on mobile (standard UX pattern)
+- Tabs scroll horizontally when many submissions (better than wrapping)
+- Some text slightly smaller on mobile (maintains readability)
 
 ---
 

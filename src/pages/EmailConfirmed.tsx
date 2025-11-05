@@ -86,7 +86,7 @@ const EmailConfirmed = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 pt-24">
+  <main className="flex-1 pt-navbar">
           <div className="container mx-auto px-6 py-12">
             <div className="max-w-md mx-auto text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -105,7 +105,7 @@ const EmailConfirmed = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 pt-24">
+  <main className="flex-1 pt-navbar">
         <div className="container mx-auto px-6 py-12">
           <div className="max-w-md mx-auto text-center">
             {isVerified ? (

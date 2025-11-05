@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { parseGroupSchedule } from "@/utils/groupSchedule";
 import { CalendarCheck2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,14 +27,45 @@ const SpiritualMeetingManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Meeting | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [form, setForm] = useState({ date: "", time: "", link: "", description: "" });
+  const [form, setForm] = useState({ date: "", start_time: "", end_time: "", time: "", link: "", description: "" });
   const [usePerGroup, setUsePerGroup] = useState(false);
   type GroupKey = 'A'|'B'|'C';
-  type GroupSchedule = { date: string; time: string; link: string };
+  type GroupSchedule = { date?: string; time?: string; link?: string };
   type GroupSchedules = Partial<Record<GroupKey, GroupSchedule>>;
   const [groupSchedules, setGroupSchedules] = useState<GroupSchedules>({});
 
   const parseGroupJson = (raw: string | null): GroupSchedules | null => parseGroupSchedule(raw);
+
+  // Helpers to convert time formats and parse single-schedule JSON stored in `time` column
+  const colonToDot = (v?: string) => (v ? v.replace(":", ".") : "");
+  const dotToColon = (v?: string) => (v ? v.replace(".", ":") : "");
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return 'Belum diatur';
+    const parts = iso.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      return `${d}-${m}-${y}`;
+    }
+    return iso;
+  };
+  const parseTimeJson = (raw: string | null | undefined): { start?: string; end?: string } => {
+    if (!raw) return {};
+    try {
+      const obj = JSON.parse(raw);
+      // supports { start, end } or { "start": "HH.mm" }
+      const start = obj.start as string | undefined;
+      const end = obj.end as string | undefined;
+      return { start, end };
+    } catch {
+      // Fallback legacy format like "HH:MM - HH:MM" or single time
+      const s = String(raw);
+      if (s.includes("-")) {
+        const [a, b] = s.split("-").map(x => x.trim());
+        return { start: a, end: b };
+      }
+      return { start: s };
+    }
+  };
 
   const tableName = program === 'intervensi' ? 'sb_intervensi_meetings' : 'sb_psikoedukasi_meetings';
 
@@ -60,17 +91,32 @@ const SpiritualMeetingManagement: React.FC = () => {
     const parsed = parseGroupJson(m.link);
     setUsePerGroup(!!parsed);
     setGroupSchedules(parsed || {});
-    setForm({ date: m.date || "", time: m.time || "", link: parsed ? "" : (m.link || ""), description: m.description || "" });
+    // Prefill from single-schedule JSON in `time`
+    const { start, end } = parseTimeJson(m.time);
+    setForm({
+      date: m.date || "",
+      start_time: dotToColon(start) || "",
+      end_time: dotToColon(end) || "",
+      time: m.time || "",
+      link: parsed ? "" : (m.link || ""),
+      description: m.description || ""
+    });
     setIsDialogOpen(true);
   };
 
   const save = async () => {
     if (!editing) return;
     try {
+      // Persist single-schedule time as JSON text in `time` column: { start: "HH.mm", end: "HH.mm" }
+      const startDot = colonToDot(form.start_time);
+      const endDot = colonToDot(form.end_time);
+      const timeJson = (startDot || endDot)
+        ? JSON.stringify({ start: startDot || undefined, end: endDot || undefined })
+        : null;
       const payload = {
-        date: form.date || null,
-        time: form.time || null,
-        link: usePerGroup ? JSON.stringify(groupSchedules) : (form.link || null),
+        date: usePerGroup ? null : (form.date || null),
+        time: usePerGroup ? null : timeJson,
+        link: usePerGroup ? (groupSchedules as any) : (form.link || null),
         description: form.description || null
       };
       const { error } = await supabase
@@ -133,8 +179,10 @@ const SpiritualMeetingManagement: React.FC = () => {
                           <div key={k} className="rounded border p-2 bg-muted/30">
                             <div className="font-semibold">Grup {k}</div>
                             <div className="flex flex-col">
-                              <span>Tanggal: <span className="font-medium">{parsed[k]?.date || 'Belum diatur'}</span></span>
-                              <span>Waktu: <span className="font-medium">{parsed[k]?.time || 'Belum diatur'}</span></span>
+                              <span>Tanggal: <span className="font-medium">{formatDate(parsed[k]?.date || null)}</span></span>
+                              <span>Waktu: <span className="font-medium">{(parsed as any)[k]?.start_time || (parsed as any)[k]?.end_time
+                                ? `${(parsed as any)[k]?.start_time || ''}${(parsed as any)[k]?.start_time && (parsed as any)[k]?.end_time ? ' - ' : ''}${(parsed as any)[k]?.end_time || ''}`
+                                : (parsed[k]?.time || 'Belum diatur')}</span></span>
                               <span className="truncate">Link: {parsed[k]?.link ? (<a href={parsed[k]!.link} target="_blank" rel="noreferrer" className="text-amber-700 hover:underline">{parsed[k]!.link}</a>) : 'Belum diatur'}</span>
                             </div>
                           </div>
@@ -142,10 +190,16 @@ const SpiritualMeetingManagement: React.FC = () => {
                       </div>
                     );
                   }
+                  const single = parseTimeJson(m.time);
+                  const startColon = dotToColon(single.start || '');
+                  const endColon = dotToColon(single.end || '');
+                  const timeDisplay = (startColon || endColon)
+                    ? `${startColon}${startColon && endColon ? ' - ' : ''}${endColon}`
+                    : (m.time || 'Belum diatur');
                   return (
                     <>
-                      <div><span className="text-muted-foreground">Tanggal:</span> <span className="font-medium">{m.date || 'Belum diatur'}</span></div>
-                      <div><span className="text-muted-foreground">Waktu:</span> <span className="font-medium">{m.time || 'Belum diatur'}</span></div>
+                      <div><span className="text-muted-foreground">Tanggal:</span> <span className="font-medium">{formatDate(m.date)}</span></div>
+                      <div><span className="text-muted-foreground">Waktu:</span> <span className="font-medium">{timeDisplay}</span></div>
                       <div className="truncate"><span className="text-muted-foreground">Link:</span> {m.link ? (<a href={m.link} className="text-amber-700 hover:underline" target="_blank" rel="noreferrer">{m.link}</a>) : 'Belum diatur'}</div>
                     </>
                   );
@@ -162,7 +216,7 @@ const SpiritualMeetingManagement: React.FC = () => {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>Edit Jadwal Sesi {editing?.session_number}</DialogTitle>
             <DialogDescription>Perbarui informasi pertemuan daring untuk sesi ini.</DialogDescription>
@@ -173,16 +227,25 @@ const SpiritualMeetingManagement: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="date">Tanggal</Label>
-                    <Input id="date" value={form.date} onChange={e=> setForm(f=> ({...f, date: e.target.value}))} placeholder="2025-10-05" />
+                    <Input id="date" type="date" value={form.date} onChange={e=> setForm(f=> ({...f, date: e.target.value}))} placeholder="2025-10-05" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="time">Waktu</Label>
-                    <Input id="time" value={form.time} onChange={e=> setForm(f=> ({...f, time: e.target.value}))} placeholder="19:30 WIB" />
+                    <Label htmlFor="start">Jam Mulai</Label>
+                    <Input id="start" type="time" value={form.start_time} onChange={e=> setForm(f=> ({...f, start_time: e.target.value}))} placeholder="20:00" />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="link">Link Pertemuan</Label>
-                  <Input id="link" value={form.link} onChange={e=> setForm(f=> ({...f, link: e.target.value}))} placeholder="https://meet.google.com/..." />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="end">Jam Selesai</Label>
+                    <Input id="end" type="time" value={form.end_time} onChange={e=> setForm(f=> ({...f, end_time: e.target.value}))} placeholder="21:00" />
+                  </div>
+                  <div />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="link">Link Pertemuan</Label>
+                    <Input id="link" value={form.link} onChange={e=> setForm(f=> ({...f, link: e.target.value}))} placeholder="https://meet.google.com/..." />
+                  </div>
                 </div>
               </>
             ) : (
@@ -199,9 +262,22 @@ const SpiritualMeetingManagement: React.FC = () => {
                   {(['A','B','C'] as GroupKey[]).map(g => (
                     <div key={g} className="space-y-2 border rounded p-3">
                       <div className="font-semibold">Grup {g}</div>
-                      <Input placeholder="Tanggal" value={groupSchedules[g]?.date || ''} onChange={e=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), date: e.target.value }}))} />
-                      <Input placeholder="Waktu" value={groupSchedules[g]?.time || ''} onChange={e=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), time: e.target.value }}))} />
-                      <Input placeholder="Link" value={groupSchedules[g]?.link || ''} onChange={e=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), link: e.target.value }}))} />
+                      <div className="space-y-1">
+                        <Label className="text-xs">Tanggal</Label>
+                        <Input type="date" placeholder="Tanggal" value={groupSchedules[g]?.date || ''} onChange={e=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{}), date: e.target.value }}))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Jam Mulai</Label>
+                        <Input type="time" placeholder="Jam Mulai" value={(groupSchedules[g] as any)?.start_time || groupSchedules[g]?.time || ''} onChange={e=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{}), start_time: e.target.value }}))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Jam Selesai</Label>
+                        <Input type="time" placeholder="Jam Selesai" value={(groupSchedules[g] as any)?.end_time || ''} onChange={e=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{}), end_time: e.target.value }}))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Link</Label>
+                        <Input placeholder="Link" value={groupSchedules[g]?.link || ''} onChange={e=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{}), link: e.target.value }}))} />
+                      </div>
                     </div>
                   ))}
                 </div>

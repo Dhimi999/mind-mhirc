@@ -289,7 +289,7 @@ const SpiritualBudayaMateri: React.FC = () => {
 
       <Navbar />
 
-      <main className="flex-1 pt-24">
+      <main className="flex-1 pt-navbar">
         <section className="relative bg-gradient-to-b from-muted/50 to-background overflow-hidden rounded">
           <div className="absolute inset-0 opacity-10">
             <img src={heroImage} alt="Spiritual & Budaya Background" className="w-full h-full object-cover" />

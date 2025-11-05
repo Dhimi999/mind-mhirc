@@ -264,7 +264,7 @@ const HibridaMeetingManagement: React.FC = () => {
                     <Label htmlFor="date">Tanggal</Label>
                     <Input
                       id="date"
-                      type="text"
+                      type="date"
                       placeholder="2025-10-05"
                       value={formData.date}
                       onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
@@ -274,8 +274,8 @@ const HibridaMeetingManagement: React.FC = () => {
                     <Label htmlFor="time">Waktu</Label>
                     <Input
                       id="time"
-                      type="text"
-                      placeholder="20:00 WIB"
+                      type="time"
+                      placeholder="20:00"
                       value={formData.time}
                       onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
                     />
@@ -285,7 +285,7 @@ const HibridaMeetingManagement: React.FC = () => {
                   <Label htmlFor="link">Link Pertemuan</Label>
                   <Input
                     id="link"
-                    type="text"
+                    type="url"
                     placeholder="https://meet.google.com/..."
                     value={formData.link}
                     onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
@@ -307,9 +307,9 @@ const HibridaMeetingManagement: React.FC = () => {
                   {(['A','B','C'] as GroupKey[]).map(g => (
                     <div key={g} className="space-y-2 border rounded p-3">
                       <div className="font-semibold">Grup {g}</div>
-                      <Input placeholder="Tanggal" value={groupSchedules[g]?.date || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), date: e.target.value }}))} />
-                      <Input placeholder="Waktu" value={groupSchedules[g]?.time || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), time: e.target.value }}))} />
-                      <Input placeholder="Link" value={groupSchedules[g]?.link || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), link: e.target.value }}))} />
+                      <Input type="date" placeholder="Tanggal" value={groupSchedules[g]?.date || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), date: e.target.value }}))} />
+                      <Input type="time" placeholder="Waktu" value={groupSchedules[g]?.time || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), time: e.target.value }}))} />
+                      <Input type="url" placeholder="Link" value={groupSchedules[g]?.link || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), link: e.target.value }}))} />
                     </div>
                   ))}
                 </div>

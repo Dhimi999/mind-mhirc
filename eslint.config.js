@@ -23,6 +23,11 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
+      // Enforce cleaner files by preventing multiple consecutive blank lines
+      "no-multiple-empty-lines": [
+        "warn",
+        { max: 1, maxEOF: 0, maxBOF: 0 }
+      ],
       "@typescript-eslint/no-unused-vars": "off",
     },
   }

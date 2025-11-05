@@ -180,7 +180,7 @@ const ServiceDetail = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 pt-24 flex items-center justify-center">
+  <main className="flex-1 pt-navbar flex items-center justify-center">
           <div className="animate-pulse flex flex-col items-center space-y-4">
             <div className="h-8 w-64 bg-muted rounded"></div>
             <div className="h-4 w-96 bg-muted rounded"></div>
@@ -196,7 +196,7 @@ const ServiceDetail = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 pt-24 flex items-center justify-center">
+  <main className="flex-1 pt-navbar flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Layanan Tidak Ditemukan</h1>
             <p className="text-muted-foreground mb-6">Maaf, layanan yang Anda cari tidak tersedia.</p>
@@ -219,7 +219,7 @@ const ServiceDetail = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <main className="flex-1 pt-24">
+  <main className="flex-1 pt-navbar">
         {/* Service Header */}
         <section className="bg-gradient-to-b from-muted/50 to-background">
           <div className="container mx-auto px-6 py-12">

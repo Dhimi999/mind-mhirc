@@ -125,7 +125,7 @@ const BlogPostPage = () => {
   if (loading) {
     return <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 pt-24">
+  <main className="flex-1 pt-navbar">
           <div className="container mx-auto px-6 py-12">
             <div className="max-w-3xl mx-auto">
               <div className="animate-pulse">
@@ -147,7 +147,7 @@ const BlogPostPage = () => {
   if (error) {
     return <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 pt-24">
+  <main className="flex-1 pt-navbar">
           <div className="container mx-auto px-6 py-12">
             <div className="max-w-3xl mx-auto text-center">
               <h1 className="text-2xl font-bold mb-4">Error</h1>
@@ -168,7 +168,7 @@ const BlogPostPage = () => {
   return <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <main className="flex-1 pt-12">
+  <main className="flex-1 pt-navbar">
         <div className="container mx-auto px-6 py-12">
           <div className="max-w-3xl mx-auto">
             <Link to="/blog" className="inline-flex items-center text-sm text-primary mb-8 hover:underline">

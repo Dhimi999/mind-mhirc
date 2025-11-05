@@ -129,16 +129,16 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSession]);
 
-  const intervensiSessions: SessionInfo[] = Array.from({ length: 8 }, (_, i) => ({
-    number: i + 1,
+  const intervensiSessions: SessionInfo[] = Array.from({ length: 9 }, (_, i) => ({
+    number: i,
     program: "intervensi" as ProgramType,
-    title: `Intervensi Sesi ${i + 1}`
+    title: i === 0 ? `Intervensi Pra-Sesi` : `Intervensi Sesi ${i}`
   }));
 
-  const psikoedukasiSessions: SessionInfo[] = Array.from({ length: 8 }, (_, i) => ({
-    number: i + 1,
+  const psikoedukasiSessions: SessionInfo[] = Array.from({ length: 9 }, (_, i) => ({
+    number: i,
     program: "psikoedukasi" as ProgramType,
-    title: `Psikoedukasi Sesi ${i + 1}`
+    title: i === 0 ? `Psikoedukasi Pra-Sesi` : `Psikoedukasi Sesi ${i}`
   }));
 
   const handleSessionClick = (session: SessionInfo, targetView: "guidance" | "answers" | "participants") => {
@@ -634,6 +634,8 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
   };
 
   // Session List View
+  const [listFilter, setListFilter] = useState<"all" | ProgramType>("all");
+
   if (view === "list") {
     return (
       <div>
@@ -642,8 +644,20 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
           <p className="text-muted-foreground">Kelola panduan penugasan, lihat jawaban peserta, dan kirim respons konselor.</p>
         </div>
 
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex items-center gap-2 border rounded px-3 py-2 bg-background">
+            <span className="text-xs text-muted-foreground">Filter Program:</span>
+            <select className="text-sm bg-transparent" value={listFilter} onChange={e=> setListFilter(e.target.value as any)}>
+              <option value="all">Semua</option>
+              <option value="intervensi">Intervensi</option>
+              <option value="psikoedukasi">Psikoedukasi</option>
+            </select>
+          </div>
+        </div>
+
         <div className="space-y-8">
           {/* Intervensi Spiritual & Budaya Sessions */}
+          {(listFilter === "all" || listFilter === "intervensi") && (
           <div>
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <ClipboardList className="h-5 w-5 text-indigo-600" />
@@ -659,7 +673,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                       </div>
                       <Badge variant="outline" className="text-xs">Intervensi</Badge>
                     </div>
-                    <CardTitle className="text-base mt-2">Sesi {session.number}</CardTitle>
+                    <CardTitle className="text-base mt-2">{session.number === 0 ? 'Pra-Sesi' : `Sesi ${session.number}`}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <Button size="sm" variant="outline" className="w-full justify-start" onClick={() => handleSessionClick(session, "guidance")}>
@@ -679,8 +693,10 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
               ))}
             </div>
           </div>
+          )}
 
           {/* Psikoedukasi Sessions */}
+          {(listFilter === "all" || listFilter === "psikoedukasi") && (
           <div>
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <ClipboardList className="h-5 w-5 text-violet-600" />
@@ -696,7 +712,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                       </div>
                       <Badge variant="outline" className="text-xs">Psikoedukasi</Badge>
                     </div>
-                    <CardTitle className="text-base mt-2">Sesi {session.number}</CardTitle>
+                    <CardTitle className="text-base mt-2">{session.number === 0 ? 'Pra-Sesi' : `Sesi ${session.number}`}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <Button size="sm" variant="outline" className="w-full justify-start" onClick={() => handleSessionClick(session, "guidance")}>
@@ -716,6 +732,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
               ))}
             </div>
           </div>
+          )}
         </div>
       </div>
     );
@@ -743,10 +760,10 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
               <span className="hidden sm:inline">Masuk ke halaman Spiritual & Budaya</span>
               <span className="sm:hidden">Masuk ke layanan</span>
             </Button>
-            <Button
+              <Button
               size="icon"
               variant="secondary"
-              disabled={selectedSession.number <= 1}
+              disabled={selectedSession.number <= 0}
               onClick={() => {
                 const sessions = selectedSession.program === "intervensi" ? intervensiSessions : psikoedukasiSessions;
                 const idx = sessions.findIndex(s => s.number === selectedSession.number);
@@ -1174,12 +1191,13 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                   assignments
                     .filter((a) => {
                       // Apply statusTab filters using robust submitted detection
-                      const p = progress[a.user_id];
-                      const hasResp = !!p?.counselor_response;
+                      const userSubs = submissionsByUser[a.user_id] || [];
                       const isSubmitted = !!a.submitted || !!a.submitted_at;
+                      const allResponded = userSubs.length > 0 && userSubs.every(s => !!s.counselor_response);
+                      const anyUnresponded = userSubs.some(s => !s.counselor_response);
                       if (statusTab === "draft") return !isSubmitted;
-                      if (statusTab === "pending") return isSubmitted && !hasResp;
-                      if (statusTab === "done") return isSubmitted && hasResp;
+                      if (statusTab === "pending") return isSubmitted && anyUnresponded;
+                      if (statusTab === "done") return isSubmitted && allResponded;
                       return true;
                     })
                     .filter((a) => {
@@ -1190,20 +1208,24 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                       return g === groupFilter;
                     })
                     .map((assignment, idx) => {
-                      const userProgress = progress[assignment.user_id];
-                      const hasResponse = !!userProgress?.counselor_response;
+                      const userSubs = submissionsByUser[assignment.user_id] || [];
                       const isSubmitted = !!assignment.submitted || !!assignment.submitted_at;
+                      const allResponded = userSubs.length > 0 && userSubs.every(s => !!s.counselor_response);
+                      const anyUnresponded = userSubs.some(s => !s.counselor_response);
                       const submissionCount = assignment.submission_count || 1;
-                      const statusLabel = !isSubmitted
-                        ? "Draft"
-                        : hasResponse
-                        ? "Selesai"
-                        : "Menunggu Balasan";
-                      const statusVariant = !isSubmitted
-                        ? "secondary"
-                        : hasResponse
-                        ? "default"
-                        : "outline";
+                      const userProg = progress[assignment.user_id];
+                      const hasResponse = !!userProg?.counselor_response;
+                      let statusLabel = "Draft";
+                      let statusVariant: any = "secondary";
+                      if (isSubmitted) {
+                        if (allResponded) {
+                          statusLabel = "Selesai";
+                          statusVariant = "default";
+                        } else if (anyUnresponded) {
+                          statusLabel = "Menunggu Balasan";
+                          statusVariant = "outline";
+                        }
+                      }
                       const groupLabel = groups[assignment.user_id] || "-";
                       return (
                         <tr key={assignment.id} className="hover:bg-muted/30">
@@ -1235,7 +1257,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                             <Badge variant={statusVariant as any}>{statusLabel}</Badge>
                             {hasResponse && (
                               <div className="mt-1 text-xs text-muted-foreground">
-                                Dijawab oleh {userProgress?.counselor_name || "-"} pada {userProgress?.responded_at ? new Date(userProgress.responded_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
+                                Dijawab oleh {userProg?.counselor_name || "-"} pada {userProg?.responded_at ? new Date(userProg.responded_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
                               </div>
                             )}
                           </td>
@@ -1256,12 +1278,12 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
 
         {/* Detail Dialog */}
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">
                 Detail Jawaban - {profiles[selectedAssignment?.user_id || ""]?.full_name}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm">
                 Lihat jawaban peserta dan berikan respons konselor.
               </DialogDescription>
             </DialogHeader>
@@ -1276,11 +1298,11 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                   setSelectedSubmission(submission);
                   setCounselorResponse(submission?.counselor_response || "");
                 }}>
-                  <TabsList className="w-full justify-start">
+                  <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
                     {selectedUserSubmissions.map((submission, idx) => {
                       const hasResponse = !!submission.counselor_response;
                       return (
-                        <TabsTrigger key={idx} value={idx.toString()} className="flex items-center gap-2">
+                        <TabsTrigger key={idx} value={idx.toString()} className="flex items-center gap-2 whitespace-nowrap text-xs sm:text-sm">
                           <span>Jawaban #{submission.submission_number}</span>
                           {hasResponse && (
                             <Badge variant="default" className="text-[10px] px-1 py-0">

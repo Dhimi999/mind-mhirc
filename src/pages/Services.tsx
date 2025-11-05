@@ -209,7 +209,7 @@ const Services = () => {
 
       <Navbar />
 
-      <main className="flex-1 pt-24">
+      <main className="flex-1 pt-navbar">
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-muted/50 to-background">
           <div className="container mx-auto px-6 py-16">

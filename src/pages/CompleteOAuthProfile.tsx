@@ -61,7 +61,7 @@ const CompleteOAuthProfile = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <main className="flex-1 pt-24">
+  <main className="flex-1 pt-navbar">
         <div className="container mx-auto px-6 py-12">
           <div className="max-w-md mx-auto">
             <div className="text-center mb-8">

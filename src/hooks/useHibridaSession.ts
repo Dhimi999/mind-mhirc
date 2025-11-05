@@ -6,6 +6,7 @@ export interface SessionProgress {
   meetingDone: boolean;
   assignmentDone: boolean;
   sessionOpened: boolean;
+  guidanceRead?: boolean;
   counselorResponse?: string;
   counselorName?: string;
   respondedAt?: string;
@@ -30,6 +31,7 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
     meetingDone: false,
     assignmentDone: false,
     sessionOpened: false,
+    guidanceRead: false,
     counselorResponse: undefined
   });
   const [meetingSchedule, setMeetingSchedule] = useState<MeetingSchedule | null>(null);
@@ -98,6 +100,7 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
           meetingDone: (progressData as any).meeting_done || false,
           assignmentDone: (progressData as any).assignment_done || false,
           sessionOpened: (progressData as any).session_opened || false,
+          guidanceRead: (progressData as any).guidance_read || false,
           counselorResponse: (progressData as any).counselor_response || undefined,
           counselorName: (progressData as any).counselor_name || undefined,
           respondedAt: (progressData as any).responded_at || undefined
@@ -184,6 +187,46 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
     }
   }, [userId, sessionNumber]);
 
+  const updateProgress = useCallback(async (updates: Partial<Record<string, any>>) => {
+    if (!userId) return;
+
+    try {
+      const { error } = await supabase
+        .from("cbt_hibrida_user_progress" as any)
+        .upsert({
+          user_id: userId,
+          session_number: sessionNumber,
+          ...updates
+        }, {
+          onConflict: "user_id,session_number"
+        });
+
+      if (error) throw error;
+      
+      // Update local state based on changes
+      const camelCaseMap: Record<string, keyof SessionProgress> = {
+        meeting_done: 'meetingDone',
+        assignment_done: 'assignmentDone',
+        session_opened: 'sessionOpened',
+        guidance_read: 'guidanceRead',
+      };
+      
+      const localUpdates: Partial<SessionProgress> = {};
+      Object.keys(updates).forEach(key => {
+        if (camelCaseMap[key]) {
+          (localUpdates as any)[camelCaseMap[key]] = updates[key];
+        }
+      });
+      
+      if (Object.keys(localUpdates).length > 0) {
+        setProgress(prev => ({ ...prev, ...localUpdates }));
+      }
+    } catch (error: any) {
+      console.error("Error updating progress:", error);
+      throw error;
+    }
+  }, [userId, sessionNumber]);
+
   const markMeetingDone = useCallback(async () => {
     if (!userId) return;
 
@@ -212,6 +255,7 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
     if (!userId) return false;
 
     try {
+      // 1) Tulis ke tabel assignments (current/latest)
       const { error: assignmentError } = await supabase
         .from("cbt_hibrida_assignments" as any)
         .upsert({
@@ -226,6 +270,38 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
 
       if (assignmentError) throw assignmentError;
 
+      // 2) Ambil submission_number terakhir dan hitung berikutnya
+      let nextSubmissionNumber = 1;
+      try {
+        const { data: last } = await supabase
+          .from('cbt_hibrida_submission_history' as any)
+          .select('submission_number')
+          .eq('user_id', userId)
+          .eq('session_number', sessionNumber)
+          .order('submission_number', { ascending: false })
+          .limit(1);
+        if (last && last.length > 0) {
+          nextSubmissionNumber = ((last[0] as any).submission_number || 0) + 1;
+        }
+      } catch {}
+
+      // 3) Append ke tabel submission_history untuk mendukung multiple submissions
+      const { error: histError } = await supabase
+        .from('cbt_hibrida_submission_history' as any)
+        .insert({
+          id: crypto.randomUUID(), // Generate UUID manually to avoid NULL constraint
+          user_id: userId,
+          session_number: sessionNumber,
+          submission_number: nextSubmissionNumber,
+          answers: answers,
+          submitted_at: new Date().toISOString()
+        });
+      if (histError) {
+        console.error('History insert error detail:', histError);
+        throw histError;
+      }
+
+      // 4) Update progress
       const { error: progressError } = await supabase
         .from("cbt_hibrida_user_progress" as any)
         .upsert({
@@ -240,11 +316,11 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
       if (progressError) throw progressError;
 
       setProgress(prev => ({ ...prev, assignmentDone: true }));
-      toast.success("Penugasan berhasil dikirim");
+      toast.success("Jawaban berhasil dikirim");
       return true;
     } catch (error: any) {
       console.error("Error submitting assignment:", error);
-      toast.error("Gagal mengirim penugasan");
+      toast.error("Gagal mengirim jawaban");
       return false;
     }
   }, [userId, sessionNumber]);
@@ -296,6 +372,24 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
     }
   }, [userId, sessionNumber]);
 
+  const fetchSubmissionHistory = useCallback(async () => {
+    if (!userId) return [];
+    try {
+      const { data, error } = await supabase
+        .from('cbt_hibrida_submission_history' as any)
+        .select('*')
+        .eq('user_id', userId)
+        .eq('session_number', sessionNumber)
+        .order('submitted_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error('Fetch hibrida submission history failed', e);
+      return [];
+    }
+  }, [userId, sessionNumber]);
+
   return {
     progress,
     meetingSchedule,
@@ -303,10 +397,12 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
     groupAssignment,
     isSuperAdmin,
     allGroupSchedules,
+    updateProgress,
     markMeetingDone,
     submitAssignment,
     loadAssignment,
     autoSaveAssignment,
+    fetchSubmissionHistory,
     refetch: fetchData
   };
 };

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 export interface SessionProgress {
   meetingDone: boolean;
+  guideDone: boolean;
   assignmentDone: boolean;
   sessionOpened: boolean;
   counselorResponse?: string;
@@ -28,6 +29,7 @@ export interface MeetingSchedule {
 export const usePsikoedukasiSession = (sessionNumber: number, userId: string | undefined) => {
   const [progress, setProgress] = useState<SessionProgress>({
     meetingDone: false,
+    guideDone: false,
     assignmentDone: false,
     sessionOpened: false,
     counselorResponse: undefined,
@@ -98,6 +100,7 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
       if (progressData) {
         setProgress({
           meetingDone: (progressData as any).meeting_done || false,
+          guideDone: (progressData as any).guide_done || false,
           assignmentDone: (progressData as any).assignment_done || false,
           sessionOpened: (progressData as any).session_opened || false,
           counselorResponse: (progressData as any).counselor_response || undefined,
@@ -210,10 +213,35 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
     }
   }, [userId, sessionNumber]);
 
+  const markGuideDone = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const { error } = await supabase
+        .from("cbt_psikoedukasi_user_progress" as any)
+        .upsert({
+          user_id: userId,
+          session_number: sessionNumber,
+          guide_done: true,
+          session_opened: true
+        }, {
+          onConflict: "user_id,session_number"
+        });
+
+      if (error) throw error;
+      setProgress(prev => ({ ...prev, guideDone: true }));
+      toast.success("Panduan penugasan ditandai selesai");
+    } catch (error: any) {
+      console.error("Error marking guide done:", error);
+      toast.error("Gagal menandai panduan selesai");
+    }
+  }, [userId, sessionNumber]);
+
   const submitAssignment = useCallback(async (answers: any) => {
     if (!userId) return false;
 
     try {
+      // 1) Tulis ke tabel assignments (current/latest)
       const { error: assignmentError } = await supabase
         .from("cbt_psikoedukasi_assignments" as any)
         .upsert({
@@ -228,6 +256,38 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
 
       if (assignmentError) throw assignmentError;
 
+      // 2) Ambil submission_number terakhir dan hitung berikutnya
+      let nextSubmissionNumber = 1;
+      try {
+        const { data: last } = await supabase
+          .from('cbt_psikoedukasi_submission_history' as any)
+          .select('submission_number')
+          .eq('user_id', userId)
+          .eq('session_number', sessionNumber)
+          .order('submission_number', { ascending: false })
+          .limit(1);
+        if (last && last.length > 0) {
+          nextSubmissionNumber = ((last[0] as any).submission_number || 0) + 1;
+        }
+      } catch {}
+
+      // 3) Append ke tabel submission_history untuk mendukung multiple submissions
+      const { error: histError } = await supabase
+        .from('cbt_psikoedukasi_submission_history' as any)
+        .insert({
+          id: crypto.randomUUID(), // Generate UUID manually to avoid NULL constraint
+          user_id: userId,
+          session_number: sessionNumber,
+          submission_number: nextSubmissionNumber,
+          answers: answers,
+          submitted_at: new Date().toISOString()
+        });
+      if (histError) {
+        console.error('History insert error detail:', histError);
+        throw histError;
+      }
+
+      // 4) Update progress
       const { error: progressError } = await supabase
         .from("cbt_psikoedukasi_user_progress" as any)
         .upsert({
@@ -242,11 +302,11 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
       if (progressError) throw progressError;
 
       setProgress(prev => ({ ...prev, assignmentDone: true }));
-      toast.success("Penugasan berhasil dikirim");
+      toast.success("Jawaban berhasil dikirim");
       return true;
     } catch (error: any) {
       console.error("Error submitting assignment:", error);
-      toast.error("Gagal mengirim penugasan");
+      toast.error("Gagal mengirim jawaban");
       return false;
     }
   }, [userId, sessionNumber]);
@@ -298,6 +358,24 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
     }
   }, [userId, sessionNumber]);
 
+  const fetchSubmissionHistory = useCallback(async () => {
+    if (!userId) return [];
+    try {
+      const { data, error } = await supabase
+        .from('cbt_psikoedukasi_submission_history' as any)
+        .select('*')
+        .eq('user_id', userId)
+        .eq('session_number', sessionNumber)
+        .order('submitted_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error('Fetch psikoedukasi submission history failed', e);
+      return [];
+    }
+  }, [userId, sessionNumber]);
+
   return {
     progress,
     meetingSchedule,
@@ -306,9 +384,11 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
     isSuperAdmin,
     allGroupSchedules,
     markMeetingDone,
+    markGuideDone,
     submitAssignment,
     loadAssignment,
     autoSaveAssignment,
+    fetchSubmissionHistory,
     refetch: fetchData
   };
 };

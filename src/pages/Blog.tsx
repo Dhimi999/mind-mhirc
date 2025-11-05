@@ -153,7 +153,7 @@ const Blog = () => {
 
       <Navbar />
 
-      <main className="flex-1 pt-12 md:pt-24 lg:pt-24 xl:pt-24 xxl:pt-24">
+  <main className="flex-1 pt-navbar">
         <div className="container mx-auto px-6 py-12">
           <div className="max-w-4xl mx-auto mb-12">
             <h1 className="text-4xl font-bold mb-4">Blog Mind MHIRC</h1>

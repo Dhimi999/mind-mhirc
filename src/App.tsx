@@ -41,22 +41,15 @@ import CBT from "./pages/safe-mother/CBT";
 import Profil from "./pages/safe-mother/Profil";
 import SpiritualBudaya from "./pages/spiritual-budaya/SpiritualBudaya";
 import SpiritualBudayaMateri from "./pages/spiritual-budaya/SpiritualBudayaMateri";
-import SpiritualIntervensiPortalSesi from "./pages/spiritual-budaya/SpiritualIntervensiPortalSesi";
 import SpiritualIntervensiUnified from "./pages/spiritual-budaya/intervensi/SpiritualIntervensiUnified";
-import SpiritualPsikoedukasiPortalSesi from "./pages/spiritual-budaya/SpiritualPsikoedukasiPortalSesi";
+import IntervensiLoginRequired from "./pages/spiritual-budaya/intervensi/LoginRequired";
 import SpiritualPsikoedukasiUnified from "./pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiUnified";
+import LoginRequired from "./pages/spiritual-budaya/psikoedukasi/LoginRequired";
 import HibridaNaratifCBT from "./pages/hibrida-naratif/HibridaNaratifCBT";
-import HibridaPortalSesi from "./pages/hibrida-naratif/HibridaPortalSesi";
-import HibridaPortalSesi2 from "./pages/hibrida-naratif/HibridaPortalSesi2";
-import PsikoedukasiPortalSesi from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi";
-import PsikoedukasiPortalSesi1 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi1";
-import PsikoedukasiPortalSesi2 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi2";
-import PsikoedukasiPortalSesi3 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi3";
-import PsikoedukasiPortalSesi4 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi4";
-import PsikoedukasiPortalSesi5 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi5";
-import PsikoedukasiPortalSesi6 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi6";
-import PsikoedukasiPortalSesi7 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi7";
-import PsikoedukasiPortalSesi8 from "./pages/hibrida-naratif/psikoedukasi/PsikoedukasiPortalSesi8";
+import HibridaIntervensiUnified from "./pages/hibrida-naratif/intervensi/HibridaIntervensiUnified";
+import HibridaIntervensiLoginRequired from "./pages/hibrida-naratif/intervensi/LoginRequired";
+import HibridaPsikoedukasiUnified from "./pages/hibrida-naratif/psikoedukasi/HibridaPsikoedukasiUnified";
+import HibridaPsikoedukasiLoginRequired from "./pages/hibrida-naratif/psikoedukasi/LoginRequired";
 import UnderMaintanance from "./pages/UnderMaintenance";
 import { HelmetProvider } from "react-helmet-async";
 
@@ -209,57 +202,37 @@ const AppRoutes = () => {
           path="/spiritual-budaya/intervensi/sesi/:sesi"
           element={<SpiritualIntervensiUnified />}
         />
+        <Route
+          path="/spiritual-budaya/intervensi/login-required"
+          element={<IntervensiLoginRequired />}
+        />
         {/* Unified route for Psikoedukasi Sesi 1-8 */}
         <Route
           path="/spiritual-budaya/psikoedukasi/sesi/:sesi"
           element={<SpiritualPsikoedukasiUnified />}
         />
+        <Route
+          path="/spiritual-budaya/psikoedukasi/login-required"
+          element={<LoginRequired />}
+        />
         {/* Hibrida Naratif CBT service routes */}
         <Route path="/hibrida-cbt" element={<HibridaNaratifCBT />} />
         <Route path="/hibrida-cbt/:tab" element={<HibridaNaratifCBT />} />
         <Route
-          path="/hibrida-cbt/intervensi/sesi/2"
-          element={<HibridaPortalSesi2 />}
-        />
-        <Route
           path="/hibrida-cbt/intervensi/sesi/:sesi"
-          element={<HibridaPortalSesi />}
+          element={<HibridaIntervensiUnified />}
         />
         <Route
-          path="/hibrida-cbt/psikoedukasi/sesi/1"
-          element={<PsikoedukasiPortalSesi1 />}
-        />
-        <Route
-          path="/hibrida-cbt/psikoedukasi/sesi/2"
-          element={<PsikoedukasiPortalSesi2 />}
-        />
-        <Route
-          path="/hibrida-cbt/psikoedukasi/sesi/3"
-          element={<PsikoedukasiPortalSesi3 />}
-        />
-        <Route
-          path="/hibrida-cbt/psikoedukasi/sesi/4"
-          element={<PsikoedukasiPortalSesi4 />}
-        />
-        <Route
-          path="/hibrida-cbt/psikoedukasi/sesi/5"
-          element={<PsikoedukasiPortalSesi5 />}
-        />
-        <Route
-          path="/hibrida-cbt/psikoedukasi/sesi/6"
-          element={<PsikoedukasiPortalSesi6 />}
-        />
-        <Route
-          path="/hibrida-cbt/psikoedukasi/sesi/7"
-          element={<PsikoedukasiPortalSesi7 />}
-        />
-        <Route
-          path="/hibrida-cbt/psikoedukasi/sesi/8"
-          element={<PsikoedukasiPortalSesi8 />}
+          path="/hibrida-cbt/intervensi/login-required"
+          element={<HibridaIntervensiLoginRequired />}
         />
         <Route
           path="/hibrida-cbt/psikoedukasi/sesi/:sesi"
-          element={<PsikoedukasiPortalSesi />}
+          element={<HibridaPsikoedukasiUnified />}
+        />
+        <Route
+          path="/hibrida-cbt/psikoedukasi/login-required"
+          element={<HibridaPsikoedukasiLoginRequired />}
         />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />

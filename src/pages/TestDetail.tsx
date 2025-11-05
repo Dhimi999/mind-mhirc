@@ -1671,7 +1671,7 @@ const TestDetail = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="test-detail-page container mx-auto pt-24 pb-8 px-4 flex-1">
+      <div className="test-detail-page container mx-auto pt-navbar pb-8 px-4 flex-1">
         <Link
           to="/tests"
           className="back-button inline-flex items-center mb-6 text-muted-foreground hover:text-foreground transition-colors"

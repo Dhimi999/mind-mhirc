@@ -5,6 +5,8 @@ import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +18,10 @@ import heroImage from "@/assets/spiritual-cultural-hero.jpg";
 import jelajahImage from "@/assets/spiritual-jelajah.jpg";
 import tasksImage from "@/assets/spiritual-tasks.jpg";
 import { getSiteBaseUrl } from "@/lib/utils";
+import { Description } from "@radix-ui/react-toast";
+import { sessionConfigs as intervensiSessionConfigs } from "./intervensi/SpiritualIntervensiUnified";
+import { sessionConfigs as psikoedukasiSessionConfigs } from "./psikoedukasi/SpiritualPsikoedukasiUnified";
+import { SessionCard } from "@/components/spiritual-budaya/SessionCard";
 
 const SpiritualBudaya = () => {
   const { tab } = useParams<{ tab?: string }>();
@@ -90,6 +96,10 @@ const SpiritualBudaya = () => {
   // Role-based access
   const canAccessIntervensi = isAuthenticated && (role === 'grup-int' || role === 'super-admin');
   const canAccessPsikoedukasi = isAuthenticated && (role === 'grup-cont' || role === 'super-admin');
+  const canShowITContact = isAuthenticated && (role === 'grup-int' || role === 'grup-cont' || role === 'super-admin');
+  const waUrl = `https://wa.me/62881036592711?text=${encodeURIComponent(
+    'Halo! Saya peserta Layanan Spiritual & Budaya. Saya ingin melaporkan error yang muncul saat membuka layanan ini, adapun kronologinya ialah sebagai berikut ............... / berikut saya lampirkan foto screenshootnya [lampirkan screenshoot]'
+  )}`;
 
   // Enrollment state (sb_enrollments)
   const [enrollmentStatus, setEnrollmentStatus] = useState<"pending" | "approved" | "rejected" | null>(null);
@@ -98,7 +108,13 @@ const SpiritualBudaya = () => {
 
   // Intervensi progress state
   const [intervensiProgress, setIntervensiProgress] = useState<Record<number, boolean>>({});
+  const [intervensiMeetingDone, setIntervensiMeetingDone] = useState<Record<number, boolean>>({});
+  const [intervensiSubmissionCounts, setIntervensiSubmissionCounts] = useState<Record<number, number>>({});
+  const [psikoProgress, setPsikoProgress] = useState<Record<number, boolean>>({});
+  const [psikoGuideDone, setPsikoGuideDone] = useState<Record<number, boolean>>({});
+  const [psikoSubmissionCounts, setPsikoSubmissionCounts] = useState<Record<number, number>>({});
   const [progressLoading, setProgressLoading] = useState(false);
+  const [adminView, setAdminView] = useState(false);
 
   useEffect(() => {
     const fetchEnrollment = async () => {
@@ -122,37 +138,115 @@ const SpiritualBudaya = () => {
     fetchEnrollment();
   }, [user?.id]);
 
-  // Fetch intervensi progress untuk menentukan status locked/available
+  // Fetch intervensi progress untuk menentukan status locked/available + meeting status
   useEffect(() => {
     const fetchIntervensiProgress = async () => {
       if (!user?.id || !canAccessIntervensi) {
         setIntervensiProgress({});
+        setIntervensiMeetingDone({});
         return;
       }
       setProgressLoading(true);
       try {
         const { data, error } = await supabase
           .from('sb_intervensi_user_progress' as any)
-          .select('session_number, assignment_done')
+          .select('session_number, assignment_done, meeting_done')
           .eq('user_id', user.id) as any;
         if (error) throw error;
         
         const progressMap: Record<number, boolean> = {};
+        const meetingMap: Record<number, boolean> = {};
         if (data) {
           data.forEach((item: any) => {
             progressMap[item.session_number] = item.assignment_done === true;
+            meetingMap[item.session_number] = item.meeting_done === true;
           });
         }
         setIntervensiProgress(progressMap);
+        setIntervensiMeetingDone(meetingMap);
       } catch (e) {
         console.error('Load intervensi progress failed', e);
         setIntervensiProgress({});
+        setIntervensiMeetingDone({});
       } finally {
         setProgressLoading(false);
       }
     };
     fetchIntervensiProgress();
   }, [user?.id, canAccessIntervensi]);
+
+  // Fetch jumlah submission intervensi per sesi
+  useEffect(() => {
+    const fetchIntervensiSubmissions = async () => {
+      if (!user?.id || !canAccessIntervensi) { setIntervensiSubmissionCounts({}); return; }
+      try {
+        const { data, error } = await supabase
+          .from('sb_intervensi_submission_history' as any)
+          .select('session_number')
+          .eq('user_id', user.id) as any;
+        if (error) throw error;
+        const counts: Record<number, number> = {};
+        (data || []).forEach((row: any) => {
+          counts[row.session_number] = (counts[row.session_number] || 0) + 1;
+        });
+        setIntervensiSubmissionCounts(counts);
+      } catch (e) {
+        console.error('Load intervensi submissions count failed', e);
+        setIntervensiSubmissionCounts({});
+      }
+    };
+    fetchIntervensiSubmissions();
+  }, [user?.id, canAccessIntervensi]);
+
+  // Fetch psikoedukasi progress untuk sequential lock + materi status
+  useEffect(() => {
+    const fetchPsikoProgress = async () => {
+      if (!user?.id || !canAccessPsikoedukasi) { setPsikoProgress({}); setPsikoGuideDone({}); return; }
+      try {
+        const { data, error } = await supabase
+          .from('sb_psikoedukasi_user_progress' as any)
+          .select('session_number, assignment_done, guide_done')
+          .eq('user_id', user.id) as any;
+        if (error) throw error;
+        const pMap: Record<number, boolean> = {};
+        const gMap: Record<number, boolean> = {};
+        (data || []).forEach((row: any) => {
+          pMap[row.session_number] = row.assignment_done === true;
+          gMap[row.session_number] = row.guide_done === true;
+        });
+        setPsikoProgress(pMap);
+        setPsikoGuideDone(gMap);
+      } catch (e) {
+        console.error('Load psiko progress failed', e);
+        setPsikoProgress({});
+        setPsikoGuideDone({});
+      }
+    };
+    fetchPsikoProgress();
+  }, [user?.id, canAccessPsikoedukasi]);
+
+  // Fetch jumlah submission psiko per sesi
+  useEffect(() => {
+    const fetchPsikoSubmissions = async () => {
+      if (!user?.id || !canAccessPsikoedukasi) { setPsikoSubmissionCounts({}); return; }
+      try {
+        const { data, error } = await supabase
+          .from('sb_psikoedukasi_submission_history' as any)
+          .select('session_number')
+          .eq('user_id', user.id) as any;
+        if (error) throw error;
+        const counts: Record<number, number> = {};
+        (data || []).forEach((row: any) => {
+          counts[row.session_number] = (counts[row.session_number] || 0) + 1;
+        });
+        setPsikoSubmissionCounts(counts);
+      } catch (e) {
+        console.error('Load psiko submissions count failed', e);
+        setPsikoSubmissionCounts({});
+      }
+    };
+    fetchPsikoSubmissions();
+  }, [user?.id, canAccessPsikoedukasi]);
 
   const handleRequestEnrollment = async () => {
     if (!isAuthenticated) {
@@ -184,64 +278,30 @@ const SpiritualBudaya = () => {
   };
 
   // meetingSchedule dipindahkan ke halaman portal sesi
-  // Determine session status based on progress
+  // Determine session status based on progress (Intervensi)
   const getSessionStatus = (sessionNumber: number): "available" | "locked" => {
-    // Sesi 1 selalu tersedia
-    if (sessionNumber === 1) return "available";
-    // Sesi lainnya tersedia jika sesi sebelumnya sudah selesai
+    if (adminView && role === 'super-admin') return "available";
+    // Sesi 0 selalu tersedia (Pra-Sesi)
+    if (sessionNumber === 0) return "available";
+    // Sesi lainnya tersedia jika sesi sebelumnya sudah selesai (termasuk sesi 1 menunggu sesi 0)
     const prevSessionDone = intervensiProgress[sessionNumber - 1] === true;
     return prevSessionDone ? "available" : "locked";
   };
 
-  const treatmentModules = [{
-    session: 1,
-    title: "Apa Itu Bunuh Diri?",
-    description: "Pengenalan tentang bunuh diri dan risiko terkait.",
-    duration: "60 menit",
-    status: getSessionStatus(1)
-  }, {
-    session: 2,
-    title: "Risiko Bunuh Diri",
-    description: "Mengenali tanda-tanda dini risiko bunuh diri.",
-    duration: "60 menit",
-    status: getSessionStatus(2)
-  }, {
-    session: 3,
-    title: "Keterampilan Koping",
-    description: "Mengembangkan keterampilan koping.",
-    duration: "60 menit",
-    status: getSessionStatus(3)
-  }, {
-    session: 4,
-    title: "Mencari Bantuan",
-    description: "Membangun dan mendorong perilaku mencari bantuan.",
-    duration: "60 menit",
-    status: getSessionStatus(4)
-  }, {
-    session: 5,
-    title: "Pengurangan Stigma",
-    description: "Mengurangi stigma seputar kesehatan mental melalui pendekatan yang bermakna.",
-    duration: "60 menit",
-    status: getSessionStatus(5)
-  }, {
-    session: 6,
-    title: "Jaringan Sosial",
-    description: "Penguatan jaringan dukungan sosial.",
-    duration: "60 menit",
-    status: getSessionStatus(6)
-  }, {
-    session: 7,
-    title: "Informasi Sumber Daya",
-    description: "Penyediaan Informasi tentang Sumber Daya.",
-    duration: "60 menit",
-    status: getSessionStatus(7)
-  }, {
-    session: 8,
-    title: "Evaluasi & Tindak Lanjut",
-    description: "Evaluasi dan tindak lanjut .",
-    duration: "60 menit",
-    status: getSessionStatus(8)
-  }];
+  // Generate treatment modules dari sessionConfigs dengan status dinamis (0..8)
+  const treatmentModules = intervensiSessionConfigs.map((config, index) => ({
+    session: index,
+    title: config.title,
+    status: getSessionStatus(index)
+  }));
+
+  // Status psiko sequential lock
+  const getPsikoStatus = (sessionNumber: number): "available" | "locked" => {
+    if (adminView && role === 'super-admin') return "available";
+    if (sessionNumber === 0) return "available";
+    const prevDone = psikoProgress[sessionNumber - 1] === true;
+    return prevDone ? "available" : "locked";
+  };
   const jelajahContent = [{
     title: "Prinsip Dasar Intervensi Spiritual & Budaya",
     description: "Memahami fondasi teoretis dan praktis dalam mengintegrasikan spiritualitas dan budaya untuk kesehatan mental.",
@@ -286,7 +346,7 @@ const SpiritualBudaya = () => {
 
       <Navbar />
 
-      <main className="flex-1 pt-24">
+  <main className="flex-1 pt-navbar">
         {/* Hero Section */}
         <section className="relative bg-gradient-to-b from-muted/50 to-background overflow-hidden rounded">
           <div className="absolute inset-0 opacity-10">
@@ -304,7 +364,33 @@ const SpiritualBudaya = () => {
                 Program intervensi digital berbasis spiritual dan budaya yang mengintegrasikan
                 nilai-nilai kearifan lokal Indonesia untuk mendukung kesehatan jiwa dan kesejahteraan holistik.
               </p>
+              {role === 'super-admin' && (
+                <div className="mt-6 md:mt-0 flex items-center justify-center">
+                  <div className="inline-flex items-center gap-4 rounded-xl bg-white/95 dark:bg-black/70 border border-amber-200 dark:border-amber-800 px-4 py-2 shadow-md backdrop-blur-sm">
+                    <div className="flex flex-col">
+                      <Label htmlFor="admin-view-global" className="text-sm font-medium">Pratinjau Peserta</Label>
+                      <span className="text-xs text-muted-foreground">Lihat halaman seperti peserta biasa</span>
+                    </div>
 
+                    <Switch
+                      id="admin-view-global"
+                      checked={adminView}
+                      onCheckedChange={setAdminView}
+                      aria-label="Toggle preview as participant"
+                      className={`relative inline-flex h-8 w-16 rounded-full p-1 transition-colors focus:outline-none ${adminView ? 'bg-amber-600 border-orange-700' : 'bg-gray-200 dark:bg-gray-600 border-transparent'}`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`inline-block h-7 w-7 rounded-full bg-white shadow transition-transform duration-200 ease-in-out transform ${adminView ? 'translate-x-[calc(100%-28px)]' : 'translate-x-0'}`}
+                      />
+                    </Switch>
+
+                    <span className={`text-sm font-semibold ${adminView ? 'text-amber-700' : 'text-muted-foreground'}`}>
+                      {adminView ? 'Pratinjau aktif' : 'Mode admin'}
+                    </span>
+                  </div>
+                </div>
+              )}
               
             </div>
           </div>
@@ -469,6 +555,26 @@ const SpiritualBudaya = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Trial notice + WhatsApp IT contact (roles: grup-cont, grup-int, super-admin) */}
+                {canShowITContact && (
+                  <div className="rounded-xl border p-5 bg-green-50/70 border-green-200">
+                  <p className="text-sm text-gray-800 mb-3">
+                    Layanan ini sedang dalam masa uji coba, jika kamu menemukan error harap hubungi kami.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <Button
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => window.open(waUrl, '_blank')}
+                    >
+                    Hubungi Tim IT via WhatsApp
+                    </Button>
+                    <div className="text-xs text-muted-foreground">
+                    Saat menghubungi, jelaskan kronologi masalah dan lampirkan screenshot untuk mempermudah pemeriksaan.
+                    </div>
+                  </div>
+                  </div>
+                )}
               </TabsContent>
 
               {/* Jelajah Tab */}
@@ -534,11 +640,14 @@ const SpiritualBudaya = () => {
               <TabsContent value="intervensi" className="space-y-8">
                 <Guarded label="Konten Intervensi hanya tersedia bagi peserta grup intervensi." requireRole={true}>
                 <div className="text-center mb-12">
-                  <h2 className="text-3xl font-bold mb-4">Intervensi & Treatment Modules</h2>
+                  <h2 className="text-3xl font-bold mb-2">Intervensi & Treatment Modules</h2>
                   <p className="text-muted-foreground max-w-2xl mx-auto">
                     Serangkaian intervensi dan latihan terstruktur untuk membantu Anda menerapkan 
                     prinsip-prinsip spiritual dan budaya dalam kehidupan sehari-hari.
                   </p>
+                  {false && role === 'super-admin' && (
+                    <div />
+                  )}
                 </div>
 
                 <div className="relative mb-8 rounded-2xl overflow-hidden">
@@ -546,82 +655,25 @@ const SpiritualBudaya = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
                     <div className="p-8 text-white">
                       <h3 className="text-2xl font-bold mb-2">Portal Intervensi Terstruktur</h3>
-                      <p className="text-white/90">8 sesi treatment module untuk perjalanan penyembuhan holistik</p>
+                      <p className="text-white/90">Pra-Sesi + 8 sesi treatment module untuk perjalanan penyembuhan holistik</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid gap-4">
-                  {treatmentModules.map((module, index) => <Card key={index} className={`group transition-all ${module.status === 'available' ? 'hover:shadow-lg border-amber-200 bg-amber-50/50' : 'opacity-60 bg-muted/30'}`}>
-                      <CardContent className="p-6">
-                        <div className="flex items-center gap-4">
-                          <div className={`flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg ${module.status === 'available' ? 'bg-amber-600' : 'bg-muted'}`}>
-                            {module.session}
-                          </div>
-                          
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <h3 className="font-semibold text-lg">
-                                Sesi {module.session}: {module.title}
-                              </h3>
-                              <Badge variant={module.status === 'available' ? 'default' : 'secondary'}>
-                                {module.status === 'available' ? 'Tersedia' : 'Terkunci'}
-                              </Badge>
-                            </div>
-                            
-                            <p className="text-muted-foreground mb-3">
-                              {module.description}
-                            </p>
-                            
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Durasi: {module.duration}
-                              </span>
-                              
-                              <Button
-                                variant={module.status === 'available' ? 'default' : 'secondary'}
-                                disabled={module.status !== 'available'}
-                                className={module.status === 'available' ? 'bg-amber-600 hover:bg-amber-700' : ''}
-                                onClick={() => module.status === 'available' && navigate(`/spiritual-budaya/intervensi/sesi/${module.session}`)}
-                              >
-                                {module.status === 'available' ? 'Mulai Sesi' : 'Belum Tersedia'}
-                              </Button>
-                            </div>
-
-                            {/* Status dua unsur + detail saat sesi dibuka */}
-                            <div className="mt-4 space-y-3">
-                              {/* Status ringkas */}
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div className="rounded-lg border bg-background p-4">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="text-sm font-medium">Pertemuan Daring</p>
-                                      <p className="text-xs text-muted-foreground">Sesi sinkron dengan fasilitator</p>
-                                    </div>
-                                    <Badge className="bg-amber-200 text-amber-900">
-                                      Lihat di Portal
-                                    </Badge>
-                                  </div>
-                                </div>
-                                <div className="rounded-lg border bg-background p-4">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="text-sm font-medium">Penugasan</p>
-                                      <p className="text-xs text-muted-foreground">Latihan terstruktur pasca pertemuan</p>
-                                    </div>
-                                    <Badge className="bg-amber-200 text-amber-900">
-                                      Lihat di Portal
-                                    </Badge>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Detail sesi dipindah ke halaman portal sesi */}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>)}
+                  {treatmentModules.map((module, index) => (
+                    <SessionCard
+                      key={index}
+                      session={module.session}
+                      title={module.title}
+                      status={module.status}
+                      submissionCount={intervensiSubmissionCounts[module.session] || 0}
+                      guideDone={intervensiMeetingDone[module.session]}
+                      assignmentDone={intervensiProgress[module.session]}
+                      onNavigate={() => navigate(`/spiritual-budaya/intervensi/sesi/${module.session}`)}
+                      showProgressIndicators={true}
+                    />
+                  ))}
                 </div>
 
                 <div className="text-center mt-12">
@@ -652,75 +704,39 @@ const SpiritualBudaya = () => {
               <TabsContent value="psikoedukasi" className="space-y-8">
                 <Guarded label="Konten Psikoedukasi hanya tersedia bagi peserta grup psikoedukasi." requireRole={true}>
                   <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold mb-4">Psikoedukasi</h2>
+                    <h2 className="text-3xl font-bold mb-2">Psikoedukasi</h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
-                      8 modul psikoedukasi terstruktur dengan penugasan reflektif untuk memperkuat pemahaman spiritual-budaya.
+                      8 Sesi psikoedukasi terstruktur dengan penugasan reflektif untuk memperkuat pemahaman spiritual-budaya.
                     </p>
+                    {false && role === 'super-admin' && (
+                      <div />
+                    )}
                   </div>
                   <div className="relative mb-8 rounded-2xl overflow-hidden">
                     <img src={heroImage} alt="Psikoedukasi" className="w-full h-64 object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
                       <div className="p-8 text-white">
                         <h3 className="text-2xl font-bold mb-2">Portal Psikoedukasi</h3>
-                        <p className="text-white/90">Pelajari konsep — refleksi — terapkan.</p>
+                        <p className="text-white/90">Pra-Sesi + 8 sesi: pelajari konsep — refleksi — terapkan.</p>
                       </div>
                     </div>
                   </div>
                   <div className="grid gap-4">
-                    {[1,2,3,4,5,6,7,8].map((session) => {
-                      const titles: Record<number, string> = {
-                        1: 'Spiritualitas & Kesejahteraan',
-                        2: 'Budaya & Identitas Diri',
-                        3: 'Kearifan Lokal & Coping',
-                        4: 'Komunitas & Dukungan',
-                        5: 'Praktik Spiritual Harian',
-                        6: 'Resiliensi Budaya',
-                        7: 'Harmoni & Keseimbangan',
-                        8: 'Keberlanjutan & Implementasi',
-                      };
-                      const title = titles[session];
+                    {psikoedukasiSessionConfigs.map((cfg, session) => {
+                      const title = cfg.title;
+                      const status = getPsikoStatus(session);
                       return (
-                        <Card key={session} className="group transition-all hover:shadow-lg border-amber-200 bg-amber-50/50">
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                              <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg bg-amber-600">{session}</div>
-                              <div className="flex-1">
-                                <div className="flex items-start justify-between mb-2">
-                                  <h3 className="font-semibold text-lg">Modul {session}: {title}</h3>
-                                  <Badge className="bg-amber-200 text-amber-900">Tersedia</Badge>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-muted-foreground">Penugasan reflektif</span>
-                                  <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => navigate(`/spiritual-budaya/psikoedukasi/sesi/${session}`)}>
-                                    Buka Sesi
-                                  </Button>
-                                </div>
-
-                                {/* Status dua unsur untuk keselarasan desain */}
-                                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                  <div className="rounded-lg border bg-background p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <p className="text-sm font-medium">Materi Inti</p>
-                                        <p className="text-xs text-muted-foreground">Konsep & bacaan utama</p>
-                                      </div>
-                                      <Badge className="bg-amber-200 text-amber-900">Lihat di Portal</Badge>
-                                    </div>
-                                  </div>
-                                  <div className="rounded-lg border bg-background p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <p className="text-sm font-medium">Penugasan</p>
-                                        <p className="text-xs text-muted-foreground">Refleksi & penerapan</p>
-                                      </div>
-                                      <Badge className="bg-amber-200 text-amber-900">Lihat di Portal</Badge>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <SessionCard
+                          key={session}
+                          session={session}
+                          title={title}
+                          status={status}
+                          submissionCount={psikoSubmissionCounts[session] || 0}
+                          guideDone={psikoGuideDone[session]}
+                          assignmentDone={psikoProgress[session]}
+                          onNavigate={() => navigate(`/spiritual-budaya/psikoedukasi/sesi/${session}`)}
+                          showProgressIndicators={true}
+                        />
                       );
                     })}
                   </div>

@@ -108,12 +108,19 @@ info@mindmhirc.my.id
         </div>
         
         <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-muted-foreground text-sm">
-            &copy; {currentYear} Mind MHIRC. All rights reserved.
-          </p>
-          <p className="text-muted-foreground text-sm mt-2 md:mt-0">
-            Dirancang dengan ♥ untuk kesehatan mental yang lebih baik
-          </p>
+          <div className="w-full md:w-auto text-center md:text-right">
+            <p className="text-muted-foreground text-sm mt-2 md:mt-0">
+              Mental Health Innovation and Research Center
+              <br />
+              Universitas Brawijaya
+            </p>
+          </div>
+
+          <div className="w-full md:w-auto text-center md:text-left mt-4 md:mt-0">
+            <p className="text-muted-foreground text-sm">
+              &copy; {currentYear} Mind MHIRC. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </footer>;

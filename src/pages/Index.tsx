@@ -251,8 +251,8 @@ const Index = () => {
         />
         <meta name="twitter:image" content={`${getSiteBaseUrl()}/og-image.png`} />
       </Helmet>
-      <Navbar />
-      <main className="flex-1 pt-24">
+  <Navbar />
+  <main className="flex-1 pt-navbar">
         <HeroSection />
 
         <section className="py-16 px-4 sm:px-6 bg-gradient-to-r from-primary/5 to-secondary/5 overflow-hidden relative">

@@ -3,7 +3,7 @@ import Footer from "@/components/Footer";
 const Cookies = () => {
   return <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-16 md:px-6 pt-24">
+  <main className="flex-1 container mx-auto px-4 py-16 md:px-6 pt-navbar">
         <h1 className="text-3xl md:text-4xl font-bold mb-6">Kebijakan Cookie</h1>
         
         <div className="prose max-w-none">

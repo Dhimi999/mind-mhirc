@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/spiritual-cultural-hero.jpg";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSpiritualIntervensiSession } from "@/hooks/useSpiritualIntervensiSession";
+import { useHibridaSession } from "@/hooks/useHibridaSession";
 import { useSpiritualRole } from "@/hooks/useSpiritualRole";
 import { GuidanceMaterialsDisplay } from "@/components/dashboard/hibrida-cbt/GuidanceMaterialsDisplay";
 import { CounselorResponseDisplay } from "@/components/dashboard/hibrida-cbt/CounselorResponseDisplay";
@@ -31,13 +31,13 @@ export const sessionConfigs = [
     tips: [
       "Baca pengantar program terlebih dahulu.",
       "Tuliskan harapan secara spesifik.",
-      "Jujur pada komitmen Anda; tak apa bila ragu—tuliskan alasannya.",
+      "Jujur pada komitmen Anda; tak apa bila ragu, tuliskan alasannya.",
     ],
     guideDesc: "Pra-Sesi berisi pengantar layanan dan orientasi awal agar Anda memahami alur program sebelum memulai sesi inti.",
   },
   {
     // Sesi 1
-    title: "Pengenalan Nilai Spiritual & Budaya",
+    title: "Pengenalan Nilai Hibrida Naratif CBT",
     assignmentFields: [
       { key: "situasi_pemicu", label: "Situasi Pemicu", desc: "Deskripsikan situasi yang memicu stres atau masalah kesehatan mental Anda." },
       { key: "pikiran_otomatis", label: "Pikiran Otomatis", desc: "Apa pikiran otomatis yang muncul saat menghadapi situasi tersebut?" },
@@ -165,7 +165,7 @@ export const sessionConfigs = [
   },
 ];
 
-const SpiritualIntervensiUnified: React.FC = () => {
+const HibridaIntervensiUnified: React.FC = () => {
   const { sesi } = useParams<{ sesi: string }>();
   const sessionNumber = parseInt(sesi || "1", 10);
   const navigate = useNavigate();
@@ -179,16 +179,17 @@ const SpiritualIntervensiUnified: React.FC = () => {
 
   const {
     progress,
-    meeting,
+    meetingSchedule,
     loading: dataLoading,
     updateProgress,
+    markMeetingDone,
+    submitAssignment,
     groupAssignment,
     isSuperAdmin: isSuperAdminFromHook,
     loadAssignment: loadAssignmentIntervensi,
     autoSaveAssignment: autoSaveIntervensi,
-    lastAutoSaveAt,
     fetchSubmissionHistory,
-  } = useSpiritualIntervensiSession(isValidSession ? sessionNumber : 1);
+  } = useHibridaSession(isValidSession ? sessionNumber : 1, user?.id);
 
   const [previousSessionProgress, setPreviousSessionProgress] = useState<any>(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -203,8 +204,8 @@ const SpiritualIntervensiUnified: React.FC = () => {
   const [hydrating, setHydrating] = useState(true);
 
   const isSuperAdmin = role === 'super-admin' || isSuperAdminFromHook;
-  const schedule = meeting;
-  const allGroupSchedules = meeting?.all_group_schedules;
+  const schedule = meetingSchedule;
+  const allGroupSchedules = meetingSchedule?.has_group_schedules ? (meetingSchedule as any).all_group_schedules : null;
   const p = progress;
 
   // Debug log for progress
@@ -257,21 +258,21 @@ const SpiritualIntervensiUnified: React.FC = () => {
     };
     
     loadHistory();
-  }, [fetchSubmissionHistory, progress?.assignment_done, config, sessionNumber]);
+  }, [fetchSubmissionHistory, progress?.assignmentDone, config, sessionNumber]);
 
   // Redirect if invalid session number - AFTER all hooks
   useEffect(() => {
     if (!isValidSession) {
-      navigate("/spiritual-budaya/intervensi");
+      navigate("/hibrida-cbt/intervensi");
     }
   }, [isValidSession, navigate]);
 
   // Mark session as opened when first loaded
   useEffect(() => {
-    if (!config || !progress || progress.session_opened) return;
+    if (!config || !progress || progress.sessionOpened) return;
     
     const markOpened = async () => {
-      await updateProgress({ session_opened: true });
+      await updateProgress({ sessionOpened: true });
     };
     
     markOpened();
@@ -281,25 +282,25 @@ const SpiritualIntervensiUnified: React.FC = () => {
 
   // Autosave
   useEffect(() => {
-    if (!config || progress?.assignment_done) return;
+    if (!config || progress?.assignmentDone) return;
     const h = setTimeout(() => {
       autoSaveIntervensi(assignment);
-      setAutoSavedAt(lastAutoSaveAt || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }));
+      setAutoSavedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }));
     }, 1200);
     return () => clearTimeout(h);
-  }, [assignment, autoSaveIntervensi, lastAutoSaveAt, progress?.assignment_done]);
+  }, [assignment, autoSaveIntervensi, progress?.assignmentDone]);
 
   // Access control - auth guard + sequential
   useEffect(() => {
     const checkSessionAccess = async () => {
       // 1. Auth guard: if not logged in, redirect to login-required page
       if (!user) {
-        navigate('/spiritual-budaya/intervensi/login-required');
+        navigate('/hibrida-cbt/intervensi/login-required');
         return;
       }
       // 2. Enrollment check: only redirect if not super-admin AND groupAssignment null AND not loading
       if (!isSuperAdmin && groupAssignment === null && dataLoading !== undefined && !dataLoading) {
-        navigate('/spiritual-budaya/pengantar');
+        navigate('/hibrida-cbt/pengantar');
         return;
       }
       // 3. Sequential lock
@@ -309,7 +310,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
       }
       try {
         const { data, error } = await supabase
-          .from('sb_intervensi_user_progress' as any)
+          .from('cbt_intervensi_user_progress' as any)
           .select('assignment_done')
           .eq('user_id', user.id)
           .eq('session_number', sessionNumber - 1)
@@ -317,7 +318,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
         if (error && (error as any).code !== 'PGRST116') throw error;
         const row: any = data as any;
         if (!row || !row.assignment_done) {
-          navigate('/spiritual-budaya/intervensi');
+          navigate('/hibrida-cbt/intervensi');
           toast({
             title: "Akses Ditolak",
             description: `Selesaikan Sesi ${sessionNumber - 1} terlebih dahulu untuk mengakses sesi ini.`,
@@ -338,9 +339,9 @@ const SpiritualIntervensiUnified: React.FC = () => {
   const progressPercentage = useMemo(() => {
     if (!progress) return 0;
     let total = 0;
-    if (progress.meeting_done) total += 50;
-    if (progress.assignment_done) total += 30;
-    if (progress.counselor_feedback) total += 20;
+    if (progress.meetingDone) total += 50;
+    if (progress.assignmentDone) total += 30;
+    if (progress.counselorResponse) total += 20;
     return total;
   }, [progress]);
 
@@ -380,31 +381,35 @@ const SpiritualIntervensiUnified: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const result = await updateProgress({ assignment_data: assignment, assignment_done: true });
+      // Use submitAssignment from hook instead of updateProgress
+      const success = await submitAssignment(assignment);
+      
+      if (!success) {
+        throw new Error("Gagal mengirim jawaban");
+      }
 
-      if (result?.success) {
-        toast({
-          title: "Jawaban Berhasil Dikirim",
-          description: `Jawaban #${submissionHistory.length + 1} telah tersimpan.`,
-          variant: "default",
-        });
-        // Exit create new mode and reload history
-        setIsCreatingNew(false);
-        // Reload history will automatically show latest submission (locked)
-        const history = await fetchSubmissionHistory();
-        const sorted = Array.isArray(history)
-          ? [...history].sort((a: any, b: any) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
-          : [];
-        setSubmissionHistory(sorted);
-        if (sorted && sorted.length > 0) {
-          const latest = sorted[0] as any;
-          const answers = latest?.answers;
-          if (answers && typeof answers === 'object') {
-            setAssignment({ ...answers });
-          }
+      // Mark assignment as done in progress table
+      await updateProgress({ assignment_done: true });
+      
+      toast({
+        title: "Jawaban Berhasil Dikirim",
+        description: `Jawaban #${submissionHistory.length + 1} telah tersimpan.`,
+        variant: "default",
+      });
+      // Exit create new mode and reload history
+      setIsCreatingNew(false);
+      // Reload history will automatically show latest submission (locked)
+      const history = await fetchSubmissionHistory();
+      const sorted = Array.isArray(history)
+        ? [...history].sort((a: any, b: any) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
+        : [];
+      setSubmissionHistory(sorted);
+      if (sorted && sorted.length > 0) {
+        const latest = sorted[0] as any;
+        const answers = latest?.answers;
+        if (answers && typeof answers === 'object') {
+          setAssignment({ ...answers });
         }
-      } else {
-        throw new Error(result?.error?.message || "Gagal mengirim jawaban");
       }
     } catch (error) {
       console.error("Submit assignment error:", error);
@@ -416,7 +421,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [assignmentValid, isSubmitting, assignment, updateProgress, toast, submissionHistory, fetchSubmissionHistory]);
+  }, [assignmentValid, isSubmitting, assignment, submitAssignment, updateProgress, toast, submissionHistory, fetchSubmissionHistory]);
 
   const handleCreateNewAnswer = useCallback(() => {
     setIsCreatingNew(true);
@@ -441,7 +446,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
   }, []);
 
   const handleMarkMeetingDone = useCallback(async () => {
-    await updateProgress({ meeting_done: !progress?.meeting_done });
+    await updateProgress({ meeting_done: !progress?.meetingDone });
   }, [progress, updateProgress]);
 
   const handleMarkGuidanceRead = useCallback(async () => {
@@ -456,11 +461,11 @@ const SpiritualIntervensiUnified: React.FC = () => {
   const overallPercent = useMemo(() => {
     if (!p) return 0;
     let cnt = 0;
-    if (p.session_opened) cnt++;
-    if (p.guidance_read) cnt++;
-    if (p.meeting_done) cnt++;
-    if (p.assignment_done) cnt++;
-    if (p.counselor_feedback) cnt++;
+    if (p.sessionOpened) cnt++;
+    if (p.guidanceRead) cnt++;
+    if (p.meetingDone) cnt++;
+    if (p.assignmentDone) cnt++;
+    if (p.counselorResponse) cnt++;
     return Math.round((cnt / 5) * 100);
   }, [p]);
 
@@ -485,8 +490,8 @@ const SpiritualIntervensiUnified: React.FC = () => {
             <p className="text-red-600 font-semibold text-lg mb-2">Error: Konfigurasi Sesi Tidak Valid</p>
             <p className="text-gray-600 text-sm mb-4">Sesi {sessionNumber} tidak tersedia</p>
             <Link 
-              to="/spiritual-budaya/intervensi" 
-              className="inline-block px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+              to="/hibrida-cbt/intervensi-hibrida" 
+              className="inline-block px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
             >
               ← Kembali ke Portal
             </Link>
@@ -509,7 +514,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
-        <title>{`Sesi ${sessionNumber}: ${config?.title ?? 'Loading'} - Intervensi Spiritual & Budaya | MindMHIRC`}</title>
+        <title>{`Sesi ${sessionNumber}: ${config?.title ?? 'Loading'} - Intervensi Hibrida Naratif CBT | MindMHIRC`}</title>
         <meta
           name="description"
           content={`Portal sesi ${sessionNumber} intervensi spiritual dan budaya - ${config?.title ?? 'Loading'}`}
@@ -519,14 +524,14 @@ const SpiritualIntervensiUnified: React.FC = () => {
   <main className="flex-1 pt-navbar">
         {/* Hero */}
         <section className="relative overflow-hidden rounded">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-600 via-orange-700 to-amber-800" />
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-600 via-cyan-700 to-teal-800" />
           <div className="absolute inset-0 opacity-10">
             <img src={heroImage} alt="Hero" className="w-full h-full object-cover" />
           </div>
           <div className="relative container mx-auto px-6 py-14">
             <div className="max-w-5xl mx-auto">
               <div className="flex items-center justify-between mb-6">
-                <Link to="/spiritual-budaya/intervensi" className="text-white/90 hover:underline text-sm">← Kembali</Link>
+                <Link to="/hibrida-cbt/intervensi-hibrida" className="text-white/90 hover:underline text-sm">← Kembali</Link>
                 <Badge className="bg-white/20 backdrop-blur text-white border border-white/30" variant="secondary">Portal Intervensi</Badge>
               </div>
               {isFetching ? (
@@ -537,7 +542,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
               ) : (
                 <>
                   <h1 className="text-3xl md:text-5xl font-bold mb-3 text-white drop-shadow-sm">Sesi {sessionNumber}: {config?.title || 'Loading...'}</h1>
-                  <p className="text-amber-100 max-w-2xl">{(config?.assignmentFields || []).map(f => f.label).join(', ') || ''}.</p>
+                  <p className="text-teal-100 max-w-2xl">{(config?.assignmentFields || []).map(f => f.label).join(', ') || ''}.</p>
                 </>
               )}
             </div>
@@ -549,13 +554,13 @@ const SpiritualIntervensiUnified: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               {/* Sidebar: Tips & Progress */}
               <div className="lg:col-span-1 space-y-6">
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed">
-                  <p className="font-semibold mb-2 text-amber-800">💡 Tips Pengerjaan</p>
+                <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-xs leading-relaxed">
+                  <p className="font-semibold mb-2 text-teal-800">💡 Tips Pengerjaan</p>
                   {isFetching ? (
                     <div className="space-y-2">
-                      <Skeleton className="h-3 w-5/6 bg-amber-200/60" />
-                      <Skeleton className="h-3 w-4/6 bg-amber-200/60" />
-                      <Skeleton className="h-3 w-3/6 bg-amber-200/60" />
+                      <Skeleton className="h-3 w-5/6 bg-teal-200/60" />
+                      <Skeleton className="h-3 w-4/6 bg-teal-200/60" />
+                      <Skeleton className="h-3 w-3/6 bg-teal-200/60" />
                     </div>
                   ) : (
                     (config?.tips || []).map((tip, i) => <p key={i} className="mb-1 text-gray-700">{tip}</p>)
@@ -565,30 +570,30 @@ const SpiritualIntervensiUnified: React.FC = () => {
                   <h3 className="font-semibold mb-4 text-sm tracking-wide text-gray-800 uppercase">Progres Sesi</h3>
                   <div className="mb-4">
                     <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-600 rounded-full transition-all" style={{ width: `${overallPercent}%` }} />
+                      <div className="h-full bg-teal-600 rounded-full transition-all" style={{ width: `${overallPercent}%` }} />
                     </div>
                     <div className="mt-2 text-xs text-gray-700 font-medium">{overallPercent}% selesai</div>
                   </div>
                   <ol className="space-y-3 text-xs">
                     <li className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.session_opened ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>1</span>
-                      <span className={p?.session_opened ? 'font-medium text-gray-900' : 'text-gray-600'}>Sesi Dibuka</span>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.sessionOpened ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>1</span>
+                      <span className={p?.sessionOpened ? 'font-medium text-gray-900' : 'text-gray-600'}>Sesi Dibuka</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.meeting_done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>2</span>
-                      <span className={p?.meeting_done ? 'font-medium text-gray-900' : 'text-gray-600'}>Pertemuan Selesai</span>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.meetingDone ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>2</span>
+                      <span className={p?.meetingDone ? 'font-medium text-gray-900' : 'text-gray-600'}>Pertemuan Selesai</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.guidance_read ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>3</span>
-                      <span className={p?.guidance_read ? 'font-medium text-gray-900' : 'text-gray-600'}>Materi/Panduan Selesai</span>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.guidanceRead ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>3</span>
+                      <span className={p?.guidanceRead ? 'font-medium text-gray-900' : 'text-gray-600'}>Materi/Panduan Selesai</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.assignment_done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>4</span>
-                      <span className={p?.assignment_done ? 'font-medium text-gray-900' : 'text-gray-600'}>Penugasan Selesai</span>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.assignmentDone ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>4</span>
+                      <span className={p?.assignmentDone ? 'font-medium text-gray-900' : 'text-gray-600'}>Penugasan Selesai</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.counselor_feedback ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>5</span>
-                      <span className={p?.counselor_feedback ? 'font-medium text-gray-900' : 'text-gray-600'}>Respons Konselor</span>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${p?.counselorResponse ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>5</span>
+                      <span className={p?.counselorResponse ? 'font-medium text-gray-900' : 'text-gray-600'}>Respons Konselor</span>
                     </li>
                   </ol>
                 </div>
@@ -598,12 +603,12 @@ const SpiritualIntervensiUnified: React.FC = () => {
               <div className="lg:col-span-3 space-y-6">
                 {/* Card Panduan Sesi */}
                 <Card className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-                  <div className="p-5 bg-amber-600 text-white border-b border-amber-700">
+                  <div className="p-5 bg-teal-600 text-white border-b border-teal-700">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">📖</span>
                       <div>
                         <h3 className="text-lg font-semibold">Panduan Sesi</h3>
-                        <p className="text-xs text-amber-100 mt-0.5">Materi dan panduan untuk sesi ini</p>
+                        <p className="text-xs text-teal-100 mt-0.5">Materi dan panduan untuk sesi ini</p>
                       </div>
                     </div>
                   </div>
@@ -627,7 +632,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                       <span className="text-2xl">📅</span>
                       <div>
                         <h3 className="text-lg font-semibold">Informasi Pertemuan Daring</h3>
-                        <p className="text-xs text-blue-100 mt-0.5">Jadwal pertemuan online intervensi Spiritual & Budaya</p>
+                        <p className="text-xs text-blue-100 mt-0.5">Jadwal pertemuan online intervensi Hibrida Naratif CBT</p>
                       </div>
                     </div>
                   </div>
@@ -700,7 +705,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                                 );
                               })}
                             </div>
-                            {!p?.meeting_done && (
+                            {!p?.meetingDone && (
                               <div className="mt-4 pt-4 border-t border-blue-200">
                                 <Button 
                                   onClick={handleMarkMeetingDone} 
@@ -710,7 +715,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                                 </Button>
                               </div>
                             )}
-                            {p?.meeting_done && (
+                            {p?.meetingDone && (
                               <div className="mt-4 pt-4 border-t border-blue-200">
                                 <div className="flex items-center justify-center gap-2 text-green-700 font-semibold bg-green-50 rounded-lg py-3 border-2 border-green-600">
                                   <span className="text-lg">✓</span>
@@ -729,7 +734,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                       <>
                         {groupAssignment && (
                           <div className="flex items-center justify-center mb-4">
-                            <span className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-base font-bold rounded-full shadow-md">
+                            <span className="px-5 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-base font-bold rounded-full shadow-md">
                               Grup {groupAssignment}
                             </span>
                           </div>
@@ -759,7 +764,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                               )}
                               {((schedule as any).start_time || (schedule as any).end_time || (schedule as any).time || (schedule as any).datetime) && (
                                 <div className="flex items-start gap-3">
-                                  <span className="text-blue-600 font-semibold text-lg mt-0.5">🕐</span>
+                                  <span className="text-blue-600 font-semibold text-lg mt-0.5">🕑</span>
                                   <div className="flex-1">
                                     <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Waktu</p>
                                     <p className="text-base font-bold text-gray-900 mt-1">{
@@ -794,7 +799,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                                   >
                                     🚀 Mulai Pertemuan
                                   </Button>
-                                  {!p?.meeting_done && (
+                                  {!p?.meetingDone && (
                                     <Button 
                                       onClick={handleMarkMeetingDone} 
                                       variant="outline"
@@ -803,7 +808,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                                       ✅ Tandai Sudah Mengikuti
                                     </Button>
                                   )}
-                                  {p?.meeting_done && (
+                                  {p?.meetingDone && (
                                     <div className="flex items-center justify-center gap-2 text-green-700 font-semibold bg-green-50 rounded-lg py-3 border-2 border-green-600">
                                       <span className="text-lg">✓</span>
                                       <span>Sudah Mengikuti</span>
@@ -813,7 +818,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                               </div>
                             )}
                             {(schedule as any).description && (
-                              <p className="text-sm text-gray-600 bg-amber-50 p-3 rounded border border-amber-200">
+                              <p className="text-sm text-gray-600 bg-teal-50 p-3 rounded border border-teal-200">
                                 📝 <strong>Catatan:</strong> {(schedule as any).description}
                               </p>
                             )}
@@ -852,7 +857,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                         showTitle={false}
                       />
                     )}
-                    {!p?.guidance_read && (
+                    {!p?.guidanceRead && (
                       <div className="mt-6 pt-4 border-t border-purple-100">
                         <Button 
                           onClick={handleMarkGuidanceRead} 
@@ -862,7 +867,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                         </Button>
                       </div>
                     )}
-                    {p?.guidance_read && (
+                    {p?.guidanceRead && (
                       <div className="mt-6 pt-4 border-t border-purple-100">
                         <div className="flex items-center justify-center gap-2 text-green-700 font-semibold bg-green-50 rounded-lg py-3 border-2 border-green-600">
                           <span className="text-lg">✓</span>
@@ -876,12 +881,12 @@ const SpiritualIntervensiUnified: React.FC = () => {
 
                 {/* Card Penugasan */}
                 <Card className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-                  <div className="p-5 bg-orange-600 text-white border-b border-orange-700">
+                  <div className="p-5 bg-purple-600 text-white border-b border-purple-700">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">✍️</span>
                       <div>
                         <h3 className="text-lg font-semibold">Penugasan Sesi {sessionNumber}</h3>
-                        <p className="text-xs text-orange-100 mt-0.5">
+                        <p className="text-xs text-purple-100 mt-0.5">
                           {isCreatingNew ? "Buat Jawaban Baru" : selectedHistoryItem ? "Riwayat Jawaban" : "Jawaban Terakhir"}
                         </p>
                       </div>
@@ -941,7 +946,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                             onClick={() => setShowHistory(false)}
                             className="text-gray-500 hover:text-gray-700"
                           >
-                            ✕ Tutup
+                           ✕ Tutup
                           </Button>
                         </div>
                         {submissionHistory.map((item, idx) => (
@@ -1002,7 +1007,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedHistoryItem.counselor_response}</p>
                             {selectedHistoryItem.counselor_name && (
                               <p className="text-xs text-green-600 mt-2">
-                                — {selectedHistoryItem.counselor_name}
+                                � {selectedHistoryItem.counselor_name}
                               </p>
                             )}
                             {selectedHistoryItem.responded_at && (
@@ -1034,7 +1039,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                                   <Button
                                     type="button"
                                     variant={(getNestedValue(assignment, field.key) || '') === 'Ya' ? 'default' : 'outline'}
-                                    className={(getNestedValue(assignment, field.key) || '') === 'Ya' ? 'bg-amber-600 text-white' : ''}
+                                    className={(getNestedValue(assignment, field.key) || '') === 'Ya' ? 'bg-teal-600 text-white' : ''}
                                     disabled={!isCreatingNew}
                                     onClick={() => setAssignment((prev: any) => {
                                       const next = setNestedValue({ ...prev }, field.key, 'Ya');
@@ -1050,7 +1055,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                                   <Button
                                     type="button"
                                     variant={(getNestedValue(assignment, field.key) || '') === 'Tidak' ? 'default' : 'outline'}
-                                    className={(getNestedValue(assignment, field.key) || '') === 'Tidak' ? 'bg-amber-600 text-white' : ''}
+                                    className={(getNestedValue(assignment, field.key) || '') === 'Tidak' ? 'bg-teal-600 text-white' : ''}
                                     disabled={!isCreatingNew}
                                     onClick={() => setAssignment((prev: any) => {
                                       const next = setNestedValue({ ...prev }, field.key, 'Tidak');
@@ -1072,7 +1077,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                                     disabled={!isCreatingNew}
                                     className={`w-full rounded-lg border p-3 text-sm transition-colors ${
                                       isCreatingNew 
-                                        ? 'border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 bg-white' 
+                                        ? 'border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white' 
                                         : 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
                                     }`}
                                     placeholder="Jelaskan alasan Anda di sini..."
@@ -1086,7 +1091,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                                   disabled={!isCreatingNew}
                                   className={`w-full rounded-lg border p-3 text-sm transition-colors ${
                                     isCreatingNew 
-                                      ? 'border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 bg-white' 
+                                      ? 'border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white' 
                                       : 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
                                   }`}
                                   placeholder={isCreatingNew ? `Tulis ${field.label.toLowerCase()} Anda di sini...` : ''}
@@ -1103,9 +1108,9 @@ const SpiritualIntervensiUnified: React.FC = () => {
                           <Button
                             onClick={handleSubmitAssignment}
                             disabled={!assignmentValid || isSubmitting}
-                            className="mt-4 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="mt-4 bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {isSubmitting ? "Mengirim..." : "📥 Kirim Jawaban"}
+                            {isSubmitting ? "Mengirim..." : "?? Kirim Jawaban"}
                           </Button>
                         )}
 
@@ -1113,7 +1118,7 @@ const SpiritualIntervensiUnified: React.FC = () => {
                         {!isCreatingNew && submissionHistory.length > 0 && (
                           <div className="mt-4 p-3 bg-gray-100 border border-gray-300 rounded-lg text-center">
                             <p className="text-sm text-gray-600">
-                              � <strong>Jawaban Terakhir</strong> —” Gunakan tombol "Buat Jawaban Baru" untuk mengirim jawaban baru
+                              ? <strong>Jawaban Terakhir</strong> ⚠️ Gunakan tombol "Buat Jawaban Baru" untuk mengirim jawaban baru
                             </p>
                           </div>
                         )}
@@ -1181,17 +1186,17 @@ const SpiritualIntervensiUnified: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-gray-200">
                   {hasPrev ? (
                     <Link
-                      to={`/spiritual-budaya/intervensi/sesi/${sessionNumber - 1}`}
-                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors font-medium text-sm sm:text-base"
+                      to={`/hibrida-cbt/intervensi/sesi/${sessionNumber - 1}`}
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
                     >
-                      <span>←</span> Sesi Sebelumnya
+                      <span>?</span> Sesi Sebelumnya
                     </Link>
                   ) : <div className="hidden sm:block" />}
                   {hasNext ? (
-                    progress?.assignment_done || isSuperAdmin ? (
+                    progress?.assignmentDone || isSuperAdmin ? (
                       <Link
-                        to={`/spiritual-budaya/intervensi/sesi/${sessionNumber + 1}`}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors font-medium text-sm sm:text-base"
+                        to={`/hibrida-cbt/intervensi/sesi/${sessionNumber + 1}`}
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
                       >
                         Sesi Selanjutnya <span>→</span>
                       </Link>
@@ -1223,4 +1228,4 @@ const SpiritualIntervensiUnified: React.FC = () => {
   );
 };
 
-export default SpiritualIntervensiUnified;
+export default HibridaIntervensiUnified;
