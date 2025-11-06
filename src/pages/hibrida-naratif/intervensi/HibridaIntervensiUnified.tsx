@@ -292,141 +292,131 @@ export const sessionConfigs: SessionConfig[] = [
     guideDesc: "Sesi ini membantu Anda mengenali pola pikiran otomatis negatif yang sering muncul saat menghadapi kesulitan. Dengan mengidentifikasi, menantang, dan menggantinya dengan pikiran yang lebih realistis, serta memperkuat alasan untuk hidup melalui visualisasi positif, Anda akan mengembangkan pola pikir yang lebih sehat dan adaptif."
   },
   {
-    // Sesi 3: Restrukturisasi Kognitif
-    title: "Restrukturisasi Kognitif",
+    // Sesi 3: Restrukturisasi Kognitif dan Coping Card
+    title: "Restrukturisasi Kognitif dan Coping Card",
     assignmentFields: [
       {
-        key: "cognitive_distortions",
-        label: "1. Identifikasi Distorsi Kognitif",
-        desc: "Identifikasi jenis-jenis distorsi kognitif yang sering Anda alami. Berikan contoh untuk setiap jenis.",
+        key: "restrukturisasi_pikiran",
+        label: "1. Restrukturisasi Pikiran",
+        desc: "Tuliskan pikiran negatif → Evaluasi kebenarannya → Bukti alternatif pikiran sehat. Lengkapi tabel berikut dengan minimal beberapa contoh pikiran negatif yang Anda alami.",
         type: "table-builder",
         columns: [
-          { key: "distorsi", label: "Jenis Distorsi" },
-          { key: "contoh", label: "Contoh Konkret" },
-          { key: "dampak", label: "Dampak pada Emosi/Perilaku" }
+          { key: "pikiran_negatif", label: "Pikiran Negatif" },
+          { key: "bukti_mendukung", label: "Bukti Mendukung" },
+          { key: "bukti_menentang", label: "Bukti Menentang" },
+          { key: "pikiran_alternatif", label: "Pikiran Alternatif yang Lebih Sehat" }
         ],
         validation: {
-          minRows: 2,
-          maxRows: 8
-        }
-      },
-      {
-        key: "thought_record",
-        label: "2. Catatan Pikiran",
-        desc: "Catat situasi, pikiran otomatis, emosi, dan respons alternatif.",
-        type: "table-builder",
-        columns: [
-          { key: "situasi", label: "Situasi" },
-          { key: "pikiran", label: "Pikiran Otomatis" },
-          { key: "emosi", label: "Emosi (0-100%)" },
-          { key: "alternatif", label: "Pikiran Alternatif" },
-          { key: "hasil", label: "Perubahan Emosi" }
-        ],
-        validation: {
-          minRows: 3,
+          minRows: 1,
           maxRows: 10
         }
       },
       {
         key: "coping_cards",
-        label: "3. Kartu Koping",
-        desc: "Buat kartu-kartu koping yang berisi situasi sulit dan strategi mengatasinya.",
+        label: "2. Template Coping Cards",
+        desc: "Buatkan minimal 3 coping cards. Contoh Coping Card: Pesan Positif: 'Saya pernah melalui hal sulit sebelumnya dan saya mampu melewatinya lagi.' | Strategi Koping: Tarik napas dalam, berjalan 5 menit, mendengarkan musik tenang. | Kontak Darurat: Teman, Konselor, dll. | Alasan untuk Bertahan Hidup: Saya masih memiliki keluarga yang menyayangi saya. | Motivasi Bertahan Hidup: Saya ingin menyelesaikan kuliah dan membanggakan orang tua.",
         type: "repeatable-card",
-        cardLabel: "Kartu Koping",
+        cardLabel: "Coping Card",
         cardFields: [
-          { key: "situasi", label: "Situasi Sulit", type: "textarea" },
-          { key: "pikiran_negatif", label: "Pikiran Negatif yang Muncul", type: "textarea" },
+          { key: "pesan_positif", label: "Pesan Positif", type: "textarea" },
           { key: "strategi_koping", label: "Strategi Koping", type: "textarea" },
-          { key: "afirmasi", label: "Afirmasi Positif", type: "textarea" }
+          { key: "kontak_darurat", label: "Kontak Darurat (Teman, Konselor, dll)", type: "textarea" },
+          { key: "alasan_bertahan", label: "Alasan untuk Bertahan Hidup", type: "textarea" },
+          { key: "motivasi_bertahan", label: "Motivasi Bertahan Hidup", type: "textarea" }
         ],
         validation: {
           minCards: 3,
-          maxCards: 8
+          maxCards: 10
         }
-      },
-      {
-        key: "reflection",
-        label: "4. Refleksi Mingguan",
-        desc: "Refleksikan pengalaman Anda dalam mempraktikkan restrukturisasi kognitif selama seminggu.",
-        type: "textarea",
-        placeholder: "Tuliskan tantangan, keberhasilan, dan pembelajaran Anda..."
       }
     ],
     tips: [
-      "Kenali pola distorsi kognitif Anda.",
-      "Latih mencatat pikiran setiap hari.",
-      "Buat kartu koping yang mudah diakses (bisa difoto).",
-      "Evaluasi perubahan emosi sebelum dan sesudah restrukturisasi."
+      "Gunakan tabel restrukturisasi pikiran untuk mengidentifikasi pola pikiran negatif Anda secara sistematis.",
+      "Cari bukti yang objektif dan konkret, bukan hanya perasaan atau asumsi.",
+      "Pikiran alternatif harus realistis dan seimbang, bukan hanya positif palsu.",
+      "Coping cards bersifat personal - isi dengan hal-hal yang benar-benar bermakna bagi Anda.",
+      "Simpan coping cards di tempat yang mudah diakses (foto di HP, kartu di dompet, dll).",
+      "Tinjau dan perbarui coping cards secara berkala sesuai perkembangan Anda."
     ],
-    guideDesc: "Sesi ini fokus pada teknik restrukturisasi kognitif yang lebih mendalam. Anda akan belajar mengidentifikasi distorsi kognitif, mencatat pikiran secara sistematis, dan membuat kartu koping praktis untuk mengelola situasi sulit dalam kehidupan sehari-hari."
+    guideDesc: "Sesi ini membantu Anda merestrukturisasi pikiran negatif menjadi lebih sehat dan realistis melalui analisis bukti yang mendukung dan menentang. Anda juga akan membuat coping cards sebagai alat praktis yang dapat diakses kapan saja saat menghadapi situasi sulit, berisi pesan positif, strategi koping, kontak darurat, dan pengingat alasan serta motivasi untuk bertahan hidup."
   },
   {
-    // Sesi 4: Pencegahan Kekambuhan
-    title: "Strategi Pencegahan Kekambuhan",
+    // Sesi 4: Pencegahan Kekambuhan Integrasi Keterampilan Harian
+    title: "Pencegahan Kekambuhan Integrasi Keterampilan Harian",
     assignmentFields: [
       {
-        key: "relapse_warning_signs",
-        label: "1. Tanda-tanda Peringatan Kekambuhan",
-        desc: "Identifikasi tanda-tanda awal yang menunjukkan Anda mungkin mengalami kekambuhan.",
-        type: "numbered-list",
-        validation: {
-          minItems: 3,
-          maxItems: 10
-        }
-      },
-      {
-        key: "high_risk_situations",
-        label: "2. Situasi Berisiko Tinggi",
-        desc: "Daftar situasi atau kondisi yang meningkatkan risiko kekambuhan bagi Anda.",
-        type: "numbered-list",
-        validation: {
-          minItems: 3,
-          maxItems: 10
-        }
-      },
-      {
-        key: "coping_strategies",
-        label: "3. Strategi Koping untuk Situasi Berisiko",
-        desc: "Untuk setiap situasi berisiko, tentukan strategi koping spesifik.",
-        type: "table-builder",
-        columns: [
-          { key: "situasi", label: "Situasi Berisiko" },
-          { key: "tanda", label: "Tanda Peringatan" },
-          { key: "strategi", label: "Strategi Koping" },
-          { key: "dukungan", label: "Sumber Dukungan" }
-        ],
-        validation: {
-          minRows: 3,
-          maxRows: 10
-        }
-      },
-      {
-        key: "wellness_plan",
-        label: "4. Rencana Kesejahteraan Harian",
-        desc: "Aktivitas rutin yang membantu menjaga kesehatan mental Anda.",
+        key: "evaluasi_pengalaman",
+        label: "1. Evaluasi Pengalaman Hidup Tersulit di Masa Lalu",
+        desc: "Refleksi mendalam terhadap pengalaman tersulit dan respons Anda saat itu.",
         type: "nested-textarea",
         subFields: [
-          { key: "pagi", label: "Rutinitas Pagi" },
-          { key: "siang", label: "Aktivitas Siang" },
-          { key: "malam", label: "Rutinitas Malam" }
+          { 
+            key: "cerita_pengalaman", 
+            label: "Ceritakan salah satu pengalaman hidup tersulit di masa lalu yang pernah Anda alami"
+          },
+          { 
+            key: "respons_saat_itu", 
+            label: "Bagaimana respons Anda saat itu?"
+          }
         ]
       },
       {
-        key: "support_system",
-        label: "5. Sistem Dukungan",
-        desc: "Daftar orang atau layanan yang dapat Anda hubungi saat membutuhkan bantuan.",
-        type: "contact-list",
-        fields: [
-          { key: "keluarga", label: "Keluarga Terdekat" },
-          { key: "teman", label: "Teman Terpercaya" },
-          { key: "profesional", label: "Profesional Kesehatan Mental" },
-          { key: "peer_support", label: "Kelompok Dukungan Sebaya" }
-        ]
+        key: "respons_baru",
+        label: "2. Menyusun Respons Baru",
+        desc: "Jika situasi terjadi lagi, respons sehat apa yang bisa Anda lakukan?",
+        type: "textarea",
+        placeholder: "Contoh: Saya akan menggunakan teknik pernapasan yang sudah saya pelajari, menghubungi teman untuk berbicara, dan mengingatkan diri bahwa perasaan ini akan berlalu..."
       },
       {
-        key: "action_plan",
-        label: "6. Rencana Tindakan Darurat",
-        desc: "Langkah-langkah konkret yang akan Anda ambil jika mengalami tanda-tanda kekambuhan.",
+        key: "refleksi_rutinitas",
+        label: "3. Refleksi Rutinitas Harian",
+        desc: "Tuliskan rutinitas rutin harian Anda (pagi hari, kuliah, saat sendiri, menjelang tidur).",
+        type: "textarea",
+        placeholder: "Contoh: Pagi: bangun jam 6, sarapan, berangkat kuliah. Kuliah: mengikuti kelas, bertemu teman. Saat sendiri: nonton video, main game. Menjelang tidur: scroll media sosial, tidur jam 12 malam..."
+      },
+      {
+        key: "rencana_keterampilan",
+        label: "4. Rencana Lima Keterampilan Harian",
+        desc: "Tuliskan keterampilan yang akan Anda praktikkan setiap hari selama 5 hari ke depan.",
+        type: "numbered-list",
+        validation: {
+          minItems: 5,
+          maxItems: 5
+        }
+      },
+      {
+        key: "hambatan_solusi",
+        label: "5. Lembar Hambatan dan Solusi",
+        desc: "Identifikasi hambatan yang mungkin muncul dalam mempraktikkan keterampilan harian, dan solusi untuk mengatasinya.",
+        type: "table-builder",
+        columns: [
+          { key: "hambatan", label: "Hambatan yang Mungkin Muncul" },
+          { key: "solusi", label: "Solusi yang Bisa Dilakukan" }
+        ],
+        validation: {
+          minRows: 1,
+          maxRows: 10
+        }
+      }
+    ],
+    tips: [
+      "Jujur dalam mengevaluasi respons masa lalu - tidak ada yang sempurna.",
+      "Respons baru harus realistis dan dapat dilakukan, bukan ideal yang tidak mungkin.",
+      "Rutinitas harian membantu mengidentifikasi pola yang perlu diperbaiki.",
+      "Pilih 5 keterampilan yang spesifik dan terukur untuk dipraktikkan.",
+      "Antisipasi hambatan sejak awal agar Anda siap dengan solusinya.",
+      "Tinjau dan sesuaikan rencana setiap minggu berdasarkan pengalaman Anda."
+    ],
+    guideDesc: "Sesi ini membantu Anda mengintegrasikan semua keterampilan yang telah dipelajari ke dalam kehidupan sehari-hari sebagai upaya pencegahan kekambuhan. Dengan mengevaluasi pengalaman masa lalu, menyusun respons baru yang lebih sehat, merefleksikan rutinitas harian, dan merencanakan praktik keterampilan spesifik selama 5 hari ke depan, Anda akan membangun kebiasaan sehat yang sustainable. Lembar hambatan-solusi membantu Anda mengantisipasi dan mengatasi tantangan dalam implementasi."
+  },
+  {
+    // Sesi 5: Mengenali Diri Tersembunyi (Hidden Area)
+    title: "Mengenali Diri Tersembunyi (Hidden Area)",
+    assignmentFields: [
+      {
+        key: "kekuatan_diri",
+        label: "1. Eksplorasi Kekuatan Diri",
+        desc: "Tuliskan minimal 5 kualitas positif yang Anda miliki, meskipun kecil atau jarang disadari.",
         type: "numbered-list",
         validation: {
           minItems: 5,
@@ -434,81 +424,194 @@ export const sessionConfigs: SessionConfig[] = [
         }
       },
       {
-        key: "progress_tracking",
-        label: "7. Pelacakan Kemajuan",
-        desc: "Bagaimana Anda akan memantau dan mengevaluasi kemajuan kesehatan mental Anda?",
-        type: "textarea",
-        placeholder: "Contoh: Mengisi mood tracker harian, konsultasi rutin bulanan dengan terapis..."
+        key: "narasi_positif",
+        label: "2. Narasi Positif 'Aku adalah...'",
+        desc: "Tuliskan minimal 3 pernyataan identitas positif diri Anda. Mulai dengan 'Aku adalah...'",
+        type: "numbered-list",
+        validation: {
+          minItems: 3,
+          maxItems: 10
+        }
       },
       {
-        key: "commitment_statement",
-        label: "8. Pernyataan Komitmen",
-        desc: "Tuliskan komitmen Anda untuk menjaga kesehatan mental dan mencegah kekambuhan.",
+        key: "refleksi_perasaan",
+        label: "3. Refleksi Diri",
+        desc: "Bagaimana perasaan Anda setelah menyadari dan menulis kekuatan diri ini?",
         type: "textarea",
-        placeholder: "Contoh: Saya berkomitmen untuk mempraktikkan strategi yang telah saya pelajari..."
+        placeholder: "Contoh: Saya merasa lebih percaya diri dan menyadari bahwa saya memiliki kualitas yang berharga..."
       }
     ],
     tips: [
-      "Kenali pola kekambuhan Anda dari pengalaman sebelumnya.",
-      "Buat rencana yang realistis dan spesifik.",
-      "Libatkan sistem dukungan dalam rencana Anda.",
-      "Tinjau dan perbarui rencana secara berkala.",
-      "Jangan ragu meminta bantuan profesional lebih awal."
+      "Jujur dan tidak merendahkan diri - tuliskan kualitas positif yang benar-benar Anda miliki.",
+      "Kualitas positif bisa berupa sifat karakter, kemampuan, atau pencapaian kecil sekalipun.",
+      "Narasi 'Aku adalah...' membantu memperkuat identitas positif Anda.",
+      "Tidak apa-apa jika awalnya sulit menemukan kualitas positif - ini adalah proses pembelajaran.",
+      "Refleksi perasaan membantu Anda menyadari dampak dari self-recognition.",
+      "Simpan daftar ini dan baca ulang saat Anda merasa down atau meragukan diri."
     ],
-    guideDesc: "Sesi ini membantu Anda menyusun strategi komprehensif untuk mencegah kekambuhan. Dengan mengidentifikasi tanda-tanda peringatan, situasi berisiko, dan memiliki rencana tindakan yang jelas, Anda dapat mempertahankan kesehatan mental jangka panjang dan merespons dengan cepat jika gejala mulai muncul kembali."
+    guideDesc: "Sesi ini membantu Anda mengenali dan mengakui kekuatan serta kualitas positif yang mungkin selama ini tersembunyi atau tidak disadari (Hidden Area dalam Johari Window). Dengan mengeksplorasi kekuatan diri dan membangun narasi identitas positif, Anda akan meningkatkan self-awareness dan self-esteem. Proses ini penting dalam recovery karena membantu Anda melihat diri dari perspektif yang lebih seimbang, tidak hanya fokus pada kelemahan atau masalah."
   },
   {
-    // Sesi 5 - Placeholder
-    title: "Mengatasi Stigma",
+    // Sesi 6: Eksternalisasi Masalah dan Kritik Sosial Positif
+    title: "Eksternalisasi Masalah dan Kritik Sosial Positif",
     assignmentFields: [
-      { key: "pengalaman_stigma", label: "Pengalaman Stigma", desc: "Deskripsikan pengalaman Anda dengan stigma kesehatan mental.", type: "textarea" },
-      { key: "strategi_mengatasi", label: "Strategi Mengatasi", desc: "Bagaimana Anda mengatasi stigma tersebut?", type: "textarea" },
-      { key: "peran_spiritual", label: "Peran Spiritual", desc: "Bagaimana nilai spiritual membantu mengatasi stigma?", type: "textarea" },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda.", type: "textarea" },
+      {
+        key: "pesan_positif",
+        label: "1. Refleksi Peran Sosial",
+        desc: "Tuliskan minimal 3 pesan positif yang pernah Anda terima dari orang lain (keluarga, teman, guru, dll).",
+        type: "numbered-list",
+        validation: {
+          minItems: 3,
+          maxItems: 10
+        }
+      },
+      {
+        key: "pengaruh_pesan",
+        label: "2. Pengaruh Pesan terhadap Cara Seseorang Memandang, Merasakan, Berpikir dan Menilai Tentang Tubuhnya Sendiri",
+        desc: "Ceritakan bagaimana pesan-pesan positif tersebut mempengaruhi cara Anda memandang, merasakan, berpikir, dan menilai diri Anda sendiri.",
+        type: "textarea",
+        placeholder: "Contoh: Ketika ibu saya mengatakan bahwa saya adalah anak yang kuat, saya mulai percaya bahwa saya mampu menghadapi kesulitan. Pesan dari teman yang bilang saya baik hati membuat saya lebih menghargai empati yang saya miliki..."
+      },
+      {
+        key: "afirmasi_diri",
+        label: "3. Menyusun Afirmasi Diri",
+        desc: "Gunakan pesan positif dari orang lain untuk membuat afirmasi diri. Buat minimal 3 pasangan pesan sosial → afirmasi.",
+        type: "repeatable-card",
+        cardLabel: "Afirmasi",
+        cardFields: [
+          { key: "pesan_sosial", label: "Pesan sosial dari orang lain", type: "textarea" },
+          { key: "afirmasi", label: "Afirmasi: 'Aku adalah...'", type: "textarea" }
+        ],
+        validation: {
+          minCards: 3,
+          maxCards: 10
+        }
+      }
     ],
-    defaultAssignment: { pengalaman_stigma: "", strategi_mengatasi: "", peran_spiritual: "", jurnal: "" },
-    tips: ["Jujur tentang pengalaman.", "Cari dukungan.", "Gunakan kekuatan spiritual."],
-    guideDesc: "Sesi ini membahas stigma kesehatan mental dan bagaimana nilai spiritual dapat menjadi kekuatan untuk mengatasinya.",
+    tips: [
+      "Ingat kembali pesan positif yang pernah Anda dengar dari orang-orang terdekat.",
+      "Pesan positif bisa berupa pujian, dukungan, atau pengakuan atas kualitas Anda.",
+      "Refleksikan bagaimana pesan tersebut membentuk cara Anda melihat diri sendiri.",
+      "Afirmasi harus dimulai dengan 'Aku adalah...' untuk memperkuat identitas positif.",
+      "Internalisasi pesan positif dari luar menjadi keyakinan internal yang kuat.",
+      "Ulangi afirmasi ini setiap hari, terutama saat Anda merasa down atau meragukan diri."
+    ],
+    guideDesc: "Sesi ini membantu Anda mengeksternalisasi masalah dengan melihat diri dari perspektif orang lain yang peduli pada Anda (kritik sosial positif). Pesan positif dari lingkungan sosial dapat menjadi cermin untuk mengenali kualitas baik yang mungkin Anda abaikan. Dengan mengubah pesan eksternal menjadi afirmasi internal ('Aku adalah...'), Anda membangun self-concept yang lebih positif dan resilient. Proses ini juga membantu Anda menyadari bahwa masalah bukan bagian dari identitas Anda - Anda adalah pribadi yang berharga terlepas dari masalah yang dihadapi."
   },
   {
-    // Sesi 6 - Placeholder
-    title: "Resiliensi dan Pertumbuhan",
+    // Sesi 7: Menata Narasi Pribadi dan Unique Outcomes
+    title: "Menata Narasi Pribadi dan Unique Outcomes",
     assignmentFields: [
-      { key: "momen_sulit", label: "Momen Sulit", desc: "Deskripsikan momen sulit yang telah Anda lalui.", type: "textarea" },
-      { key: "pembelajaran", label: "Pembelajaran", desc: "Apa yang Anda pelajari dari pengalaman tersebut?", type: "textarea" },
-      { key: "pertumbuhan", label: "Pertumbuhan Personal", desc: "Bagaimana Anda tumbuh dari pengalaman tersebut?", type: "textarea" },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda.", type: "textarea" },
+      {
+        key: "unique_outcomes",
+        label: "1. Identifikasi Unique Outcomes",
+        desc: "Ceritakan peristiwa ketika Anda berhasil keluar dari pola negatif. Unique outcomes adalah momen-momen keberhasilan yang menunjukkan Anda mampu melawan masalah.",
+        type: "nested-textarea",
+        subFields: [
+          { 
+            key: "apa_yang_terjadi", 
+            label: "Apa yang terjadi?"
+          },
+          { 
+            key: "peran_anda", 
+            label: "Apa peran Anda dalam peristiwa itu?"
+          },
+          { 
+            key: "faktor_pendukung", 
+            label: "Apa yang membantu Anda berhasil (dukungan, strategi, kekuatan pribadi)?"
+          }
+        ]
+      },
+      {
+        key: "eksplorasi_makna",
+        label: "2. Eksplorasi Makna",
+        desc: "Refleksikan makna dari keberhasilan Anda tersebut.",
+        type: "nested-textarea",
+        subFields: [
+          { 
+            key: "pelajaran", 
+            label: "Apa pelajaran yang Anda dapat dari peristiwa ini?"
+          },
+          { 
+            key: "tentang_kekuatan", 
+            label: "Apa yang peristiwa ini katakan tentang kekuatan diri Anda?"
+          }
+        ]
+      },
+      {
+        key: "cerita_baru",
+        label: "3. Cerita Saya yang Baru",
+        desc: "Tuliskan narasi pribadi baru Anda berdasarkan unique outcomes tersebut. Format: Dulu saya → Kemudian saya → Sekarang saya → Ke depan saya.",
+        type: "nested-textarea",
+        subFields: [
+          { 
+            key: "dulu_saya", 
+            label: "Dulu saya... (jelaskan pola negatif atau kesulitan yang dihadapi)"
+          },
+          { 
+            key: "kemudian_saya", 
+            label: "Kemudian saya... (ceritakan pengalaman keberhasilan/unique outcomes)"
+          },
+          { 
+            key: "sekarang_saya", 
+            label: "Sekarang saya... (gambarkan identitas baru yang lebih kuat dan sehat)"
+          },
+          { 
+            key: "kedepan_saya", 
+            label: "Ke depan saya... (buat komitmen atau harapan positif untuk masa depan)"
+          }
+        ]
+      }
     ],
-    defaultAssignment: { momen_sulit: "", pembelajaran: "", pertumbuhan: "", jurnal: "" },
-    tips: ["Fokus pada pertumbuhan.", "Hargai perjalanan Anda.", "Rayakan kemajuan kecil."],
-    guideDesc: "Sesi ini fokus pada resiliensi dan pertumbuhan pasca-trauma dengan perspektif spiritual.",
+    tips: [
+      "Unique outcomes adalah momen ketika Anda BERHASIL melawan masalah - fokuslah pada keberhasilan, bukan kegagalan.",
+      "Tidak perlu keberhasilan besar - bahkan langkah kecil pun adalah unique outcome yang berharga.",
+      "Eksplorasi makna membantu Anda menyadari bahwa keberhasilan bukan kebetulan, tapi bukti kekuatan Anda.",
+      "Narasi baru Anda harus mencerminkan identitas yang lebih kuat, bukan lagi didominasi oleh masalah.",
+      "Format 'Dulu → Kemudian → Sekarang → Ke depan' membantu Anda melihat transformasi secara jelas.",
+      "Ini adalah latihan untuk Sesi 8 - gunakan narasi ini sebagai dasar untuk cerita lengkap Anda nanti."
+    ],
+    guideDesc: "Sesi ini menggunakan konsep 'unique outcomes' dari narrative therapy untuk membantu Anda mengenali dan memperkuat momen-momen keberhasilan dalam melawan masalah. Seringkali, kita terlalu fokus pada kegagalan hingga melupakan saat-saat ketika kita berhasil. Dengan mengidentifikasi unique outcomes, mengeksplorasi maknanya, dan menenun cerita baru berdasarkan keberhasilan tersebut, Anda membangun narasi alternatif yang lebih empowering. Sesi ini adalah jembatan menuju Sesi 8 (Rekonstruksi Narasi Terpadu) dengan memberikan contoh konkret bagaimana Anda telah menunjukkan kekuatan dan resiliensi."
   },
   {
-    // Sesi 7 - Placeholder
-    title: "Rencana Tindak Lanjut",
+    // Sesi 8: Rekonstruksi Narasi Terpadu
+    title: "Rekonstruksi Narasi Terpadu",
     assignmentFields: [
-      { key: "tujuan_jangka_pendek", label: "Tujuan Jangka Pendek", desc: "Apa tujuan Anda dalam 1-3 bulan ke depan?", type: "textarea" },
-      { key: "tujuan_jangka_panjang", label: "Tujuan Jangka Panjang", desc: "Apa tujuan Anda dalam 6-12 bulan ke depan?", type: "textarea" },
-      { key: "strategi_pencapaian", label: "Strategi Pencapaian", desc: "Bagaimana Anda akan mencapai tujuan tersebut?", type: "textarea" },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda.", type: "textarea" },
+      {
+        key: "cerita_saya",
+        label: "Format Narasi Akhir 'Cerita Saya'",
+        desc: "Tuliskan narasi lengkap perjalanan transformasi Anda dari masa lalu hingga masa depan. Ini adalah cerita hidup Anda yang telah direkonstruksi melalui proses intervensi.",
+        type: "nested-textarea",
+        subFields: [
+          { 
+            key: "siapa_saya_dulu", 
+            label: "1. Siapa saya dulu (narasi tentang kesulitan, pola negatif, atau identitas lama yang tidak sehat)"
+          },
+          { 
+            key: "proses_perjalanan", 
+            label: "2. Proses perjalanan saya (ceritakan proses pembelajaran dari sesi 1-7, kekuatan yang ditemukan, strategi koping yang dipelajari)"
+          },
+          { 
+            key: "siapa_saya_sekarang", 
+            label: "3. Siapa saya sekarang (identitas diri baru, nilai positif, kekuatan, dan citra diri yang lebih sehat)"
+          },
+          { 
+            key: "arah_masa_depan", 
+            label: "4. Arah masa depan saya (harapan, komitmen, atau tujuan hidup berdasarkan narasi baru)"
+          }
+        ]
+      }
     ],
-    defaultAssignment: { tujuan_jangka_pendek: "", tujuan_jangka_panjang: "", strategi_pencapaian: "", jurnal: "" },
-    tips: ["Buat tujuan SMART.", "Mulai dari langkah kecil.", "Evaluasi secara berkala."],
-    guideDesc: "Sesi ini membantu Anda menyusun rencana tindak lanjut yang realistis dan berkelanjutan.",
-  },
-  {
-    // Sesi 8 - Placeholder
-    title: "Evaluasi dan Penutup",
-    assignmentFields: [
-      { key: "refleksi_perjalanan", label: "Refleksi Perjalanan", desc: "Refleksikan seluruh perjalanan intervensi yang telah Anda lalui.", type: "textarea" },
-      { key: "perubahan_signifikan", label: "Perubahan Signifikan", desc: "Perubahan apa yang paling signifikan bagi Anda?", type: "textarea" },
-      { key: "komitmen_kedepan", label: "Komitmen ke Depan", desc: "Apa komitmen Anda untuk terus merawat kesehatan mental?", type: "textarea" },
-      { key: "pesan_untuk_diri", label: "Pesan untuk Diri Sendiri", desc: "Tuliskan pesan positif untuk diri Anda di masa depan.", type: "textarea" },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda.", type: "textarea" },
+    tips: [
+      "Tuliskan cerita Anda dengan jujur dan autentik - ini adalah narasi ANDA yang unik.",
+      "Bagian 'Siapa saya dulu' bukan untuk menyalahkan diri, tapi untuk mengakui perjalanan Anda.",
+      "Bagian 'Proses perjalanan' adalah refleksi dari semua yang telah Anda pelajari di sesi 1-7.",
+      "Bagian 'Siapa saya sekarang' harus mencerminkan perubahan positif dan kekuatan baru yang ditemukan.",
+      "Bagian 'Arah masa depan' adalah komitmen dan visi Anda untuk terus tumbuh dan berkembang.",
+      "Narasi ini adalah dokumen penting - simpan dan baca ulang saat Anda membutuhkan pengingat kekuatan Anda.",
+      "Anda dapat membagikan cerita ini dengan orang terpercaya sebagai testimoni transformasi Anda."
     ],
-    defaultAssignment: { refleksi_perjalanan: "", perubahan_signifikan: "", komitmen_kedepan: "", pesan_untuk_diri: "", jurnal: "" },
-    tips: ["Rayakan pencapaian Anda.", "Hargai proses yang telah dilalui.", "Tetap terhubung dengan nilai spiritual."],
-    guideDesc: "Sesi penutup ini adalah evaluasi komprehensif dari seluruh program intervensi spiritual dan budaya yang telah Anda ikuti.",
+    guideDesc: "Sesi penutup ini adalah puncak dari seluruh perjalanan intervensi Anda. Melalui rekonstruksi narasi terpadu, Anda akan menyatukan semua pembelajaran, kekuatan, dan transformasi yang telah terjadi menjadi satu cerita hidup yang koheren dan bermakna. Proses narrative therapy ini membantu Anda melihat diri dari perspektif yang lebih luas - bukan hanya sekadar 'orang dengan masalah', tetapi sebagai individu yang telah melewati perjalanan heroik dan keluar lebih kuat. Narasi baru ini akan menjadi fondasi identitas Anda yang lebih sehat dan resilient untuk masa depan."
   },
 ];
 

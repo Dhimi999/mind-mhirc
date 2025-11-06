@@ -46,6 +46,8 @@ export const CheckboxMultipleField: React.FC<CheckboxMultipleFieldProps> = ({
   };
 
   const selectedCount = (value.selected || []).length;
+  const hasOther = field.allowOther && typeof value.other === 'string' && value.other.trim() !== '';
+  const totalCount = selectedCount + (hasOther ? 1 : 0);
   const minSelected = field.validation?.minSelected;
   const maxSelected = field.validation?.maxSelected;
 
@@ -65,7 +67,7 @@ export const CheckboxMultipleField: React.FC<CheckboxMultipleFieldProps> = ({
           {maxSelected && `Maksimal pilih ${maxSelected} opsi`}
           {!disabled && (
             <span className="ml-2 font-medium">
-              (Dipilih: {selectedCount})
+              (Dipilih: {totalCount})
             </span>
           )}
         </div>
