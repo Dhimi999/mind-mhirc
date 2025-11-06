@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ClipboardList, ArrowLeft, FileText, Download, Send, Users, Upload, Trash2, Edit, ExternalLink, BookOpen, CheckCircle, UserCheck, SendHorizontal, Link as LinkIcon, Plus, X, ChevronLeft, ChevronRight, MessageCircle, Globe, Folder, Link2, PlayCircle, Eye, EyeOff } from "lucide-react";
+import { ClipboardList, ArrowLeft, FileText, Download, Send, Users, Upload, Trash2, Edit, ExternalLink, BookOpen, CheckCircle, UserCheck, SendHorizontal, Link as LinkIcon, Plus, X, ChevronLeft, ChevronRight, MessageCircle, Globe, Folder, Link2, PlayCircle, Eye, EyeOff, ZoomIn, EyeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -1237,8 +1237,8 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                             <div className="flex flex-col gap-1">
                               <span>{profiles[assignment.user_id]?.full_name || "Tidak diketahui"}</span>
                               <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className="text-xs">
-                                  {submissionCount} Jawaban
+                                <Badge variant="secondary" className="text-xs text-green-900 bg-green-300 hover:bg-green-600 hover:text-white px-2 py-2">
+                                  {submissionCount}
                                 </Badge>
                                 {assignment.submitted_at && (
                                   <span className="text-xs text-muted-foreground">
@@ -1266,8 +1266,7 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                           </td>
                           <td className="p-4">
                             <Button size="sm" variant="outline" onClick={() => handleViewDetail(assignment)} className="inline-flex items-center">
-                              <FileText className="h-3 w-3" />
-                              <span className="hidden sm:inline ml-1">Lihat & Respons</span>
+                              <EyeIcon className="h-3 w-3" />
                             </Button>
                           </td>
                         </tr>
