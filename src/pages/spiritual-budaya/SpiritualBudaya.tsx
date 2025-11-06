@@ -277,6 +277,17 @@ const SpiritualBudaya = () => {
     }
   };
 
+  /* ========================================
+   * SEQUENTIAL LOCK - TEMPORARILY DISABLED
+   * ========================================
+   * Uncomment the code below to re-enable sequential session unlocking on the portal page.
+   * This will require users to complete the previous session before accessing the next one.
+   * To re-enable:
+   * 1. Uncomment the entire block below
+   * 2. Comment out or remove the "return 'available'" lines in the active functions
+   * ======================================== */
+
+  /*
   // meetingSchedule dipindahkan ke halaman portal sesi
   // Determine session status based on progress (Intervensi)
   const getSessionStatus = (sessionNumber: number): "available" | "locked" => {
@@ -287,6 +298,12 @@ const SpiritualBudaya = () => {
     const prevSessionDone = intervensiProgress[sessionNumber - 1] === true;
     return prevSessionDone ? "available" : "locked";
   };
+  */
+
+  // Sequential lock disabled: all sessions available
+  const getSessionStatus = (sessionNumber: number): "available" | "locked" => {
+    return "available";
+  };
 
   // Generate treatment modules dari sessionConfigs dengan status dinamis (0..8)
   const treatmentModules = intervensiSessionConfigs.map((config, index) => ({
@@ -295,12 +312,19 @@ const SpiritualBudaya = () => {
     status: getSessionStatus(index)
   }));
 
+  /*
   // Status psiko sequential lock
   const getPsikoStatus = (sessionNumber: number): "available" | "locked" => {
     if (adminView && role === 'super-admin') return "available";
     if (sessionNumber === 0) return "available";
     const prevDone = psikoProgress[sessionNumber - 1] === true;
     return prevDone ? "available" : "locked";
+  };
+  */
+
+  // Sequential lock disabled: all sessions available
+  const getPsikoStatus = (sessionNumber: number): "available" | "locked" => {
+    return "available";
   };
   const jelajahContent = [{
     title: "Prinsip Dasar Intervensi Spiritual & Budaya",

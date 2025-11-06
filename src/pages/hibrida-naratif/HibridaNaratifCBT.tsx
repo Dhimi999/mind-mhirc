@@ -247,6 +247,17 @@ const HibridaNaratifCBT: React.FC = () => {
     loadProg();
   }, [user?.id]);
 
+  /* ========================================
+   * SEQUENTIAL LOCK - TEMPORARILY DISABLED
+   * ========================================
+   * Uncomment the code below to re-enable sequential session unlocking on the portal page.
+   * This will require users to complete the previous session before accessing the next one.
+   * To re-enable:
+   * 1. Uncomment the entire block below
+   * 2. Comment out or remove the "return 'available'" lines in the active functions
+   * ======================================== */
+
+  /*
   // Sequential unlocking logic for HN-CBT Intervensi (mirror Spiritual Budaya pattern)
   const getSessionStatus = (sessionNumber: number): "available" | "locked" => {
     // Admin always see all sessions available
@@ -257,7 +268,14 @@ const HibridaNaratifCBT: React.FC = () => {
     const prevSessionDone = !!(progressMap[sessionNumber - 1]?.meetingDone && progressMap[sessionNumber - 1]?.assignmentDone);
     return prevSessionDone ? "available" : "locked";
   };
+  */
 
+  // Sequential lock disabled: all sessions available
+  const getSessionStatus = (sessionNumber: number): "available" | "locked" => {
+    return "available";
+  };
+
+  /*
   // Sequential unlocking logic for Psikoedukasi (mirror Spiritual Budaya pattern)
   const getPsikoStatus = (sessionNumber: number): "available" | "locked" => {
     // Admin always see all sessions available
@@ -267,6 +285,12 @@ const HibridaNaratifCBT: React.FC = () => {
     // Other sessions require previous session to be completed (both meeting & assignment)
     const prevDone = !!(psikoProgress[sessionNumber - 1]?.meetingDone && psikoProgress[sessionNumber - 1]?.assignmentDone);
     return prevDone ? "available" : "locked";
+  };
+  */
+
+  // Sequential lock disabled: all sessions available
+  const getPsikoStatus = (sessionNumber: number): "available" | "locked" => {
+    return "available";
   };
 
   return (

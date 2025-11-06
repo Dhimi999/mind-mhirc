@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/spiritual-cultural-hero.jpg";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePsikoedukasiSession } from "@/hooks/usePsikoedukasiSession";
+import { useHibridaPsikoedukasiSession } from "@/hooks/useHibridaPsikoedukasiSession";
 import { GuidanceMaterialsDisplay } from "@/components/dashboard/hibrida-cbt/GuidanceMaterialsDisplay";
 import { CounselorResponseDisplay } from "@/components/dashboard/hibrida-cbt/CounselorResponseDisplay";
 import { toast } from "sonner";
@@ -176,7 +176,7 @@ const HibridaPsikoedukasiUnified: React.FC = () => {
     allGroupSchedules,
     loading,
     fetchSubmissionHistory,
-  } = usePsikoedukasiSession(sessionNumber, user?.id);
+  } = useHibridaPsikoedukasiSession(sessionNumber, user?.id);
 
   const navigate = (window as any).navigate || ((path: string) => { window.location.href = path; });
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -194,6 +194,15 @@ const HibridaPsikoedukasiUnified: React.FC = () => {
       navigate('/hibrida-cbt');
       return;
     }
+    
+    /* ========================================
+     * SEQUENTIAL LOCK - TEMPORARILY DISABLED
+     * ========================================
+     * Uncomment code below to re-enable sequential session access.
+     * This will require users to complete previous sessions before accessing the next one.
+     * ======================================== */
+    
+    /*
     // 3. Sequential lock: if session > 0, check previous session assignmentDone
     const checkPrev = async () => {
       if (sessionNumber > 0 && !isSuperAdmin && user?.id) {
@@ -219,6 +228,10 @@ const HibridaPsikoedukasiUnified: React.FC = () => {
       setCheckingAccess(false);
     };
     checkPrev();
+    */
+    
+    // Directly set checking complete (sequential lock disabled)
+    setCheckingAccess(false);
   }, [user, groupAssignment, isSuperAdmin, sessionNumber, loading]);
 
   const [assignment, setAssignment] = useState<any>(config?.defaultAssignment || {});

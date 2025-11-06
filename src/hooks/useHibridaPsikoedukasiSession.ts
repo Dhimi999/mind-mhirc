@@ -28,7 +28,7 @@ export interface MeetingSchedule {
   end_time?: string | null;
 }
 
-export const usePsikoedukasiSession = (sessionNumber: number, userId: string | undefined) => {
+export const useHibridaPsikoedukasiSession = (sessionNumber: number, userId: string | undefined) => {
   const [progress, setProgress] = useState<SessionProgress>({
     meetingDone: false,
     guideDone: false,

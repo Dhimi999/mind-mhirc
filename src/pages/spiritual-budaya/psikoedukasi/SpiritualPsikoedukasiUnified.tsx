@@ -194,6 +194,18 @@ const SpiritualPsikoedukasiUnified: React.FC = () => {
       navigate('/spiritual-budaya/pengantar');
       return;
     }
+
+    /* ========================================
+     * SEQUENTIAL LOCK - TEMPORARILY DISABLED
+     * ========================================
+     * Uncomment the code below to re-enable sequential session access.
+     * This will require users to complete the previous session before accessing the next one.
+     * To re-enable:
+     * 1. Uncomment the entire block below
+     * 2. Remove or comment out the "setCheckingAccess(false)" line at the bottom
+     * ======================================== */
+    
+    /*
     // 3. Sequential lock: if session > 0, check previous session assignmentDone
     const checkPrev = async () => {
       if (sessionNumber > 0 && !isSuperAdmin && user?.id) {
@@ -216,6 +228,10 @@ const SpiritualPsikoedukasiUnified: React.FC = () => {
       setCheckingAccess(false);
     };
     checkPrev();
+    */
+
+    // Directly set checking complete (sequential lock disabled)
+    setCheckingAccess(false);
   }, [user, groupAssignment, isSuperAdmin, sessionNumber, loading]);
 
   const [assignment, setAssignment] = useState<any>(config?.defaultAssignment || {});

@@ -53,167 +53,243 @@ export const sessionConfigs: SessionConfig[] = [
     guideDesc: "Pra-Sesi berisi pengantar layanan dan orientasi awal agar Anda memahami alur program sebelum memulai sesi inti.",
   },
   {
-    // Sesi 1: Crisis Response Plan
-    title: "Rencana Respon Krisis",
+    // Sesi 1: Pengalaman Crisis Response Plan
+    title: "Pengalaman Crisis Response Plan",
     assignmentFields: [
       {
-        key: "warning_signs",
-        label: "1. Tanda-tanda Peringatan",
-        desc: "Tuliskan tanda-tanda yang menunjukkan Anda sedang mendekati krisis (pikiran, perasaan, atau perilaku).",
-        type: "textarea",
-        placeholder: "Contoh: Merasa sangat cemas, sulit tidur, pikiran negatif berulang..."
+        key: "pengalaman_tersulit",
+        label: "1. Pengalaman Hidup Tersulit Selama menjadi Mahasiswa",
+        desc: "Ceritakan pengalaman hidup tersulit selama menjadi mahasiswa yang sampai sekarang masih mengganggu dalam hidup Anda.",
+        type: "nested-textarea",
+        subFields: [
+          { 
+            key: "keluarga", 
+            label: "a. Pengalaman hidup tersulit terkait permasalahan keluarga meliputi konflik (perceraian, pertengkaran, komunikasi buruk), tekanan ekonomi (kesulitan biaya kuliah), serta masalah kesehatan anggota keluarga (penyakit menahun atau kehilangan orang terdekat)"
+          },
+          { 
+            key: "harapan", 
+            label: "b. Pengalaman tersulit mengenai harapan dan masa depan mencakup kebingungan menentukan karier, tekanan dari orang tua atau lingkungan terhadap pencapaian, serta kurangnya percaya diri menghadapi persaingan kerja maupun studi lanjut"
+          },
+          { 
+            key: "pribadi", 
+            label: "c. Pengalaman tersulit terhadap masalah pribadi meliputi gangguan kesehatan mental (cemas, depresi, stres), masalah hubungan sosial/romantis, kesulitan akademik, serta perilaku yang menghambat seperti prokrastinasi atau kecanduan gadget"
+          }
+        ]
       },
       {
-        key: "internal_coping",
-        label: "2. Strategi Koping Internal",
-        desc: "Aktivitas yang bisa Anda lakukan sendiri untuk mengelola krisis (tanpa melibatkan orang lain).",
-        type: "textarea",
-        placeholder: "Contoh: Bernapas dalam, meditasi, menulis jurnal..."
+        key: "pemicu_emosi",
+        label: "2. Pemicu Emosi",
+        desc: "Apa hal-hal yang biasanya memicu stres/krisis bagi Anda?",
+        type: "checkbox-multiple",
+        options: [
+          "Konflik dengan teman/dosen",
+          "Tekanan akademik",
+          "Masalah keluarga"
+        ],
+        allowOther: true,
+        validation: {
+          minSelected: 1
+        }
       },
       {
-        key: "social_settings",
-        label: "3. Lingkungan Sosial yang Membantu",
-        desc: "Tempat atau situasi sosial yang dapat mengalihkan pikiran dari krisis.",
+        key: "pikiran_otomatis",
+        label: "3. Pikiran Otomatis",
+        desc: "Ceritakan pikiran pertama yang biasanya muncul saat terjadi pengalaman tersulit.",
         type: "textarea",
-        placeholder: "Contoh: Pergi ke taman, mengunjungi kafe favorit..."
+        placeholder: "Contoh: 'Saya tidak akan pernah berhasil', 'Saya tidak mampu mengatasi ini'..."
       },
       {
-        key: "support_contacts",
-        label: "4. Kontak Pendukung",
-        desc: "Daftar orang yang bisa Anda hubungi untuk mendapat dukungan.",
+        key: "emosi_muncul",
+        label: "4. Emosi yang Muncul",
+        desc: "Apa emosi yang biasanya muncul ketika Anda mengalami pengalaman tersulit?",
+        type: "checkbox-multiple",
+        options: [
+          "Takut/cemas",
+          "Sedih/putus asa",
+          "Marah/frustasi",
+          "Malu/rendah diri",
+          "Bersalah",
+          "Kebingungan/hilang arah",
+          "Kesepian/terisolasi",
+          "Menghindar dari orang lain",
+          "Menangis",
+          "Tersinggung"
+        ],
+        allowOther: true,
+        validation: {
+          minSelected: 1
+        }
+      },
+      {
+        key: "reaksi_perilaku",
+        label: "5. Reaksi Perilaku",
+        desc: "Apa yang biasanya Anda lakukan ketika pengalaman tersulit muncul?",
+        type: "checkbox-multiple",
+        options: [
+          "Tidur berlebihan",
+          "Tidak ingin keluar/mengurung diri",
+          "Perubahan nafsu makan",
+          "Tidak bisa tidur",
+          "Sulit konsentrasi dalam belajar atau kuliah",
+          "Mencari pelarian (misal berlebihan menggunakan media sosial, game, belanja, makan cepat saji)",
+          "Mencari dukungan (misal curhat ke teman dekat, dosen, konselor)"
+        ],
+        allowOther: true,
+        validation: {
+          minSelected: 1
+        }
+      },
+      {
+        key: "tanda_peringatan",
+        label: "6. Tanda Peringatan Pribadi",
+        desc: "Ciri-ciri yang menandakan Anda mulai masuk dalam pengalaman tersulit. Contoh: Mudah marah, Melakukan perilaku berisiko (merokok, tempat hiburan malam, minum alkohol), Menyimpan perasaan.",
+        type: "textarea",
+        placeholder: "Tuliskan tanda-tanda peringatan pribadi Anda..."
+      },
+      {
+        key: "strategi_koping",
+        label: "7. Strategi Koping Sehat",
+        desc: "Hal-hal yang bisa Anda lakukan untuk menenangkan diri.",
+        type: "nested-textarea",
+        subFields: [
+          { key: "memecahkan_masalah", label: "a. Memecahkan masalah" },
+          { key: "dukungan_teman", label: "b. Mencari dukungan teman sebaya" },
+          { key: "fasilitas_kesehatan", label: "c. Memanfaatkan fasilitas kesehatan" },
+          { key: "hobi", label: "d. Melakukan hobi atau kegiatan yang disukai" }
+        ]
+      },
+      {
+        key: "aktivitas_penenang",
+        label: "8. Aktivitas Penenang Diri/Mengalihkan Diri",
+        desc: "Centang minimal 3 aktivitas yang dapat membantu menenangkan diri.",
+        type: "checkbox-multiple",
+        options: [
+          "Mendengarkan musik",
+          "Berdoa/meditasi",
+          "Jalan santai",
+          "Menulis jurnal",
+          "Menghubungi teman"
+        ],
+        allowOther: true,
+        validation: {
+          minSelected: 3
+        }
+      },
+      {
+        key: "kontak_darurat",
+        label: "9. Kontak Darurat",
+        desc: "Daftar kontak yang dapat dihubungi saat mengalami krisis.",
         type: "contact-list",
         fields: [
+          { key: "teman_dekat", label: "Teman dekat" },
           { key: "keluarga", label: "Keluarga" },
-          { key: "teman", label: "Teman" },
-          { key: "konselor", label: "Konselor/Terapis" }
+          { key: "dosen_konselor", label: "Dosen wali/konselor" },
+          { key: "layanan_darurat", label: "Layanan darurat kampus/RS" }
         ]
       },
       {
-        key: "professional_help",
-        label: "5. Bantuan Profesional",
-        desc: "Layanan kesehatan mental profesional yang dapat Anda akses.",
-        type: "contact-list",
-        fields: [
-          { key: "layanan_krisis", label: "Layanan Krisis (Hotline)" },
-          { key: "dokter", label: "Dokter/Psikiater" },
-          { key: "rumah_sakit", label: "Rumah Sakit Terdekat" }
-        ]
+        key: "lingkungan_aman",
+        label: "10. Lingkungan Aman atau Tempat untuk Menenangkan Diri",
+        desc: "Pilih tempat-tempat yang membuat Anda merasa aman dan tenang.",
+        type: "checkbox-multiple",
+        options: [
+          "Kamar pribadi",
+          "Perpustakaan kampus",
+          "Taman kampus",
+          "Tempat ibadah",
+          "Cafe",
+          "Ruang musik/seni",
+          "Lapangan olahraga",
+          "Pantai, gunung, atau area wisata alam",
+          "Ruang konseling kampus",
+          "Rumah keluarga",
+          "Kost"
+        ],
+        allowOther: true,
+        validation: {
+          minSelected: 1
+        }
       },
       {
-        key: "safe_environment",
-        label: "6. Menciptakan Lingkungan Aman",
-        desc: "Langkah-langkah untuk mengurangi akses ke benda berbahaya saat krisis.",
+        key: "tindakan_krisis",
+        label: "Tindakan Anda ketika pengalaman tersulit datang",
+        desc: "Tuliskan rencana tindakan konkret yang akan Anda lakukan ketika menghadapi pengalaman tersulit.",
         type: "textarea",
-        placeholder: "Contoh: Menyimpan obat-obatan di tempat aman, meminta keluarga menyimpan benda tajam..."
+        placeholder: "Contoh: Pertama saya akan menarik napas dalam, kemudian menghubungi teman dekat, lalu pergi ke tempat yang aman..."
+      }
+    ],
+    tips: [
+      "Jawab setiap pertanyaan dengan jujur dan spesifik berdasarkan pengalaman Anda.",
+      "Identifikasi pola-pola yang terjadi dalam pengalaman tersulit Anda.",
+      "Pastikan kontak darurat yang ditulis aktif dan dapat dihubungi.",
+      "Rencana ini akan menjadi panduan Anda saat menghadapi krisis di masa depan.",
+      "Tinjau dan perbarui rencana ini secara berkala sesuai perkembangan Anda."
+    ],
+    guideDesc: "Sesi ini membantu Anda memahami dan memetakan pengalaman tersulit yang pernah dialami selama menjadi mahasiswa. Dengan mengidentifikasi pemicu, emosi, perilaku, dan strategi koping, Anda akan menyusun Crisis Response Plan yang personal dan aplikatif untuk menghadapi situasi krisis di masa depan."
+  },
+  {
+    // Sesi 2: Pikiran Otomatis Negatif
+    title: "Pikiran Otomatis Negatif",
+    assignmentFields: [
+      {
+        key: "identifikasi_pikiran_negatif",
+        label: "1. Identifikasi Pikiran Negatif",
+        desc: "Refleksi mendalam terhadap pengalaman hidup tersulit dan pikiran negatif yang muncul.",
+        type: "nested-textarea",
+        subFields: [
+          { 
+            key: "cerita_momen", 
+            label: "a. Ceritakan kembali momen pengalaman hidup tersulit Anda menjadi mahasiswa yang sempat terjadi"
+          },
+          { 
+            key: "situasi_perasaan", 
+            label: "b. Ceritakan situasi pengalaman hidup tersulit Anda meliputi perasaan dan pikiran pertama yang muncul"
+          }
+        ]
       },
       {
-        key: "reasons_to_live",
-        label: "7. Alasan untuk Terus Hidup",
-        desc: "Daftar hal-hal penting dalam hidup Anda yang memberikan makna dan motivasi.",
+        key: "pikiran_otomatis_list",
+        label: "c. Tuliskan 3-5 pikiran otomatis negatif yang biasanya muncul ketika Anda merasa tertekan atau mengalami pengalaman hidup tersulit",
+        desc: "Identifikasi pikiran-pikiran negatif yang sering muncul secara otomatis.",
         type: "numbered-list",
         validation: {
           minItems: 3,
+          maxItems: 5
+        }
+      },
+      {
+        key: "tantangan_pikiran",
+        label: "2. Tantangan terhadap Pikiran Negatif",
+        desc: "Untuk setiap pikiran negatif, tuliskan jawaban/tantangan yang lebih realistis atau positif. Contoh: Pikiran: 'Saya gagal, tidak ada gunanya.' → Tantangan: 'Saya pernah berhasil di banyak hal, kegagalan ini hanya sementara.'",
+        type: "textarea",
+        placeholder: "Tuliskan tantangan untuk setiap pikiran negatif yang telah Anda identifikasi..."
+      },
+      {
+        key: "alasan_hidup",
+        label: "3. Daftar Alasan untuk Tetap Hidup",
+        desc: "Tuliskan minimal 5 alasan personal yang membuat Anda ingin tetap hidup.",
+        type: "numbered-list",
+        validation: {
+          minItems: 5,
           maxItems: 10
         }
       },
       {
-        key: "hope_statement",
-        label: "8. Pernyataan Harapan",
-        desc: "Tuliskan pernyataan positif yang dapat Anda ingat saat menghadapi krisis.",
+        key: "visualisasi_positif",
+        label: "4. Visualisasi Positif (Guided Imagery)",
+        desc: "Bayangkan diri Anda sedang menjalani hidup dengan alasan-alasan di atas. Tuliskan gambaran yang muncul dalam pikiran Anda.",
         type: "textarea",
-        placeholder: "Contoh: Masa sulit ini akan berlalu, saya lebih kuat dari yang saya kira..."
-      },
-      {
-        key: "beliefs",
-        label: "9. Keyakinan Spiritual/Budaya",
-        desc: "Keyakinan atau nilai spiritual/budaya yang memberi kekuatan saat menghadapi kesulitan.",
-        type: "nested-textarea",
-        subFields: [
-          { key: "keluarga", label: "Nilai Keluarga" },
-          { key: "harapan", label: "Harapan dan Makna Hidup" }
-        ]
-      },
-      {
-        key: "commitment",
-        label: "10. Komitmen Keselamatan",
-        desc: "Apakah Anda berkomitmen untuk menggunakan rencana ini saat menghadapi krisis?",
-        type: "boolean"
+        placeholder: "Contoh: Saya membayangkan diri saya lulus dengan nilai baik, bekerja di tempat yang saya sukai, dikelilingi oleh keluarga dan teman yang mendukung..."
       }
     ],
     tips: [
-      "Jawab dengan jujur dan spesifik.",
-      "Pastikan nomor kontak yang ditulis aktif dan dapat dihubungi.",
-      "Simpan salinan rencana ini di tempat yang mudah diakses.",
-      "Tinjau dan perbarui rencana ini secara berkala."
+      "Jujur pada diri sendiri saat mengidentifikasi pikiran negatif - tidak ada jawaban yang salah.",
+      "Pikiran otomatis negatif adalah pikiran yang muncul secara spontan tanpa disadari.",
+      "Saat menantang pikiran negatif, gunakan bukti konkret dari pengalaman Anda.",
+      "Alasan untuk hidup bisa berupa orang, tujuan, mimpi, nilai, atau hal-hal kecil yang bermakna.",
+      "Visualisasi positif membantu otak Anda menciptakan peta jalan menuju masa depan yang lebih baik."
     ],
-    guideDesc: "Sesi ini membantu Anda menyusun Rencana Respon Krisis yang komprehensif. Rencana ini adalah alat penting untuk mengidentifikasi tanda-tanda peringatan dan langkah-langkah yang dapat diambil untuk menjaga keselamatan Anda saat menghadapi krisis mental."
-  },
-  {
-    // Sesi 2: Pikiran Otomatis Negatif
-    title: "Mengenali Pikiran Otomatis Negatif",
-    assignmentFields: [
-      {
-        key: "automatic_thought",
-        label: "1. Pikiran Otomatis Negatif",
-        desc: "Tuliskan pikiran negatif yang sering muncul secara otomatis dalam pikiran Anda.",
-        type: "textarea",
-        placeholder: "Contoh: 'Saya tidak akan pernah berhasil', 'Semua orang membenci saya'..."
-      },
-      {
-        key: "trigger_situation",
-        label: "2. Situasi Pemicu",
-        desc: "Deskripsikan situasi atau kejadian yang memicu munculnya pikiran otomatis negatif tersebut.",
-        type: "textarea",
-        placeholder: "Contoh: Saat gagal dalam ujian, ditolak dalam interview kerja..."
-      },
-      {
-        key: "emotional_response",
-        label: "3. Respons Emosional",
-        desc: "Emosi apa yang Anda rasakan ketika pikiran negatif muncul?",
-        type: "checkbox-multiple",
-        options: [
-          "Sedih",
-          "Cemas",
-          "Marah",
-          "Takut",
-          "Malu",
-          "Bersalah",
-          "Putus asa"
-        ],
-        allowOther: true,
-        validation: {
-          minSelected: 1,
-          maxSelected: 5
-        }
-      },
-      {
-        key: "evidence_analysis",
-        label: "4. Analisis Bukti",
-        desc: "Analisis bukti untuk dan melawan pikiran otomatis negatif Anda.",
-        type: "nested-textarea",
-        subFields: [
-          { key: "mendukung", label: "Bukti yang mendukung pikiran negatif" },
-          { key: "melawan", label: "Bukti yang melawan pikiran negatif" }
-        ]
-      },
-      {
-        key: "alternative_thoughts",
-        label: "5. Pikiran Alternatif",
-        desc: "Daftar pikiran alternatif yang lebih seimbang dan realistis.",
-        type: "numbered-list",
-        validation: {
-          minItems: 2,
-          maxItems: 5
-        }
-      }
-    ],
-    tips: [
-      "Jujur pada diri sendiri saat mengidentifikasi pikiran negatif.",
-      "Cari bukti konkret, bukan asumsi.",
-      "Pikiran alternatif harus realistis, bukan hanya positif palsu.",
-      "Latih pikiran alternatif secara konsisten."
-    ],
-    guideDesc: "Sesi ini membantu Anda mengenali dan menganalisis pikiran otomatis negatif yang sering muncul. Dengan memahami pola pikir negatif dan mengembangkan pikiran alternatif yang lebih seimbang, Anda dapat mengelola emosi dan perilaku dengan lebih baik."
+    guideDesc: "Sesi ini membantu Anda mengenali pola pikiran otomatis negatif yang sering muncul saat menghadapi kesulitan. Dengan mengidentifikasi, menantang, dan menggantinya dengan pikiran yang lebih realistis, serta memperkuat alasan untuk hidup melalui visualisasi positif, Anda akan mengembangkan pola pikir yang lebih sehat dan adaptif."
   },
   {
     // Sesi 3: Restrukturisasi Kognitif
@@ -588,6 +664,15 @@ const HibridaIntervensiUnified: React.FC = () => {
         navigate('/hibrida-cbt/pengantar');
         return;
       }
+      
+      /* ========================================
+       * SEQUENTIAL LOCK - TEMPORARILY DISABLED
+       * ========================================
+       * Uncomment code below to re-enable sequential session access.
+       * This will require users to complete previous sessions before accessing the next one.
+       * ======================================== */
+      
+      /*
       // 3. Sequential lock
       if (!config || sessionNumber === 0 || isSuperAdmin) {
         setCheckingAccess(false);
@@ -617,6 +702,10 @@ const HibridaIntervensiUnified: React.FC = () => {
       } finally {
         setCheckingAccess(false);
       }
+      */
+      
+      // Directly set checking complete (sequential lock disabled)
+      setCheckingAccess(false);
     };
     checkSessionAccess();
   }, [user, groupAssignment, isSuperAdmin, sessionNumber, config, navigate, toast, dataLoading]);
@@ -670,7 +759,11 @@ const HibridaIntervensiUnified: React.FC = () => {
         case "checkbox-multiple":
           if (!val || typeof val !== 'object') return false;
           const minSelected = field.validation?.minSelected || 0;
-          return Array.isArray(val.selected) && val.selected.length >= minSelected;
+          // Count both selected checkboxes and "other" field if filled
+          const selectedCount = (Array.isArray(val.selected) ? val.selected.length : 0);
+          const hasOther = field.allowOther && typeof val.other === 'string' && val.other.trim() !== '';
+          const totalCount = selectedCount + (hasOther ? 1 : 0);
+          return totalCount >= minSelected;
         
         case "contact-list":
           if (!field.contacts) return true;
