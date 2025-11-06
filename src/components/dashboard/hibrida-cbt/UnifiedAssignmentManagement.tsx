@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import PdfInlineViewer from "@/components/common/PdfInlineViewer";
+import { sessionConfigs } from "@/pages/hibrida-naratif/intervensi/HibridaIntervensiUnified";
+import { AssignmentFieldDisplayer } from "@/components/hibrida-naratif/fields/AssignmentFieldDisplayer";
 
 type ProgramType = "hibrida" | "psikoedukasi";
 
@@ -1364,29 +1366,55 @@ const UnifiedAssignmentManagement: React.FC = () => {
               <div className="bg-muted/50 rounded-lg p-4">
                 <h4 className="font-semibold mb-2">Jawaban Peserta:</h4>
                 <div className="bg-background p-3 rounded border max-h-[300px] overflow-y-auto">
-                    {selectedSubmission?.answers ? (
-                    <div className="space-y-2 text-sm">
-                        {Object.entries(selectedSubmission.answers).map(([key, value]) => (
-                        <div key={key}>
-                          <div className="font-medium">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</div>
-                          <div className="text-muted-foreground break-words">
-                            {typeof value === 'string' || typeof value === 'number' ? (
-                              String(value)
-                            ) : Array.isArray(value) ? (
-                              <ul className="list-disc pl-5">
-                                {value.map((v, i) => (
-                                  <li key={i} className="break-words">{typeof v === 'string' ? v : JSON.stringify(v)}</li>
-                                ))}
-                              </ul>
-                            ) : value && typeof value === 'object' ? (
-                              <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
-                            ) : (
-                              <span>-</span>
-                            )}
+                  {selectedSubmission?.answers ? (
+                    (() => {
+                      // Find session config based on session_number
+                      const sessionConfig = sessionConfigs[selectedSession?.number || 0];
+                      
+                      if (sessionConfig && sessionConfig.assignmentFields) {
+                        // Use field-aware renderer for proper display
+                        return (
+                          <div className="space-y-3">
+                            {sessionConfig.assignmentFields.map((field) => {
+                              const value = selectedSubmission.answers[field.key];
+                              return (
+                                <AssignmentFieldDisplayer
+                                  key={field.key}
+                                  field={field}
+                                  value={value}
+                                />
+                              );
+                            })}
                           </div>
+                        );
+                      }
+                      
+                      // Fallback to generic renderer if no config found
+                      return (
+                        <div className="space-y-2 text-sm">
+                          {Object.entries(selectedSubmission.answers).map(([key, value]) => (
+                            <div key={key}>
+                              <div className="font-medium">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</div>
+                              <div className="text-muted-foreground break-words">
+                                {typeof value === 'string' || typeof value === 'number' ? (
+                                  String(value)
+                                ) : Array.isArray(value) ? (
+                                  <ul className="list-disc pl-5">
+                                    {value.map((v, i) => (
+                                      <li key={i} className="break-words">{typeof v === 'string' ? v : JSON.stringify(v)}</li>
+                                    ))}
+                                  </ul>
+                                ) : value && typeof value === 'object' ? (
+                                  <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
+                                ) : (
+                                  <span>-</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })()
                   ) : (
                     <div className="text-sm text-muted-foreground">Tidak ada jawaban</div>
                   )}

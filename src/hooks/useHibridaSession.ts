@@ -240,12 +240,27 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
     if (!userId) return;
 
     try {
+      // Convert camelCase keys to snake_case for database
+      const snakeCaseMap: Record<string, string> = {
+        meetingDone: 'meeting_done',
+        assignmentDone: 'assignment_done',
+        sessionOpened: 'session_opened',
+        guidanceRead: 'guidance_read',
+        counselorResponse: 'counselor_response',
+      };
+      
+      const dbUpdates: Record<string, any> = {};
+      Object.keys(updates).forEach(key => {
+        const dbKey = snakeCaseMap[key] || key;
+        dbUpdates[dbKey] = updates[key];
+      });
+
       const { error } = await supabase
         .from("cbt_hibrida_user_progress" as any)
         .upsert({
           user_id: userId,
           session_number: sessionNumber,
-          ...updates
+          ...dbUpdates
         }, {
           onConflict: "user_id,session_number"
         });
@@ -262,7 +277,11 @@ export const useHibridaSession = (sessionNumber: number, userId: string | undefi
       
       const localUpdates: Partial<SessionProgress> = {};
       Object.keys(updates).forEach(key => {
-        if (camelCaseMap[key]) {
+        if (key in snakeCaseMap) {
+          // Already in camelCase
+          (localUpdates as any)[key] = updates[key];
+        } else if (camelCaseMap[key]) {
+          // In snake_case, convert to camelCase
           (localUpdates as any)[camelCaseMap[key]] = updates[key];
         }
       });

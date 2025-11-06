@@ -15,19 +15,36 @@ import { CounselorResponseDisplay } from "@/components/dashboard/hibrida-cbt/Cou
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { SessionConfig } from "@/types/hibridaAssignment";
+import { AssignmentFieldRenderer } from "@/components/hibrida-naratif/fields/AssignmentFieldRenderer";
+import { AssignmentFieldDisplayer } from "@/components/hibrida-naratif/fields/AssignmentFieldDisplayer";
 
 // Session configurations (untuk 8 sesi, tapi saat ini baru 2 yang ada datanya)
-export const sessionConfigs = [
+export const sessionConfigs: SessionConfig[] = [
   {
     // Pra-Sesi (Sesi 0)
     title: "Mengenal dan Materi Awal Layanan Ini",
     assignmentFields: [
-      { key: "read_overview_ack", label: "Saya sudah membaca dan mengetahui gambaran dari layanan ini", desc: "Mohon pilih Ya bila sudah membaca pengantar layanan.", type: "boolean" },
-      { key: "hopes", label: "Harapan saya setelah mengikuti layanan ini adalah", desc: "Tuliskan harapan Anda mengikuti layanan ini.", type: "text" },
-      { key: "commit_all", label: "Saya akan berusaha mengikuti seluruh tahapan dan sesi layanan ini dari awal hingga akhir", desc: "Komitmen mengikuti layanan hingga selesai.", type: "boolean" },
-      { key: "reason_no_commit", label: "Jika memilih Tidak, jelaskan alasannya", desc: "Alasan tidak berkomitmen mengikuti seluruh sesi.", type: "text", showIf: { key: "commit_all", equals: false } },
+      { 
+        key: "read_overview_ack", 
+        label: "Saya sudah membaca dan mengetahui gambaran dari layanan ini", 
+        desc: "Mohon pilih Ya bila sudah membaca pengantar layanan.", 
+        type: "boolean" 
+      },
+      { 
+        key: "hopes", 
+        label: "Harapan saya setelah mengikuti layanan ini adalah", 
+        desc: "Tuliskan harapan Anda mengikuti layanan ini.", 
+        type: "textarea",
+        placeholder: "Contoh: Saya berharap dapat mengelola stres dengan lebih baik..."
+      },
+      { 
+        key: "commit_all", 
+        label: "Saya akan berusaha mengikuti seluruh tahapan dan sesi layanan ini dari awal hingga akhir", 
+        desc: "Komitmen mengikuti layanan hingga selesai.", 
+        type: "boolean" 
+      },
     ],
-    defaultAssignment: { read_overview_ack: "", hopes: "", commit_all: "", reason_no_commit: "" },
     tips: [
       "Baca pengantar program terlebih dahulu.",
       "Tuliskan harapan secara spesifik.",
@@ -36,88 +53,342 @@ export const sessionConfigs = [
     guideDesc: "Pra-Sesi berisi pengantar layanan dan orientasi awal agar Anda memahami alur program sebelum memulai sesi inti.",
   },
   {
-    // Sesi 1
-    title: "Pengenalan Nilai Hibrida Naratif CBT",
+    // Sesi 1: Crisis Response Plan
+    title: "Rencana Respon Krisis",
     assignmentFields: [
-      { key: "situasi_pemicu", label: "Situasi Pemicu", desc: "Deskripsikan situasi yang memicu stres atau masalah kesehatan mental Anda." },
-      { key: "pikiran_otomatis", label: "Pikiran Otomatis", desc: "Apa pikiran otomatis yang muncul saat menghadapi situasi tersebut?" },
-      { key: "emosi", label: "Emosi yang Dirasakan", desc: "Emosi apa yang Anda rasakan? (cemas, sedih, marah, dll.)" },
-      { key: "perilaku", label: "Perilaku yang Muncul", desc: "Apa perilaku atau tindakan yang Anda lakukan sebagai respons?" },
-      { key: "coping.aktivitas", label: "Coping: Aktivitas Positif", desc: "Aktivitas positif apa yang bisa Anda lakukan untuk mengelola emosi?" },
-      { key: "coping.kontak", label: "Coping: Kontak Sosial", desc: "Siapa yang bisa Anda hubungi untuk mendapat dukungan?" },
-      { key: "coping.layanan", label: "Coping: Layanan Profesional", desc: "Layanan profesional apa yang tersedia untuk Anda?" },
-      { key: "coping.lingkungan", label: "Coping: Lingkungan Aman", desc: "Bagaimana menciptakan lingkungan yang aman dan mendukung?" },
-      { key: "teknik_metagora", label: "Teknik Metafora Spiritual", desc: "Gunakan metafora spiritual/budaya untuk menggambarkan perjalanan Anda." },
+      {
+        key: "warning_signs",
+        label: "1. Tanda-tanda Peringatan",
+        desc: "Tuliskan tanda-tanda yang menunjukkan Anda sedang mendekati krisis (pikiran, perasaan, atau perilaku).",
+        type: "textarea",
+        placeholder: "Contoh: Merasa sangat cemas, sulit tidur, pikiran negatif berulang..."
+      },
+      {
+        key: "internal_coping",
+        label: "2. Strategi Koping Internal",
+        desc: "Aktivitas yang bisa Anda lakukan sendiri untuk mengelola krisis (tanpa melibatkan orang lain).",
+        type: "textarea",
+        placeholder: "Contoh: Bernapas dalam, meditasi, menulis jurnal..."
+      },
+      {
+        key: "social_settings",
+        label: "3. Lingkungan Sosial yang Membantu",
+        desc: "Tempat atau situasi sosial yang dapat mengalihkan pikiran dari krisis.",
+        type: "textarea",
+        placeholder: "Contoh: Pergi ke taman, mengunjungi kafe favorit..."
+      },
+      {
+        key: "support_contacts",
+        label: "4. Kontak Pendukung",
+        desc: "Daftar orang yang bisa Anda hubungi untuk mendapat dukungan.",
+        type: "contact-list",
+        fields: [
+          { key: "keluarga", label: "Keluarga" },
+          { key: "teman", label: "Teman" },
+          { key: "konselor", label: "Konselor/Terapis" }
+        ]
+      },
+      {
+        key: "professional_help",
+        label: "5. Bantuan Profesional",
+        desc: "Layanan kesehatan mental profesional yang dapat Anda akses.",
+        type: "contact-list",
+        fields: [
+          { key: "layanan_krisis", label: "Layanan Krisis (Hotline)" },
+          { key: "dokter", label: "Dokter/Psikiater" },
+          { key: "rumah_sakit", label: "Rumah Sakit Terdekat" }
+        ]
+      },
+      {
+        key: "safe_environment",
+        label: "6. Menciptakan Lingkungan Aman",
+        desc: "Langkah-langkah untuk mengurangi akses ke benda berbahaya saat krisis.",
+        type: "textarea",
+        placeholder: "Contoh: Menyimpan obat-obatan di tempat aman, meminta keluarga menyimpan benda tajam..."
+      },
+      {
+        key: "reasons_to_live",
+        label: "7. Alasan untuk Terus Hidup",
+        desc: "Daftar hal-hal penting dalam hidup Anda yang memberikan makna dan motivasi.",
+        type: "numbered-list",
+        validation: {
+          minItems: 3,
+          maxItems: 10
+        }
+      },
+      {
+        key: "hope_statement",
+        label: "8. Pernyataan Harapan",
+        desc: "Tuliskan pernyataan positif yang dapat Anda ingat saat menghadapi krisis.",
+        type: "textarea",
+        placeholder: "Contoh: Masa sulit ini akan berlalu, saya lebih kuat dari yang saya kira..."
+      },
+      {
+        key: "beliefs",
+        label: "9. Keyakinan Spiritual/Budaya",
+        desc: "Keyakinan atau nilai spiritual/budaya yang memberi kekuatan saat menghadapi kesulitan.",
+        type: "nested-textarea",
+        subFields: [
+          { key: "keluarga", label: "Nilai Keluarga" },
+          { key: "harapan", label: "Harapan dan Makna Hidup" }
+        ]
+      },
+      {
+        key: "commitment",
+        label: "10. Komitmen Keselamatan",
+        desc: "Apakah Anda berkomitmen untuk menggunakan rencana ini saat menghadapi krisis?",
+        type: "boolean"
+      }
     ],
-    defaultAssignment: {
-      situasi_pemicu: "",
-      pikiran_otomatis: "",
-      emosi: "",
-      perilaku: "",
-      coping: { aktivitas: "", kontak: "", layanan: "", lingkungan: "" },
-      teknik_metagora: "",
-    },
     tips: [
-      "Jawab dengan jujur dan reflektif.",
-      "Gunakan contoh konkret dari pengalaman Anda.",
-      "Hubungkan dengan nilai spiritual/budaya Anda.",
+      "Jawab dengan jujur dan spesifik.",
+      "Pastikan nomor kontak yang ditulis aktif dan dapat dihubungi.",
+      "Simpan salinan rencana ini di tempat yang mudah diakses.",
+      "Tinjau dan perbarui rencana ini secara berkala."
     ],
-    guideDesc: "Sesi ini memperkenalkan konsep nilai spiritual dan budaya dalam konteks kesehatan mental. Anda akan mempelajari bagaimana mengidentifikasi pemicu stres dan mengembangkan strategi coping yang sesuai dengan nilai spiritual dan budaya Anda.",
+    guideDesc: "Sesi ini membantu Anda menyusun Rencana Respon Krisis yang komprehensif. Rencana ini adalah alat penting untuk mengidentifikasi tanda-tanda peringatan dan langkah-langkah yang dapat diambil untuk menjaga keselamatan Anda saat menghadapi krisis mental."
   },
   {
-    // Sesi 2
-    title: "Eksplorasi Identitas Kultural",
+    // Sesi 2: Pikiran Otomatis Negatif
+    title: "Mengenali Pikiran Otomatis Negatif",
     assignmentFields: [
-      { key: "doa_reflektif", label: "Doa Reflektif", desc: "Tuliskan doa atau refleksi spiritual Anda terkait perjalanan kesehatan mental." },
-      { key: "meditasi_nilai", label: "Meditasi Nilai", desc: "Catat pengalaman Anda dalam meditasi nilai-nilai spiritual yang penting bagi Anda." },
-      { key: "jurnal_spiritual", label: "Jurnal Spiritual", desc: "Tuliskan jurnal refleksi spiritual mingguan Anda." },
+      {
+        key: "automatic_thought",
+        label: "1. Pikiran Otomatis Negatif",
+        desc: "Tuliskan pikiran negatif yang sering muncul secara otomatis dalam pikiran Anda.",
+        type: "textarea",
+        placeholder: "Contoh: 'Saya tidak akan pernah berhasil', 'Semua orang membenci saya'..."
+      },
+      {
+        key: "trigger_situation",
+        label: "2. Situasi Pemicu",
+        desc: "Deskripsikan situasi atau kejadian yang memicu munculnya pikiran otomatis negatif tersebut.",
+        type: "textarea",
+        placeholder: "Contoh: Saat gagal dalam ujian, ditolak dalam interview kerja..."
+      },
+      {
+        key: "emotional_response",
+        label: "3. Respons Emosional",
+        desc: "Emosi apa yang Anda rasakan ketika pikiran negatif muncul?",
+        type: "checkbox-multiple",
+        options: [
+          "Sedih",
+          "Cemas",
+          "Marah",
+          "Takut",
+          "Malu",
+          "Bersalah",
+          "Putus asa"
+        ],
+        allowOther: true,
+        validation: {
+          minSelected: 1,
+          maxSelected: 5
+        }
+      },
+      {
+        key: "evidence_analysis",
+        label: "4. Analisis Bukti",
+        desc: "Analisis bukti untuk dan melawan pikiran otomatis negatif Anda.",
+        type: "nested-textarea",
+        subFields: [
+          { key: "mendukung", label: "Bukti yang mendukung pikiran negatif" },
+          { key: "melawan", label: "Bukti yang melawan pikiran negatif" }
+        ]
+      },
+      {
+        key: "alternative_thoughts",
+        label: "5. Pikiran Alternatif",
+        desc: "Daftar pikiran alternatif yang lebih seimbang dan realistis.",
+        type: "numbered-list",
+        validation: {
+          minItems: 2,
+          maxItems: 5
+        }
+      }
     ],
-    defaultAssignment: {
-      doa_reflektif: "",
-      meditasi_nilai: "",
-      jurnal_spiritual: "",
-    },
     tips: [
-      "Luangkan waktu untuk introspeksi mendalam.",
-      "Hubungkan dengan tradisi spiritual Anda.",
-      "Catat perubahan yang Anda rasakan.",
+      "Jujur pada diri sendiri saat mengidentifikasi pikiran negatif.",
+      "Cari bukti konkret, bukan asumsi.",
+      "Pikiran alternatif harus realistis, bukan hanya positif palsu.",
+      "Latih pikiran alternatif secara konsisten."
     ],
-    guideDesc: "Sesi ini mengajak Anda mengeksplorasi identitas kultural dan spiritual Anda lebih dalam. Melalui doa, meditasi, dan jurnal, Anda akan mengenali kekuatan spiritual sebagai sumber resiliensi.",
+    guideDesc: "Sesi ini membantu Anda mengenali dan menganalisis pikiran otomatis negatif yang sering muncul. Dengan memahami pola pikir negatif dan mengembangkan pikiran alternatif yang lebih seimbang, Anda dapat mengelola emosi dan perilaku dengan lebih baik."
   },
   {
-    // Sesi 3 - Placeholder (belum ada data lengkap)
-    title: "Integrasi Praktik Spiritual",
+    // Sesi 3: Restrukturisasi Kognitif
+    title: "Restrukturisasi Kognitif",
     assignmentFields: [
-      { key: "praktik_harian", label: "Praktik Spiritual Harian", desc: "Deskripsikan praktik spiritual yang Anda lakukan setiap hari." },
-      { key: "refleksi_dampak", label: "Refleksi Dampak", desc: "Bagaimana praktik ini memengaruhi kesehatan mental Anda?" },
-      { key: "tantangan", label: "Tantangan", desc: "Tantangan apa yang Anda hadapi dalam menjalankan praktik ini?" },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda." },
+      {
+        key: "cognitive_distortions",
+        label: "1. Identifikasi Distorsi Kognitif",
+        desc: "Identifikasi jenis-jenis distorsi kognitif yang sering Anda alami. Berikan contoh untuk setiap jenis.",
+        type: "table-builder",
+        columns: [
+          { key: "distorsi", label: "Jenis Distorsi" },
+          { key: "contoh", label: "Contoh Konkret" },
+          { key: "dampak", label: "Dampak pada Emosi/Perilaku" }
+        ],
+        validation: {
+          minRows: 2,
+          maxRows: 8
+        }
+      },
+      {
+        key: "thought_record",
+        label: "2. Catatan Pikiran",
+        desc: "Catat situasi, pikiran otomatis, emosi, dan respons alternatif.",
+        type: "table-builder",
+        columns: [
+          { key: "situasi", label: "Situasi" },
+          { key: "pikiran", label: "Pikiran Otomatis" },
+          { key: "emosi", label: "Emosi (0-100%)" },
+          { key: "alternatif", label: "Pikiran Alternatif" },
+          { key: "hasil", label: "Perubahan Emosi" }
+        ],
+        validation: {
+          minRows: 3,
+          maxRows: 10
+        }
+      },
+      {
+        key: "coping_cards",
+        label: "3. Kartu Koping",
+        desc: "Buat kartu-kartu koping yang berisi situasi sulit dan strategi mengatasinya.",
+        type: "repeatable-card",
+        cardLabel: "Kartu Koping",
+        cardFields: [
+          { key: "situasi", label: "Situasi Sulit", type: "textarea" },
+          { key: "pikiran_negatif", label: "Pikiran Negatif yang Muncul", type: "textarea" },
+          { key: "strategi_koping", label: "Strategi Koping", type: "textarea" },
+          { key: "afirmasi", label: "Afirmasi Positif", type: "textarea" }
+        ],
+        validation: {
+          minCards: 3,
+          maxCards: 8
+        }
+      },
+      {
+        key: "reflection",
+        label: "4. Refleksi Mingguan",
+        desc: "Refleksikan pengalaman Anda dalam mempraktikkan restrukturisasi kognitif selama seminggu.",
+        type: "textarea",
+        placeholder: "Tuliskan tantangan, keberhasilan, dan pembelajaran Anda..."
+      }
     ],
-    defaultAssignment: { praktik_harian: "", refleksi_dampak: "", tantangan: "", jurnal: "" },
-    tips: ["Konsisten dalam praktik.", "Catat perubahan kecil.", "Minta dukungan jika perlu."],
-    guideDesc: "Sesi ini fokus pada integrasi praktik spiritual dalam kehidupan sehari-hari.",
+    tips: [
+      "Kenali pola distorsi kognitif Anda.",
+      "Latih mencatat pikiran setiap hari.",
+      "Buat kartu koping yang mudah diakses (bisa difoto).",
+      "Evaluasi perubahan emosi sebelum dan sesudah restrukturisasi."
+    ],
+    guideDesc: "Sesi ini fokus pada teknik restrukturisasi kognitif yang lebih mendalam. Anda akan belajar mengidentifikasi distorsi kognitif, mencatat pikiran secara sistematis, dan membuat kartu koping praktis untuk mengelola situasi sulit dalam kehidupan sehari-hari."
   },
   {
-    // Sesi 4 - Placeholder
-    title: "Komunitas dan Dukungan Sosial",
+    // Sesi 4: Pencegahan Kekambuhan
+    title: "Strategi Pencegahan Kekambuhan",
     assignmentFields: [
-      { key: "komunitas", label: "Komunitas Spiritual", desc: "Deskripsikan komunitas spiritual/budaya yang Anda ikuti." },
-      { key: "dukungan", label: "Dukungan yang Diterima", desc: "Dukungan apa yang Anda terima dari komunitas?" },
-      { key: "kontribusi", label: "Kontribusi Anda", desc: "Apa yang bisa Anda kontribusikan untuk komunitas?" },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda." },
+      {
+        key: "relapse_warning_signs",
+        label: "1. Tanda-tanda Peringatan Kekambuhan",
+        desc: "Identifikasi tanda-tanda awal yang menunjukkan Anda mungkin mengalami kekambuhan.",
+        type: "numbered-list",
+        validation: {
+          minItems: 3,
+          maxItems: 10
+        }
+      },
+      {
+        key: "high_risk_situations",
+        label: "2. Situasi Berisiko Tinggi",
+        desc: "Daftar situasi atau kondisi yang meningkatkan risiko kekambuhan bagi Anda.",
+        type: "numbered-list",
+        validation: {
+          minItems: 3,
+          maxItems: 10
+        }
+      },
+      {
+        key: "coping_strategies",
+        label: "3. Strategi Koping untuk Situasi Berisiko",
+        desc: "Untuk setiap situasi berisiko, tentukan strategi koping spesifik.",
+        type: "table-builder",
+        columns: [
+          { key: "situasi", label: "Situasi Berisiko" },
+          { key: "tanda", label: "Tanda Peringatan" },
+          { key: "strategi", label: "Strategi Koping" },
+          { key: "dukungan", label: "Sumber Dukungan" }
+        ],
+        validation: {
+          minRows: 3,
+          maxRows: 10
+        }
+      },
+      {
+        key: "wellness_plan",
+        label: "4. Rencana Kesejahteraan Harian",
+        desc: "Aktivitas rutin yang membantu menjaga kesehatan mental Anda.",
+        type: "nested-textarea",
+        subFields: [
+          { key: "pagi", label: "Rutinitas Pagi" },
+          { key: "siang", label: "Aktivitas Siang" },
+          { key: "malam", label: "Rutinitas Malam" }
+        ]
+      },
+      {
+        key: "support_system",
+        label: "5. Sistem Dukungan",
+        desc: "Daftar orang atau layanan yang dapat Anda hubungi saat membutuhkan bantuan.",
+        type: "contact-list",
+        fields: [
+          { key: "keluarga", label: "Keluarga Terdekat" },
+          { key: "teman", label: "Teman Terpercaya" },
+          { key: "profesional", label: "Profesional Kesehatan Mental" },
+          { key: "peer_support", label: "Kelompok Dukungan Sebaya" }
+        ]
+      },
+      {
+        key: "action_plan",
+        label: "6. Rencana Tindakan Darurat",
+        desc: "Langkah-langkah konkret yang akan Anda ambil jika mengalami tanda-tanda kekambuhan.",
+        type: "numbered-list",
+        validation: {
+          minItems: 5,
+          maxItems: 10
+        }
+      },
+      {
+        key: "progress_tracking",
+        label: "7. Pelacakan Kemajuan",
+        desc: "Bagaimana Anda akan memantau dan mengevaluasi kemajuan kesehatan mental Anda?",
+        type: "textarea",
+        placeholder: "Contoh: Mengisi mood tracker harian, konsultasi rutin bulanan dengan terapis..."
+      },
+      {
+        key: "commitment_statement",
+        label: "8. Pernyataan Komitmen",
+        desc: "Tuliskan komitmen Anda untuk menjaga kesehatan mental dan mencegah kekambuhan.",
+        type: "textarea",
+        placeholder: "Contoh: Saya berkomitmen untuk mempraktikkan strategi yang telah saya pelajari..."
+      }
     ],
-    defaultAssignment: { komunitas: "", dukungan: "", kontribusi: "", jurnal: "" },
-    tips: ["Aktif dalam komunitas.", "Berbagi pengalaman.", "Belajar dari orang lain."],
-    guideDesc: "Sesi ini menekankan pentingnya komunitas dan dukungan sosial dalam perjalanan spiritual dan kesehatan mental.",
+    tips: [
+      "Kenali pola kekambuhan Anda dari pengalaman sebelumnya.",
+      "Buat rencana yang realistis dan spesifik.",
+      "Libatkan sistem dukungan dalam rencana Anda.",
+      "Tinjau dan perbarui rencana secara berkala.",
+      "Jangan ragu meminta bantuan profesional lebih awal."
+    ],
+    guideDesc: "Sesi ini membantu Anda menyusun strategi komprehensif untuk mencegah kekambuhan. Dengan mengidentifikasi tanda-tanda peringatan, situasi berisiko, dan memiliki rencana tindakan yang jelas, Anda dapat mempertahankan kesehatan mental jangka panjang dan merespons dengan cepat jika gejala mulai muncul kembali."
   },
   {
     // Sesi 5 - Placeholder
     title: "Mengatasi Stigma",
     assignmentFields: [
-      { key: "pengalaman_stigma", label: "Pengalaman Stigma", desc: "Deskripsikan pengalaman Anda dengan stigma kesehatan mental." },
-      { key: "strategi_mengatasi", label: "Strategi Mengatasi", desc: "Bagaimana Anda mengatasi stigma tersebut?" },
-      { key: "peran_spiritual", label: "Peran Spiritual", desc: "Bagaimana nilai spiritual membantu mengatasi stigma?" },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda." },
+      { key: "pengalaman_stigma", label: "Pengalaman Stigma", desc: "Deskripsikan pengalaman Anda dengan stigma kesehatan mental.", type: "textarea" },
+      { key: "strategi_mengatasi", label: "Strategi Mengatasi", desc: "Bagaimana Anda mengatasi stigma tersebut?", type: "textarea" },
+      { key: "peran_spiritual", label: "Peran Spiritual", desc: "Bagaimana nilai spiritual membantu mengatasi stigma?", type: "textarea" },
+      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda.", type: "textarea" },
     ],
     defaultAssignment: { pengalaman_stigma: "", strategi_mengatasi: "", peran_spiritual: "", jurnal: "" },
     tips: ["Jujur tentang pengalaman.", "Cari dukungan.", "Gunakan kekuatan spiritual."],
@@ -127,10 +398,10 @@ export const sessionConfigs = [
     // Sesi 6 - Placeholder
     title: "Resiliensi dan Pertumbuhan",
     assignmentFields: [
-      { key: "momen_sulit", label: "Momen Sulit", desc: "Deskripsikan momen sulit yang telah Anda lalui." },
-      { key: "pembelajaran", label: "Pembelajaran", desc: "Apa yang Anda pelajari dari pengalaman tersebut?" },
-      { key: "pertumbuhan", label: "Pertumbuhan Personal", desc: "Bagaimana Anda tumbuh dari pengalaman tersebut?" },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda." },
+      { key: "momen_sulit", label: "Momen Sulit", desc: "Deskripsikan momen sulit yang telah Anda lalui.", type: "textarea" },
+      { key: "pembelajaran", label: "Pembelajaran", desc: "Apa yang Anda pelajari dari pengalaman tersebut?", type: "textarea" },
+      { key: "pertumbuhan", label: "Pertumbuhan Personal", desc: "Bagaimana Anda tumbuh dari pengalaman tersebut?", type: "textarea" },
+      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda.", type: "textarea" },
     ],
     defaultAssignment: { momen_sulit: "", pembelajaran: "", pertumbuhan: "", jurnal: "" },
     tips: ["Fokus pada pertumbuhan.", "Hargai perjalanan Anda.", "Rayakan kemajuan kecil."],
@@ -140,10 +411,10 @@ export const sessionConfigs = [
     // Sesi 7 - Placeholder
     title: "Rencana Tindak Lanjut",
     assignmentFields: [
-      { key: "tujuan_jangka_pendek", label: "Tujuan Jangka Pendek", desc: "Apa tujuan Anda dalam 1-3 bulan ke depan?" },
-      { key: "tujuan_jangka_panjang", label: "Tujuan Jangka Panjang", desc: "Apa tujuan Anda dalam 6-12 bulan ke depan?" },
-      { key: "strategi_pencapaian", label: "Strategi Pencapaian", desc: "Bagaimana Anda akan mencapai tujuan tersebut?" },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda." },
+      { key: "tujuan_jangka_pendek", label: "Tujuan Jangka Pendek", desc: "Apa tujuan Anda dalam 1-3 bulan ke depan?", type: "textarea" },
+      { key: "tujuan_jangka_panjang", label: "Tujuan Jangka Panjang", desc: "Apa tujuan Anda dalam 6-12 bulan ke depan?", type: "textarea" },
+      { key: "strategi_pencapaian", label: "Strategi Pencapaian", desc: "Bagaimana Anda akan mencapai tujuan tersebut?", type: "textarea" },
+      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda.", type: "textarea" },
     ],
     defaultAssignment: { tujuan_jangka_pendek: "", tujuan_jangka_panjang: "", strategi_pencapaian: "", jurnal: "" },
     tips: ["Buat tujuan SMART.", "Mulai dari langkah kecil.", "Evaluasi secara berkala."],
@@ -153,11 +424,11 @@ export const sessionConfigs = [
     // Sesi 8 - Placeholder
     title: "Evaluasi dan Penutup",
     assignmentFields: [
-      { key: "refleksi_perjalanan", label: "Refleksi Perjalanan", desc: "Refleksikan seluruh perjalanan intervensi yang telah Anda lalui." },
-      { key: "perubahan_signifikan", label: "Perubahan Signifikan", desc: "Perubahan apa yang paling signifikan bagi Anda?" },
-      { key: "komitmen_kedepan", label: "Komitmen ke Depan", desc: "Apa komitmen Anda untuk terus merawat kesehatan mental?" },
-      { key: "pesan_untuk_diri", label: "Pesan untuk Diri Sendiri", desc: "Tuliskan pesan positif untuk diri Anda di masa depan." },
-      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda." },
+      { key: "refleksi_perjalanan", label: "Refleksi Perjalanan", desc: "Refleksikan seluruh perjalanan intervensi yang telah Anda lalui.", type: "textarea" },
+      { key: "perubahan_signifikan", label: "Perubahan Signifikan", desc: "Perubahan apa yang paling signifikan bagi Anda?", type: "textarea" },
+      { key: "komitmen_kedepan", label: "Komitmen ke Depan", desc: "Apa komitmen Anda untuk terus merawat kesehatan mental?", type: "textarea" },
+      { key: "pesan_untuk_diri", label: "Pesan untuk Diri Sendiri", desc: "Tuliskan pesan positif untuk diri Anda di masa depan.", type: "textarea" },
+      { key: "jurnal", label: "Jurnal Mingguan", desc: "Tuliskan refleksi mingguan Anda.", type: "textarea" },
     ],
     defaultAssignment: { refleksi_perjalanan: "", perubahan_signifikan: "", komitmen_kedepan: "", pesan_untuk_diri: "", jurnal: "" },
     tips: ["Rayakan pencapaian Anda.", "Hargai proses yang telah dilalui.", "Tetap terhubung dengan nilai spiritual."],
@@ -324,7 +595,7 @@ const HibridaIntervensiUnified: React.FC = () => {
       }
       try {
         const { data, error } = await supabase
-          .from('cbt_intervensi_user_progress' as any)
+          .from('cbt_hibrida_user_progress')
           .select('assignment_done')
           .eq('user_id', user.id)
           .eq('session_number', sessionNumber - 1)
@@ -378,15 +649,64 @@ const HibridaIntervensiUnified: React.FC = () => {
 
   const assignmentValid = useMemo(() => {
     if (!config?.assignmentFields) return false;
+    
     return config.assignmentFields.every((field: any) => {
-      // Respect conditional visibility (showIf)
-      if (field.showIf && field.showIf.key) {
-        const condVal = (getNestedValue(assignment, field.showIf.key) || '') as string;
-        const shouldShow = field.showIf.equals === false ? condVal === 'Tidak' : condVal === 'Ya';
-        if (!shouldShow) return true; // hidden => not required
+      const val = assignment[field.key];
+      
+      // Check field type and validate accordingly
+      switch (field.type) {
+        case "textarea":
+          return field.validation?.required ? (typeof val === 'string' && val.trim() !== '') : true;
+        
+        case "boolean":
+          return field.validation?.required ? (val === true || val === false) : true;
+        
+        case "nested-textarea":
+          if (!field.subFields) return true;
+          return field.subFields.every((sf: any) => 
+            typeof val?.[sf.key] === 'string' && val[sf.key].trim() !== ''
+          );
+        
+        case "checkbox-multiple":
+          if (!val || typeof val !== 'object') return false;
+          const minSelected = field.validation?.minSelected || 0;
+          return Array.isArray(val.selected) && val.selected.length >= minSelected;
+        
+        case "contact-list":
+          if (!field.contacts) return true;
+          // At least one contact should be filled
+          return field.contacts.some((c: any) => 
+            typeof val?.[c.key] === 'string' && val[c.key].trim() !== ''
+          );
+        
+        case "numbered-list":
+          const minItems = field.validation?.minItems || 0;
+          return Array.isArray(val) && val.length >= minItems && val.every((item: string) => item.trim() !== '');
+        
+        case "table-builder":
+          const minRows = field.validation?.minRows || 0;
+          if (!Array.isArray(val) || val.length < minRows) return false;
+          // Check that all rows have all columns filled
+          return val.every((row: any) => 
+            field.columns.every((col: any) => 
+              typeof row[col.key] === 'string' && row[col.key].trim() !== ''
+            )
+          );
+        
+        case "repeatable-card":
+          const minCards = field.validation?.minCards || 0;
+          if (!Array.isArray(val) || val.length < minCards) return false;
+          // Check that all cards have all fields filled
+          return val.every((card: any) =>
+            field.cardFields.every((cf: any) =>
+              typeof card[cf.key] === 'string' && card[cf.key].trim() !== ''
+            )
+          );
+        
+        default:
+          // Fallback for unknown types
+          return typeof val === 'string' && val.trim() !== '';
       }
-      const val = getNestedValue(assignment, field.key);
-      return typeof val === 'string' && val.trim() !== '';
     });
   }, [assignment, config]);
 
@@ -1026,15 +1346,13 @@ const HibridaIntervensiUnified: React.FC = () => {
                           </div>
                         </div>
                         {(config?.assignmentFields || []).map((field: any) => {
-                          const value = selectedHistoryItem.answers?.[field.key] || '';
+                          const value = selectedHistoryItem.answers?.[field.key];
                           return (
-                            <div key={field.key} className="mb-6">
-                              <label className="block text-sm font-semibold mb-1 text-gray-800">{field.label}</label>
-                              <div className="text-xs text-gray-600 mb-2 italic">{field.desc}</div>
-                              <div className="w-full rounded-lg border-2 border-gray-300 bg-gray-50 p-3 text-sm min-h-[80px]">
-                                {value || <span className="text-gray-400 italic">Tidak ada jawaban</span>}
-                              </div>
-                            </div>
+                            <AssignmentFieldDisplayer
+                              key={field.key}
+                              field={field}
+                              value={value}
+                            />
                           );
                         })}
                         {selectedHistoryItem.counselor_response && (
@@ -1059,85 +1377,15 @@ const HibridaIntervensiUnified: React.FC = () => {
                     {/* Form fields - only show in create new mode or when showing latest (not history) */}
                     {!isFetching && !showHistory && !selectedHistoryItem && (
                       <>
-                        {(config?.assignmentFields || []).map((field: any) => {
-                          const dependsVisible = field.showIf && field.showIf.key
-                            ? (field.showIf.equals === false
-                                ? (getNestedValue(assignment, field.showIf.key) || '') === 'Tidak'
-                                : (getNestedValue(assignment, field.showIf.key) || '') === 'Ya')
-                            : true;
-
-                          return (
-                            <div key={field.key} className="mb-6">
-                              <label className="block text-sm font-semibold mb-1 text-gray-800">{field.label}</label>
-                              <div className="text-xs text-gray-600 mb-2 italic">{field.desc}</div>
-                              {field.type === 'boolean' ? (
-                                <div className="flex gap-3">
-                                  <Button
-                                    type="button"
-                                    variant={(getNestedValue(assignment, field.key) || '') === 'Ya' ? 'default' : 'outline'}
-                                    className={(getNestedValue(assignment, field.key) || '') === 'Ya' ? 'bg-teal-600 text-white' : ''}
-                                    disabled={!isCreatingNew}
-                                    onClick={() => setAssignment((prev: any) => {
-                                      const next = setNestedValue({ ...prev }, field.key, 'Ya');
-                                      // If toggling commit_all to 'Ya', clear reason_no_commit
-                                      if (field.key === 'commit_all') {
-                                        setNestedValue(next, 'reason_no_commit', '');
-                                      }
-                                      return next;
-                                    })}
-                                  >
-                                    Ya
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant={(getNestedValue(assignment, field.key) || '') === 'Tidak' ? 'default' : 'outline'}
-                                    className={(getNestedValue(assignment, field.key) || '') === 'Tidak' ? 'bg-teal-600 text-white' : ''}
-                                    disabled={!isCreatingNew}
-                                    onClick={() => setAssignment((prev: any) => {
-                                      const next = setNestedValue({ ...prev }, field.key, 'Tidak');
-                                      // If toggling commit_all to 'Tidak', auto-fill reason when empty
-                                      if (field.key === 'commit_all') {
-                                        const reason = (getNestedValue(next, 'reason_no_commit') || '') as string;
-                                        if (!reason.trim()) setNestedValue(next, 'reason_no_commit', '-');
-                                      }
-                                      return next;
-                                    })}
-                                  >
-                                    Tidak
-                                  </Button>
-                                </div>
-                              ) : field.key === 'reason_no_commit' ? (
-                                dependsVisible ? (
-                                  <textarea
-                                    rows={3}
-                                    disabled={!isCreatingNew}
-                                    className={`w-full rounded-lg border p-3 text-sm transition-colors ${
-                                      isCreatingNew 
-                                        ? 'border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white' 
-                                        : 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
-                                    }`}
-                                    placeholder="Jelaskan alasan Anda di sini..."
-                                    value={getNestedValue(assignment, 'reason_no_commit') || ''}
-                                    onChange={e => setAssignment((prev: any) => setNestedValue(prev, 'reason_no_commit', e.target.value))}
-                                  />
-                                ) : null
-                              ) : (
-                                <textarea
-                                  rows={3}
-                                  disabled={!isCreatingNew}
-                                  className={`w-full rounded-lg border p-3 text-sm transition-colors ${
-                                    isCreatingNew 
-                                      ? 'border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white' 
-                                      : 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
-                                  }`}
-                                  placeholder={isCreatingNew ? `Tulis ${field.label.toLowerCase()} Anda di sini...` : ''}
-                                  value={getNestedValue(assignment, field.key) || ''}
-                                  onChange={e => setAssignment((prev: any) => setNestedValue(prev, field.key, e.target.value))}
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
+                        {(config?.assignmentFields || []).map((field: any) => (
+                          <AssignmentFieldRenderer
+                            key={field.key}
+                            field={field}
+                            value={assignment[field.key]}
+                            onChange={(value) => setAssignment((prev: any) => ({ ...prev, [field.key]: value }))}
+                            disabled={!isCreatingNew}
+                          />
+                        ))}
                         
                         {/* Submit button - only show in create new mode */}
                         {isCreatingNew && (
