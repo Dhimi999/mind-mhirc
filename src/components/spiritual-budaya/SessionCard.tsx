@@ -44,7 +44,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
               {session}
             </div>
             <h3 className="font-semibold text-base sm:text-lg">
-              {session === 0 ? 'Pra-Sesi' : `Sesi ${session}`}: {title}
+              Sesi {session}: {title}
             </h3>
             <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-medium border border-gray-200">
               <span>📝</span>

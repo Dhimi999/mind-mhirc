@@ -26,7 +26,7 @@ export const useSpiritualIntervensiSession = (sessionNumber: number) => {
   const [lastAutoSaveAt, setLastAutoSaveAt] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!user?.id || sessionNumber === undefined || sessionNumber === null || Number.isNaN(sessionNumber)) {
+    if (!user?.id || !sessionNumber) {
       setLoading(false);
       return;
     }
