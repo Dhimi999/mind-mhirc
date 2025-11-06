@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ClipboardList, ArrowLeft, FileText, Download, Send, Users, Upload, Trash2, Edit, ExternalLink, BookOpen, CheckCircle, UserCheck, SendHorizontal, Link as LinkIcon, Plus, X, ChevronLeft, ChevronRight, MessageCircle, Globe, Folder, Link2, PlayCircle, Eye, EyeOff, EyeIcon } from "lucide-react";
+import { ClipboardList, ArrowLeft, FileText, Download, Send, Users, Upload, Trash2, Edit, ExternalLink, BookOpen, CheckCircle, UserCheck, SendHorizontal, Link as LinkIcon, Plus, X, ChevronLeft, ChevronRight, MessageCircle, Globe, Folder, Link2, PlayCircle, Eye, EyeOff, EyeIcon, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -120,6 +124,24 @@ const UnifiedAssignmentManagement: React.FC = () => {
   // Bulk response state
   const [isBulkResponseOpen, setIsBulkResponseOpen] = useState(false);
   const [bulkResponse, setBulkResponse] = useState("");
+  const [showBulkConfirmation, setShowBulkConfirmation] = useState(false);
+  const [bulkResponseStats, setBulkResponseStats] = useState<{
+    total: number;
+    withExistingResponse: number;
+    withoutResponse: number;
+  }>({ total: 0, withExistingResponse: 0, withoutResponse: 0 });
+  const [skipExistingResponses, setSkipExistingResponses] = useState(false);
+  const [bulkResponseProgress, setBulkResponseProgress] = useState<{
+    current: number;
+    total: number;
+    isProcessing: boolean;
+  }>({ current: 0, total: 0, isProcessing: false });
+  
+  // Custom selection state
+  const [submissionNumberFilter, setSubmissionNumberFilter] = useState<"all" | "latest" | "1" | "2" | "3" | "4" | "5" | "6" | "7">("latest");
+  const [bulkGroupFilter, setBulkGroupFilter] = useState<"all" | "A" | "B" | "C" | "none">("all");
+  const [selectedRecipients, setSelectedRecipients] = useState<Set<string>>(new Set());
+  const [selectAllRecipients, setSelectAllRecipients] = useState(true);
 
   // Participant list state
   const [allParticipants, setAllParticipants] = useState<UserProfile[]>([]);
@@ -616,42 +638,186 @@ const UnifiedAssignmentManagement: React.FC = () => {
     }
   };
 
+  // Helper function to get target submissions based on filters
+  const getFilteredSubmissions = () => {
+    const filtered: Submission[] = [];
+
+    assignments.forEach(assignment => {
+      const userSubmissions = submissionsByUser[assignment.user_id];
+      if (!userSubmissions || userSubmissions.length === 0) return;
+
+      // Apply group filter
+      const userGroup = groups[assignment.user_id];
+      if (bulkGroupFilter !== "all") {
+        if (bulkGroupFilter === "none" && userGroup !== null) return;
+        if (bulkGroupFilter !== "none" && userGroup !== bulkGroupFilter) return;
+      }
+
+      // Apply submission number filter
+      let targetSubmission: Submission | null = null;
+      
+      if (submissionNumberFilter === "latest") {
+        targetSubmission = userSubmissions[0]; // Already sorted by submitted_at desc
+      } else if (submissionNumberFilter === "all") {
+        // For "all", we take the latest submission
+        targetSubmission = userSubmissions[0];
+      } else {
+        // Specific submission number (1-7)
+        const submissionNum = parseInt(submissionNumberFilter);
+        targetSubmission = userSubmissions.find(s => s.submission_number === submissionNum) || null;
+      }
+
+      if (targetSubmission) {
+        filtered.push(targetSubmission);
+      }
+    });
+
+    return filtered;
+  };
+
+  const prepareBulkResponse = () => {
+    if (!selectedSession || !bulkResponse.trim()) {
+      toast.error("Respons tidak boleh kosong");
+      return;
+    }
+
+    // Get filtered submissions based on custom filters
+    const targetSubmissions = getFilteredSubmissions();
+    
+    let withExisting = 0;
+    let withoutResponse = 0;
+
+    targetSubmissions.forEach(submission => {
+      if (submission.counselor_response && submission.counselor_response.trim()) {
+        withExisting++;
+      } else {
+        withoutResponse++;
+      }
+    });
+
+    // Initialize selected recipients (all selected by default)
+    const recipientIds = new Set(targetSubmissions.map(s => s.user_id));
+    setSelectedRecipients(recipientIds);
+    setSelectAllRecipients(true);
+
+    setBulkResponseStats({
+      total: targetSubmissions.length,
+      withExistingResponse: withExisting,
+      withoutResponse: withoutResponse
+    });
+
+    setShowBulkConfirmation(true);
+  };
+
   const handleBulkResponse = async () => {
     if (!selectedSession || !bulkResponse.trim()) {
       toast.error("Respons tidak boleh kosong");
       return;
     }
 
+    if (selectedRecipients.size === 0) {
+      toast.error("Pilih minimal satu penerima");
+      return;
+    }
+
     try {
+      setShowBulkConfirmation(false);
+      
       const submissionTable = selectedSession.program === "hibrida" 
         ? "cbt_hibrida_submission_history" 
         : "cbt_psikoedukasi_submission_history";
       
-      // For bulk response, respond to the latest submission of each user
-      const latestSubmissions: Submission[] = [];
-      assignments.forEach(assignment => {
-        const userSubmissions = submissionsByUser[assignment.user_id];
-        if (userSubmissions && userSubmissions.length > 0) {
-          latestSubmissions.push(userSubmissions[0]); // Latest submission
-        }
-      });
+      // Get filtered submissions and apply recipient selection
+      const targetSubmissions = getFilteredSubmissions().filter(
+        submission => selectedRecipients.has(submission.user_id)
+      );
 
-      for (const submission of latestSubmissions) {
-        await supabase
-          .from(submissionTable as any)
-          .update({
-            counselor_response: bulkResponse,
-            counselor_name: user?.full_name || "Konselor",
-            responded_at: new Date().toISOString()
-          })
-          .eq("id", submission.id);
+      // Apply skip existing responses logic
+      const submissionsToUpdate = skipExistingResponses
+        ? targetSubmissions.filter(s => !s.counselor_response || !s.counselor_response.trim())
+        : targetSubmissions;
+
+      if (submissionsToUpdate.length === 0) {
+        toast.info("Tidak ada submisi yang perlu diupdate");
+        return;
       }
 
-      toast.success(`Respons berhasil dikirim ke ${latestSubmissions.length} peserta`);
+      // Set progress tracking
+      setBulkResponseProgress({
+        current: 0,
+        total: submissionsToUpdate.length,
+        isProcessing: true
+      });
+
+      const successUpdates: string[] = [];
+      const failedUpdates: { userId: string; userName: string; error: string }[] = [];
+
+      for (let i = 0; i < submissionsToUpdate.length; i++) {
+        const submission = submissionsToUpdate[i];
+        
+        try {
+          const { error } = await supabase
+            .from(submissionTable as any)
+            .update({
+              counselor_response: bulkResponse,
+              counselor_name: user?.full_name || "Konselor",
+              responded_at: new Date().toISOString()
+            })
+            .eq("id", submission.id);
+
+          if (error) throw error;
+          
+          successUpdates.push(submission.user_id);
+          
+          // Update progress
+          setBulkResponseProgress({
+            current: i + 1,
+            total: submissionsToUpdate.length,
+            isProcessing: true
+          });
+        } catch (err: any) {
+          const userName = profiles[submission.user_id]?.full_name || "Unknown";
+          failedUpdates.push({
+            userId: submission.user_id,
+            userName: userName,
+            error: err.message || "Unknown error"
+          });
+        }
+      }
+
+      // Reset progress
+      setBulkResponseProgress({
+        current: 0,
+        total: 0,
+        isProcessing: false
+      });
+
+      // Show results
+      if (failedUpdates.length === 0) {
+        toast.success(`Respons berhasil dikirim ke ${successUpdates.length} peserta`);
+      } else {
+        toast.warning(
+          `Berhasil: ${successUpdates.length}, Gagal: ${failedUpdates.length}. Periksa console untuk detail.`,
+          { duration: 5000 }
+        );
+        console.error("Failed bulk response updates:", failedUpdates);
+      }
+
       setIsBulkResponseOpen(false);
       setBulkResponse("");
+      setSkipExistingResponses(false);
+      setSubmissionNumberFilter("latest");
+      setBulkGroupFilter("all");
+      setSelectedRecipients(new Set());
+      setSelectAllRecipients(true);
+      
       if (selectedSession) fetchSessionAssignments(selectedSession);
     } catch (error: any) {
+      setBulkResponseProgress({
+        current: 0,
+        total: 0,
+        isProcessing: false
+      });
       toast.error("Gagal mengirim respons massal");
       console.error(error);
     }
@@ -1202,7 +1368,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
                 <tr>
                   <th className="text-left p-4 font-medium w-16">No.</th>
                   <th className="text-left p-4 font-medium">Nama Peserta</th>
-                  <th className="text-left p-4 font-medium">Program</th>
+                  <th className="text-left p-4 font-medium">Jawaban Dikirim</th>
                   <th className="text-left p-4 font-medium">Kelompok</th>
                   <th className="text-left p-4 font-medium">Status</th>
                   <th className="text-left p-4 font-medium">Aksi</th>
@@ -1254,27 +1420,24 @@ const UnifiedAssignmentManagement: React.FC = () => {
                         <tr key={assignment.id} className="hover:bg-muted/30">
                           <td className="p-4 text-sm text-muted-foreground">{idx + 1}</td>
                           <td className="p-4">
-                              <div className="flex flex-col">
-                                <div className="flex items-center gap-2">
-                                  <span>{profiles[assignment.user_id]?.full_name || "Tidak diketahui"}</span>
-                                  {assignment.submission_count && assignment.submission_count > 1 && (
-                                    <Badge variant="secondary" className="text-xs text-green-900 bg-green-300 hover:bg-green-600 hover:text-white px-2 py-2">
-                                      {assignment.submission_count}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="mt-1 text-xs text-muted-foreground">
-                                  {(() => {
-                                    const last = (submissionsByUser[assignment.user_id] || [])[0];
-                                    return last?.submitted_at
-                                      ? <>Terakhir: {new Date(last.submitted_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</>
-                                      : null;
-                                  })()}
-                                </div>
-                              </div>
+                            <span className="font-medium">{profiles[assignment.user_id]?.full_name || "Tidak diketahui"}</span>
                           </td>
                           <td className="p-4">
-                            {selectedSession?.program === "hibrida" ? "HN-CBT" : "Psikoedukasi"}
+                            <div className="flex flex-col gap-1">
+                              {assignment.submission_count && assignment.submission_count > 0 && (
+                                <Badge variant="secondary" className="text-xs text-green-900 bg-green-300 hover:bg-green-600 hover:text-white px-2 py-1 w-fit">
+                                  {assignment.submission_count} {assignment.submission_count === 1 ? 'jawaban' : 'jawaban'}
+                                </Badge>
+                              )}
+                              {(() => {
+                                const last = (submissionsByUser[assignment.user_id] || [])[0];
+                                return last?.submitted_at ? (
+                                  <span className="text-xs text-muted-foreground">
+                                    Terakhir: {new Date(last.submitted_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
                           </td>
                           <td className="p-4">{groupLabel}</td>
                           <td className="p-4">
@@ -1452,28 +1615,304 @@ const UnifiedAssignmentManagement: React.FC = () => {
 
         {/* Bulk Response Dialog */}
         <Dialog open={isBulkResponseOpen} onOpenChange={setIsBulkResponseOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle>Kirim Respons ke Semua Peserta</DialogTitle>
+              <DialogTitle>Kirim Respons ke Semua Peserta - Custom Selection</DialogTitle>
               <DialogDescription>
-                Respons ini akan dikirim ke {assignments.length} peserta yang telah mengumpulkan tugas.
+                Pilih kriteria pengiriman dan penerima yang akan menerima respons
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-              <Textarea
-                rows={8}
-                placeholder="Tulis respons universal untuk semua peserta..."
-                value={bulkResponse}
-                onChange={(e) => setBulkResponse(e.target.value)}
-              />
-            </div>
+            <ScrollArea className="max-h-[calc(90vh-200px)] pr-4">
+              <div className="py-4 space-y-6">
+                {/* Response Text */}
+                <div>
+                  <Label htmlFor="bulk-response">Respons Universal</Label>
+                  <Textarea
+                    id="bulk-response"
+                    rows={6}
+                    placeholder="Tulis respons universal untuk peserta yang dipilih..."
+                    value={bulkResponse}
+                    onChange={(e) => setBulkResponse(e.target.value)}
+                    disabled={bulkResponseProgress.isProcessing}
+                  />
+                </div>
+
+                {/* Custom Selection Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg border">
+                  <div className="space-y-2">
+                    <Label htmlFor="submission-filter">Pilih Nomor Jawaban</Label>
+                    <Select 
+                      value={submissionNumberFilter} 
+                      onValueChange={(val) => setSubmissionNumberFilter(val as any)}
+                      disabled={bulkResponseProgress.isProcessing}
+                    >
+                      <SelectTrigger id="submission-filter">
+                        <SelectValue placeholder="Pilih jawaban..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="latest">Jawaban Paling Akhir</SelectItem>
+                        <SelectItem value="all">Semua Jawaban (Latest per User)</SelectItem>
+                        <SelectItem value="1">Jawaban #1</SelectItem>
+                        <SelectItem value="2">Jawaban #2</SelectItem>
+                        <SelectItem value="3">Jawaban #3</SelectItem>
+                        <SelectItem value="4">Jawaban #4</SelectItem>
+                        <SelectItem value="5">Jawaban #5</SelectItem>
+                        <SelectItem value="6">Jawaban #6</SelectItem>
+                        <SelectItem value="7">Jawaban #7</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Tentukan jawaban keberapa yang akan menerima respons
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="group-filter">Filter Grup</Label>
+                    <Select 
+                      value={bulkGroupFilter} 
+                      onValueChange={(val) => setBulkGroupFilter(val as any)}
+                      disabled={bulkResponseProgress.isProcessing}
+                    >
+                      <SelectTrigger id="group-filter">
+                        <SelectValue placeholder="Pilih grup..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Grup</SelectItem>
+                        <SelectItem value="A">Grup A</SelectItem>
+                        <SelectItem value="B">Grup B</SelectItem>
+                        <SelectItem value="C">Grup C</SelectItem>
+                        <SelectItem value="none">Tanpa Grup</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Batasi pengiriman berdasarkan grup peserta
+                    </p>
+                  </div>
+                </div>
+
+                {/* Skip existing responses option */}
+                <div className="flex items-center space-x-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <Checkbox
+                    id="skip-existing"
+                    checked={skipExistingResponses}
+                    onCheckedChange={(checked) => setSkipExistingResponses(checked as boolean)}
+                    disabled={bulkResponseProgress.isProcessing}
+                  />
+                  <Label 
+                    htmlFor="skip-existing" 
+                    className="text-sm font-normal cursor-pointer flex-1"
+                  >
+                    Lewati peserta yang sudah memiliki respons (hanya kirim ke yang belum direspons)
+                  </Label>
+                </div>
+
+                {/* Progress bar */}
+                {bulkResponseProgress.isProcessing && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Mengirim respons...</span>
+                      <span>{bulkResponseProgress.current} / {bulkResponseProgress.total}</span>
+                    </div>
+                    <Progress 
+                      value={(bulkResponseProgress.current / bulkResponseProgress.total) * 100} 
+                      className="h-2"
+                    />
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsBulkResponseOpen(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsBulkResponseOpen(false);
+                  setBulkResponse("");
+                  setSkipExistingResponses(false);
+                  setSubmissionNumberFilter("latest");
+                  setBulkGroupFilter("all");
+                  setSelectedRecipients(new Set());
+                  setSelectAllRecipients(true);
+                }}
+                disabled={bulkResponseProgress.isProcessing}
+              >
                 Batal
               </Button>
-              <Button onClick={handleBulkResponse} className="bg-teal-600 hover:bg-teal-700">
+              <Button 
+                onClick={prepareBulkResponse} 
+                className="bg-teal-600 hover:bg-teal-700"
+                disabled={bulkResponseProgress.isProcessing || !bulkResponse.trim()}
+              >
                 <Send className="h-4 w-4 mr-2" />
-                Kirim ke Semua
+                Lanjutkan ke Preview
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Confirmation Dialog with Recipient Selection */}
+        <Dialog open={showBulkConfirmation} onOpenChange={setShowBulkConfirmation}>
+          <DialogContent className="max-w-3xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Konfirmasi dan Pilih Penerima
+              </DialogTitle>
+              <DialogDescription>
+                Pilih peserta yang akan menerima respons
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[calc(90vh-250px)]">
+              <div className="py-4 space-y-4">
+                {/* Summary */}
+                <div className="p-4 bg-slate-50 rounded-lg border space-y-2">
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium text-base mb-2">Ringkasan Pengiriman:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Filter Jawaban:</span>
+                        <Badge variant="outline">
+                          {submissionNumberFilter === "latest" ? "Paling Akhir" : 
+                           submissionNumberFilter === "all" ? "Semua" : 
+                           `Jawaban #${submissionNumberFilter}`}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Filter Grup:</span>
+                        <Badge variant="outline">
+                          {bulkGroupFilter === "all" ? "Semua Grup" :
+                           bulkGroupFilter === "none" ? "Tanpa Grup" :
+                           `Grup ${bulkGroupFilter}`}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t mt-2">
+                      <p>• Total penerima yang memenuhi kriteria: <strong>{bulkResponseStats.total}</strong> peserta</p>
+                      <p>• Dipilih untuk dikirim: <strong>{selectedRecipients.size}</strong> peserta</p>
+                      {!skipExistingResponses && (
+                        <>
+                          <p>• Belum direspons: <strong>{bulkResponseStats.withoutResponse}</strong> peserta</p>
+                          <p className="text-amber-600">• Sudah direspons (akan ditimpa): <strong>{bulkResponseStats.withExistingResponse}</strong> peserta</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {!skipExistingResponses && bulkResponseStats.withExistingResponse > 0 && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-sm text-amber-800">
+                        <AlertTriangle className="h-4 w-4 inline mr-1" />
+                        <strong>Peringatan:</strong> Beberapa respons yang sudah ada akan ditimpa dengan respons baru ini.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recipient List with Checkboxes */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">Daftar Penerima</Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="select-all-recipients"
+                        checked={selectAllRecipients}
+                        onCheckedChange={(checked) => {
+                          setSelectAllRecipients(checked as boolean);
+                          if (checked) {
+                            const allIds = getFilteredSubmissions().map(s => s.user_id);
+                            setSelectedRecipients(new Set(allIds));
+                          } else {
+                            setSelectedRecipients(new Set());
+                          }
+                        }}
+                      />
+                      <Label htmlFor="select-all-recipients" className="text-sm font-normal cursor-pointer">
+                        Pilih Semua
+                      </Label>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+                    {getFilteredSubmissions().map((submission) => {
+                      const userName = profiles[submission.user_id]?.full_name || "Unknown";
+                      const userGroup = groups[submission.user_id];
+                      const hasResponse = submission.counselor_response && submission.counselor_response.trim();
+                      const isSelected = selectedRecipients.has(submission.user_id);
+
+                      return (
+                        <div 
+                          key={submission.id} 
+                          className={`flex items-center gap-3 p-3 hover:bg-slate-50 ${hasResponse ? 'bg-amber-50/30' : ''}`}
+                        >
+                          <Checkbox
+                            id={`recipient-${submission.user_id}`}
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              const newSelected = new Set(selectedRecipients);
+                              if (checked) {
+                                newSelected.add(submission.user_id);
+                              } else {
+                                newSelected.delete(submission.user_id);
+                                setSelectAllRecipients(false);
+                              }
+                              setSelectedRecipients(newSelected);
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Label 
+                                htmlFor={`recipient-${submission.user_id}`}
+                                className="font-medium cursor-pointer"
+                              >
+                                {userName}
+                              </Label>
+                              {userGroup && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Grup {userGroup}
+                                </Badge>
+                              )}
+                              <Badge variant="outline" className="text-xs">
+                                Jawaban #{submission.submission_number}
+                              </Badge>
+                              {hasResponse && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Akan Ditimpa
+                                </Badge>
+                              )}
+                            </div>
+                            {hasResponse && submission.counselor_name && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Respons sebelumnya oleh: {submission.counselor_name}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {getFilteredSubmissions().length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Tidak ada peserta yang memenuhi kriteria filter</p>
+                      <p className="text-sm mt-1">Coba ubah filter jawaban atau grup</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </ScrollArea>
+            <DialogFooter className="gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowBulkConfirmation(false)}
+              >
+                Kembali
+              </Button>
+              <Button 
+                onClick={handleBulkResponse}
+                className="bg-teal-600 hover:bg-teal-700"
+                disabled={selectedRecipients.size === 0}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Kirim ke {selectedRecipients.size} Peserta
               </Button>
             </DialogFooter>
           </DialogContent>
