@@ -37,7 +37,7 @@ export const sessionConfigs = [
   },
   {
     // Sesi 1
-    title: "Pengenalan Nilai Spiritual & Budaya",
+    title: "Identitas Budaya Dan Makna Diri",
     assignmentFields: [
       { key: "situasi_pemicu", label: "Situasi Pemicu", desc: "Deskripsikan situasi yang memicu stres atau masalah kesehatan mental Anda." },
       { key: "pikiran_otomatis", label: "Pikiran Otomatis", desc: "Apa pikiran otomatis yang muncul saat menghadapi situasi tersebut?" },
@@ -66,7 +66,7 @@ export const sessionConfigs = [
   },
   {
     // Sesi 2
-    title: "Eksplorasi Identitas Kultural",
+    title: "Spiritualitas Sebagai Pilar Harapan",
     assignmentFields: [
       { key: "doa_reflektif", label: "Doa Reflektif", desc: "Tuliskan doa atau refleksi spiritual Anda terkait perjalanan kesehatan mental." },
       { key: "meditasi_nilai", label: "Meditasi Nilai", desc: "Catat pengalaman Anda dalam meditasi nilai-nilai spiritual yang penting bagi Anda." },
@@ -86,7 +86,7 @@ export const sessionConfigs = [
   },
   {
     // Sesi 3 - Placeholder (belum ada data lengkap)
-    title: "Integrasi Praktik Spiritual",
+    title: "Ekspresi Emosi Melalui Budaya",
     assignmentFields: [
       { key: "praktik_harian", label: "Praktik Spiritual Harian", desc: "Deskripsikan praktik spiritual yang Anda lakukan setiap hari." },
       { key: "refleksi_dampak", label: "Refleksi Dampak", desc: "Bagaimana praktik ini memengaruhi kesehatan mental Anda?" },
@@ -99,7 +99,7 @@ export const sessionConfigs = [
   },
   {
     // Sesi 4 - Placeholder
-    title: "Komunitas dan Dukungan Sosial",
+    title: "Mengurai Stigma Melalui Nilai Komunitas",
     assignmentFields: [
       { key: "komunitas", label: "Komunitas Spiritual", desc: "Deskripsikan komunitas spiritual/budaya yang Anda ikuti." },
       { key: "dukungan", label: "Dukungan yang Diterima", desc: "Dukungan apa yang Anda terima dari komunitas?" },
@@ -112,7 +112,7 @@ export const sessionConfigs = [
   },
   {
     // Sesi 5 - Placeholder
-    title: "Mengatasi Stigma",
+    title: "Peran Komunitas dalam Dukungan Emosional",
     assignmentFields: [
       { key: "pengalaman_stigma", label: "Pengalaman Stigma", desc: "Deskripsikan pengalaman Anda dengan stigma kesehatan mental." },
       { key: "strategi_mengatasi", label: "Strategi Mengatasi", desc: "Bagaimana Anda mengatasi stigma tersebut?" },
@@ -125,7 +125,7 @@ export const sessionConfigs = [
   },
   {
     // Sesi 6 - Placeholder
-    title: "Resiliensi dan Pertumbuhan",
+    title: "Ritual dan Tradisi Sebagai Media Kesembuhan",
     assignmentFields: [
       { key: "momen_sulit", label: "Momen Sulit", desc: "Deskripsikan momen sulit yang telah Anda lalui." },
       { key: "pembelajaran", label: "Pembelajaran", desc: "Apa yang Anda pelajari dari pengalaman tersebut?" },
@@ -138,7 +138,7 @@ export const sessionConfigs = [
   },
   {
     // Sesi 7 - Placeholder
-    title: "Rencana Tindak Lanjut",
+    title: "Literasi Spiritual dan Budaya Kesehatan Jiwa",
     assignmentFields: [
       { key: "tujuan_jangka_pendek", label: "Tujuan Jangka Pendek", desc: "Apa tujuan Anda dalam 1-3 bulan ke depan?" },
       { key: "tujuan_jangka_panjang", label: "Tujuan Jangka Panjang", desc: "Apa tujuan Anda dalam 6-12 bulan ke depan?" },
@@ -151,7 +151,7 @@ export const sessionConfigs = [
   },
   {
     // Sesi 8 - Placeholder
-    title: "Evaluasi dan Penutup",
+    title: "Komitmen Hidup dan Prospek Masa Depan",
     assignmentFields: [
       { key: "refleksi_perjalanan", label: "Refleksi Perjalanan", desc: "Refleksikan seluruh perjalanan intervensi yang telah Anda lalui." },
       { key: "perubahan_signifikan", label: "Perubahan Signifikan", desc: "Perubahan apa yang paling signifikan bagi Anda?" },

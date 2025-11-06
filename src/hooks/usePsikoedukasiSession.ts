@@ -24,6 +24,8 @@ export interface MeetingSchedule {
   guidance_links: Array<{ title: string; url: string }> | null;
   group_key_used?: 'A' | 'B' | 'C' | null;
   has_group_schedules?: boolean;
+  start_time?: string | null;
+  end_time?: string | null;
 }
 
 export const usePsikoedukasiSession = (sessionNumber: number, userId: string | undefined) => {
@@ -116,16 +118,50 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
           if (!raw) return null as any;
           try { return JSON.parse(raw); } catch { return null as any; }
         };
-        const rawLink: string | null = (meetingData as any).link;
-        let parsed = tryParse(rawLink);
-        if (!parsed && rawLink) {
-          try { parsed = tryParse(decodeURIComponent(rawLink)); } catch {}
+        
+        // Helper to convert dot notation time (HH.mm) to colon notation (HH:mm)
+        const dotToColon = (timeStr: string | null | undefined) => {
+          if (!timeStr) return '';
+          return timeStr.replace('.', ':');
+        };
+        
+        const rawLinkAny = (meetingData as any).link;
+        const rawTimeAny = (meetingData as any).time;
+        const rawLink: any = rawLinkAny;
+        const rawTime: any = rawTimeAny;
+        
+        let parsed: any = null;
+        if (rawLink && typeof rawLink === 'object') {
+          parsed = rawLink;
+        } else {
+          parsed = tryParse(rawLink as string | null);
         }
+        if (!parsed && rawLink) {
+          try { parsed = tryParse(decodeURIComponent(rawLink as string)); } catch {}
+        }
+        
+        // Parse time JSON if it's not a group schedule
+        let parsedTime: any = null;
+        if (rawTime && typeof rawTime === 'object') {
+          parsedTime = rawTime;
+        } else {
+          parsedTime = tryParse(rawTime as string | null);
+        }
+        let start_time: string | null = null;
+        let end_time: string | null = null;
+        
+        // If time is JSON with start/end fields, extract them
+        if (parsedTime && typeof parsedTime === 'object' && !Array.isArray(parsedTime)) {
+          if (parsedTime.start) start_time = dotToColon(parsedTime.start);
+          if (parsedTime.end) end_time = dotToColon(parsedTime.end);
+        }
+        
         let date = (meetingData as any).date;
-        let time = (meetingData as any).time;
-        let link = (meetingData as any).link;
+        let time = rawTime as string | null;
+        let link = (meetingData as any).link as string | null;
         let groupKeyUsed: 'A'|'B'|'C'|null = null;
         let hasGroupSchedules = false;
+        
         if (parsed && (parsed.A || parsed.B || parsed.C)) {
           hasGroupSchedules = true;
           const key = (detectedGroup === 'A' || detectedGroup === 'B' || detectedGroup === 'C') ? detectedGroup : 'A';
@@ -133,11 +169,19 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
           date = entry?.date || null;
           time = entry?.time || null;
           link = entry?.link || null;
+          
+          // Extract start_time and end_time from group schedule if available
+          if (entry) {
+            start_time = entry.start_time || null;
+            end_time = entry.end_time || null;
+          }
+          
           groupKeyUsed = (parsed[key] ? key : (parsed.A ? 'A' : parsed.B ? 'B' : parsed.C ? 'C' : null)) as any;
           setAllGroupSchedules(parsed as any);
         } else {
           setAllGroupSchedules(null);
         }
+        
         setMeetingSchedule({
           date: date || null,
           time: time || null,
@@ -149,8 +193,11 @@ export const usePsikoedukasiSession = (sessionNumber: number, userId: string | u
           guidance_video_url: (meetingData as any).guidance_video_url || null,
           guidance_links: (meetingData as any).guidance_links || null,
           group_key_used: groupKeyUsed,
-          has_group_schedules: hasGroupSchedules
-        });
+          has_group_schedules: hasGroupSchedules,
+          start_time: start_time,
+          end_time: end_time,
+          ...(hasGroupSchedules ? { all_group_schedules: parsed } : {})
+        } as any);
       } else {
         setMeetingSchedule(null);
       }

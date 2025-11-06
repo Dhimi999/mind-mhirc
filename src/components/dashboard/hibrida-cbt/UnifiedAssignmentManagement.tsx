@@ -31,6 +31,19 @@ interface GuidanceMaterials {
   guidance_links: { title: string; url: string; icon?: string }[];
 }
 
+  // New Submission interface for multiple submissions support
+  interface Submission {
+    id: string;
+    user_id: string;
+    session_number: number;
+    submission_number: number;
+    answers: any;
+    counselor_response: string | null;
+    counselor_name: string | null;
+    submitted_at: string;
+    responded_at: string | null;
+  }
+
 interface Assignment {
   id: string;
   user_id: string;
@@ -38,6 +51,7 @@ interface Assignment {
   answers: any;
   submitted: boolean;
   submitted_at: string | null;
+    submission_count?: number; // Total submissions for this user
 }
 
 interface UserProgress {
@@ -88,6 +102,13 @@ const UnifiedAssignmentManagement: React.FC = () => {
   const [selectedProgress, setSelectedProgress] = useState<UserProgress | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [counselorResponse, setCounselorResponse] = useState("");
+  
+    // Multiple submissions support
+    const [submissionsByUser, setSubmissionsByUser] = useState<Record<string, Submission[]>>({});
+    const [selectedUserSubmissions, setSelectedUserSubmissions] = useState<Submission[]>([]);
+    const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+    const [selectedSubmissionTab, setSelectedSubmissionTab] = useState<string>("0"); // Tab index for submission selector
+  
   // Filters for Answers view
   const [statusTab, setStatusTab] = useState<"all" | "draft" | "pending" | "done">("all");
   const [programFilter, setProgramFilter] = useState<ProgramType | null>(null);
@@ -108,16 +129,16 @@ const UnifiedAssignmentManagement: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSession]);
 
-  const hibridaSessions: SessionInfo[] = Array.from({ length: 8 }, (_, i) => ({
-    number: i + 1,
+    const hibridaSessions: SessionInfo[] = Array.from({ length: 9 }, (_, i) => ({
+      number: i,
     program: "hibrida" as ProgramType,
-    title: `HN-CBT Sesi ${i + 1}`
+      title: i === 0 ? `HN-CBT Pra-Sesi` : `HN-CBT Sesi ${i}`
   }));
 
-  const psikoedukasiSessions: SessionInfo[] = Array.from({ length: 8 }, (_, i) => ({
-    number: i + 1,
+    const psikoedukasiSessions: SessionInfo[] = Array.from({ length: 9 }, (_, i) => ({
+      number: i,
     program: "psikoedukasi" as ProgramType,
-    title: `Psikoedukasi Sesi ${i + 1}`
+      title: i === 0 ? `Psikoedukasi Pra-Sesi` : `Psikoedukasi Sesi ${i}`
   }));
 
   const handleSessionClick = (session: SessionInfo, targetView: "guidance" | "answers" | "participants") => {
@@ -176,23 +197,65 @@ const UnifiedAssignmentManagement: React.FC = () => {
   const fetchSessionAssignments = async (session: SessionInfo, includeDraftsOverride?: boolean) => {
     setLoading(true);
     try {
-  const table = session.program === "hibrida" ? "cbt_hibrida_assignments" : "cbt_psikoedukasi_assignments";
+    // Use submission_history tables for multiple submissions support
+    const submissionTable = session.program === "hibrida" 
+      ? "cbt_hibrida_submission_history" 
+      : "cbt_psikoedukasi_submission_history";
   const progressTable = session.program === "hibrida" ? "cbt_hibrida_user_progress" : "cbt_psikoedukasi_user_progress";
       const includeDrafts = includeDraftsOverride ?? (statusTab === "all" || statusTab === "draft");
 
-      let query = supabase
-        .from(table as any)
+        // Fetch all submissions for this session
+        const { data: submissionsData, error: submissionsError } = await supabase
+          .from(submissionTable as any)
         .select("*")
         .eq("session_number", session.number)
         .order("submitted_at", { ascending: false });
 
-      if (!includeDrafts) {
-        query = query.eq("submitted", true);
-      }
+        if (submissionsError) throw submissionsError;
 
-      const { data: assignmentsData, error: assignmentsError } = await query;
+        // Group submissions by user_id
+        const submissionsByUserMap: Record<string, Submission[]> = {};
+        submissionsData?.forEach((s: any) => {
+          const submission: Submission = {
+            id: s.id,
+            user_id: s.user_id,
+            session_number: s.session_number,
+            submission_number: s.submission_number || 1,
+            answers: s.answers,
+            counselor_response: s.counselor_response,
+            counselor_name: s.counselor_name,
+            submitted_at: s.submitted_at,
+            responded_at: s.responded_at
+          };
+        
+          if (!submissionsByUserMap[s.user_id]) {
+            submissionsByUserMap[s.user_id] = [];
+          }
+          submissionsByUserMap[s.user_id].push(submission);
+        });
 
-      if (assignmentsError) throw assignmentsError;
+        // Sort each user's submissions by submission_number descending (latest first)
+        Object.values(submissionsByUserMap).forEach(userSubmissions => {
+          userSubmissions.sort((a, b) => b.submission_number - a.submission_number);
+        });
+
+        setSubmissionsByUser(submissionsByUserMap);
+
+        // Create unique assignments array (one per user, using their latest submission)
+        const uniqueAssignments: Assignment[] = Object.entries(submissionsByUserMap).map(([userId, userSubs]) => {
+          const latestSubmission = userSubs[0]; // Already sorted, first is latest
+          return {
+            id: latestSubmission.id,
+            user_id: userId,
+            session_number: session.number,
+            answers: latestSubmission.answers,
+            submitted: true,
+            submitted_at: latestSubmission.submitted_at,
+            submission_count: userSubs.length // Track total submissions
+          };
+        });
+
+        setAssignments(uniqueAssignments);
 
       const { data: progressData, error: progressError } = await supabase
         .from(progressTable as any)
@@ -201,7 +264,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
 
       if (progressError) throw progressError;
 
-  const userIds = [...new Set(assignmentsData?.map((a: any) => a.user_id) || [])];
+    const userIds = Object.keys(submissionsByUserMap);
       if (userIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from("profiles")
@@ -231,11 +294,22 @@ const UnifiedAssignmentManagement: React.FC = () => {
         setGroups(groupMap);
       }
 
-      setAssignments(assignmentsData as any || []);
-
+        // Build progress map from counselor responses
       const progressMap: Record<string, UserProgress> = {};
       progressData?.forEach((p: any) => {
-        progressMap[p.user_id] = p;
+          const userId = p.user_id;
+          const userSubmissions = submissionsByUserMap[userId];
+        
+          // Check if any submission has counselor response
+          const hasResponse = userSubmissions?.some(sub => sub.counselor_response);
+          const latestResponse = userSubmissions?.find(sub => sub.counselor_response);
+        
+          progressMap[userId] = {
+            ...p,
+            counselor_response: hasResponse ? latestResponse?.counselor_response : p.counselor_response,
+            counselor_name: hasResponse ? latestResponse?.counselor_name : p.counselor_name,
+            responded_at: hasResponse ? latestResponse?.responded_at : p.responded_at
+          };
       });
       setProgress(progressMap);
     } catch (error: any) {
@@ -475,27 +549,60 @@ const UnifiedAssignmentManagement: React.FC = () => {
 
   const handleViewDetail = (assignment: Assignment) => {
     setSelectedAssignment(assignment);
+    
+      // Load all submissions for this user
+      const userSubmissions = submissionsByUser[assignment.user_id] || [];
+      setSelectedUserSubmissions(userSubmissions);
+    
+      // Set the latest submission as default (index 0)
+      if (userSubmissions.length > 0) {
+        setSelectedSubmission(userSubmissions[0]);
+        setSelectedSubmissionTab("0");
+        setCounselorResponse(userSubmissions[0].counselor_response || "");
+      } else {
+        setSelectedSubmission(null);
+        setSelectedSubmissionTab("0");
+      }
+    
     const userProgress = progress[assignment.user_id] || null;
     setSelectedProgress(userProgress);
-    setCounselorResponse(userProgress?.counselor_response || "");
     setIsDetailOpen(true);
   };
 
   const handleSaveResponse = async () => {
-    if (!selectedAssignment || !selectedProgress || !selectedSession) return;
+    if (!selectedSubmission || !selectedSession) return;
 
     try {
-  const table = selectedSession.program === "hibrida" ? "cbt_hibrida_user_progress" : "cbt_psikoedukasi_user_progress";
-      const { error } = await supabase
-        .from(table as any)
+      // Save counselor response to the specific submission
+      const submissionTable = selectedSession.program === "hibrida" 
+        ? "cbt_hibrida_submission_history" 
+        : "cbt_psikoedukasi_submission_history";
+      
+      const { error: submissionError } = await supabase
+        .from(submissionTable as any)
         .update({
           counselor_response: counselorResponse,
           counselor_name: user?.full_name || "Konselor",
           responded_at: new Date().toISOString()
         })
-        .eq("id", selectedProgress.id);
+        .eq("id", selectedSubmission.id);
 
-      if (error) throw error;
+      if (submissionError) throw submissionError;
+      
+      // Also update user_progress for tracking
+      const progressTable = selectedSession.program === "hibrida" 
+        ? "cbt_hibrida_user_progress" 
+        : "cbt_psikoedukasi_user_progress";
+      
+      await supabase
+        .from(progressTable as any)
+        .update({
+          counselor_response: counselorResponse,
+          counselor_name: user?.full_name || "Konselor",
+          responded_at: new Date().toISOString()
+        })
+        .eq("user_id", selectedSubmission.user_id)
+        .eq("session_number", selectedSession.number);
 
       toast.success("Respons konselor berhasil disimpan");
       setIsDetailOpen(false);
@@ -513,25 +620,31 @@ const UnifiedAssignmentManagement: React.FC = () => {
     }
 
     try {
-  const table = selectedSession.program === "hibrida" ? "cbt_hibrida_user_progress" : "cbt_psikoedukasi_user_progress";
-      const userIds = assignments.map(a => a.user_id);
+      const submissionTable = selectedSession.program === "hibrida" 
+        ? "cbt_hibrida_submission_history" 
+        : "cbt_psikoedukasi_submission_history";
+      
+      // For bulk response, respond to the latest submission of each user
+      const latestSubmissions: Submission[] = [];
+      assignments.forEach(assignment => {
+        const userSubmissions = submissionsByUser[assignment.user_id];
+        if (userSubmissions && userSubmissions.length > 0) {
+          latestSubmissions.push(userSubmissions[0]); // Latest submission
+        }
+      });
 
-      for (const userId of userIds) {
+      for (const submission of latestSubmissions) {
         await supabase
-          .from(table as any)
-          .upsert({
-            user_id: userId,
-            session_number: selectedSession.number,
+          .from(submissionTable as any)
+          .update({
             counselor_response: bulkResponse,
             counselor_name: user?.full_name || "Konselor",
-            responded_at: new Date().toISOString(),
-            session_opened: true
-          }, {
-            onConflict: "user_id,session_number"
-          });
+            responded_at: new Date().toISOString()
+          })
+          .eq("id", submission.id);
       }
 
-      toast.success(`Respons berhasil dikirim ke ${userIds.length} peserta`);
+      toast.success(`Respons berhasil dikirim ke ${latestSubmissions.length} peserta`);
       setIsBulkResponseOpen(false);
       setBulkResponse("");
       if (selectedSession) fetchSessionAssignments(selectedSession);
@@ -675,7 +788,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
             <Button
               size="icon"
               variant="secondary"
-              disabled={selectedSession.number <= 1}
+              disabled={selectedSession.number <= 0}
               onClick={() => {
                 const sessions = selectedSession.program === "hibrida" ? hibridaSessions : psikoedukasiSessions;
                 const idx = sessions.findIndex(s => s.number === selectedSession.number);
@@ -1000,7 +1113,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
             <p className="text-muted-foreground">Memuat data...</p>
           </div>
         </div>
@@ -1012,7 +1125,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
         {detailHeader}
 
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <Button onClick={() => setIsBulkResponseOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
+          <Button onClick={() => setIsBulkResponseOpen(true)} className="bg-teal-600 hover:bg-teal-700">
             <SendHorizontal className="h-4 w-4 mr-2" />
             Kirim Respons ke Semua
           </Button>
@@ -1102,13 +1215,13 @@ const UnifiedAssignmentManagement: React.FC = () => {
                 ) : (
                   assignments
                     .filter((a) => {
-                      // Apply statusTab filters using robust submitted detection
-                      const p = progress[a.user_id];
-                      const hasResp = !!p?.counselor_response;
-                      const isSubmitted = !!a.submitted || !!a.submitted_at;
-                      if (statusTab === "draft") return !isSubmitted;
-                      if (statusTab === "pending") return isSubmitted && !hasResp;
-                      if (statusTab === "done") return isSubmitted && hasResp;
+                      // Apply statusTab filters based on per-user submission history
+                      const userSubs = submissionsByUser[a.user_id] || [];
+                      const anyUnresponded = userSubs.some(s => !s.counselor_response);
+                      const allResponded = userSubs.length > 0 && userSubs.every(s => !!s.counselor_response);
+                      if (statusTab === "draft") return userSubs.length === 0;
+                      if (statusTab === "pending") return userSubs.length > 0 && anyUnresponded;
+                      if (statusTab === "done") return allResponded;
                       return true;
                     })
                     .filter((a) => {
@@ -1120,16 +1233,17 @@ const UnifiedAssignmentManagement: React.FC = () => {
                     })
                     .map((assignment, idx) => {
                       const userProgress = progress[assignment.user_id];
-                      const hasResponse = !!userProgress?.counselor_response;
-                      const isSubmitted = !!assignment.submitted || !!assignment.submitted_at;
-                      const statusLabel = !isSubmitted
+                      const userSubs = submissionsByUser[assignment.user_id] || [];
+                      const anyUnresponded = userSubs.some(s => !s.counselor_response);
+                      const allResponded = userSubs.length > 0 && userSubs.every(s => !!s.counselor_response);
+                      const statusLabel = userSubs.length === 0
                         ? "Draft"
-                        : hasResponse
+                        : allResponded
                         ? "Selesai"
                         : "Menunggu Balasan";
-                      const statusVariant = !isSubmitted
+                      const statusVariant = userSubs.length === 0
                         ? "secondary"
-                        : hasResponse
+                        : allResponded
                         ? "default"
                         : "outline";
                       const groupLabel = groups[assignment.user_id] || "-";
@@ -1137,7 +1251,24 @@ const UnifiedAssignmentManagement: React.FC = () => {
                         <tr key={assignment.id} className="hover:bg-muted/30">
                           <td className="p-4 text-sm text-muted-foreground">{idx + 1}</td>
                           <td className="p-4">
-                            {profiles[assignment.user_id]?.full_name || "Tidak diketahui"}
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  <span>{profiles[assignment.user_id]?.full_name || "Tidak diketahui"}</span>
+                                  {assignment.submission_count && assignment.submission_count > 1 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {assignment.submission_count} Jawaban
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                  {(() => {
+                                    const last = (submissionsByUser[assignment.user_id] || [])[0];
+                                    return last?.submitted_at
+                                      ? <>Terakhir: {new Date(last.submitted_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</>
+                                      : null;
+                                  })()}
+                                </div>
+                              </div>
                           </td>
                           <td className="p-4">
                             {selectedSession?.program === "hibrida" ? "HN-CBT" : "Psikoedukasi"}
@@ -1145,7 +1276,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
                           <td className="p-4">{groupLabel}</td>
                           <td className="p-4">
                             <Badge variant={statusVariant as any}>{statusLabel}</Badge>
-                            {hasResponse && (
+                            {!!userProgress?.counselor_response && (
                               <div className="mt-1 text-xs text-muted-foreground">
                                 Dijawab oleh {userProgress?.counselor_name || "-"} pada {userProgress?.responded_at ? new Date(userProgress.responded_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
                               </div>
@@ -1168,22 +1299,74 @@ const UnifiedAssignmentManagement: React.FC = () => {
 
         {/* Detail Dialog */}
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">
                 Detail Jawaban - {profiles[selectedAssignment?.user_id || ""]?.full_name}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm">
                 Lihat jawaban peserta dan berikan respons konselor.
               </DialogDescription>
             </DialogHeader>
+            
+            {/* Submission Selector Tabs */}
+            {selectedUserSubmissions.length > 1 && (
+              <div className="border-b">
+                <Tabs value={selectedSubmissionTab} onValueChange={(value) => {
+                  setSelectedSubmissionTab(value);
+                  const selectedIndex = parseInt(value);
+                  const submission = selectedUserSubmissions[selectedIndex];
+                  setSelectedSubmission(submission);
+                  setCounselorResponse(submission?.counselor_response || "");
+                }}>
+                  <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
+                    {selectedUserSubmissions.map((submission, idx) => {
+                      const hasResponse = !!submission.counselor_response;
+                      return (
+                        <TabsTrigger key={idx} value={idx.toString()} className="flex items-center gap-2 whitespace-nowrap text-xs sm:text-sm">
+                          <span>Jawaban #{submission.submission_number}</span>
+                          {hasResponse && (
+                            <Badge variant="default" className="text-[10px] px-1 py-0">
+                              ✓ Direspons
+                            </Badge>
+                          )}
+                        </TabsTrigger>
+                      );
+                    })}
+                  </TabsList>
+                </Tabs>
+                <div className="py-2 px-1 text-xs text-muted-foreground">
+                  {selectedSubmission && (
+                    <>
+                      Dikirim: {new Date(selectedSubmission.submitted_at).toLocaleDateString("id-ID", { 
+                        day: "2-digit", 
+                        month: "short", 
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
+                      {selectedSubmission.counselor_response && selectedSubmission.responded_at && (
+                        <> • Direspons oleh {selectedSubmission.counselor_name} pada {new Date(selectedSubmission.responded_at).toLocaleDateString("id-ID", { 
+                          day: "2-digit", 
+                          month: "short", 
+                          year: "numeric" 
+                        })}</>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-4 py-4">
+
+              
               <div className="bg-muted/50 rounded-lg p-4">
                 <h4 className="font-semibold mb-2">Jawaban Peserta:</h4>
                 <div className="bg-background p-3 rounded border max-h-[300px] overflow-y-auto">
-                  {selectedAssignment?.answers ? (
+                    {selectedSubmission?.answers ? (
                     <div className="space-y-2 text-sm">
-                      {Object.entries(selectedAssignment.answers).map(([key, value]) => (
+                        {Object.entries(selectedSubmission.answers).map(([key, value]) => (
                         <div key={key}>
                           <div className="font-medium">{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</div>
                           <div className="text-muted-foreground break-words">
@@ -1217,10 +1400,10 @@ const UnifiedAssignmentManagement: React.FC = () => {
                   placeholder="Tulis respons atau feedback untuk peserta..."
                   value={counselorResponse}
                   onChange={(e) => setCounselorResponse(e.target.value)}
-                  disabled={!!selectedProgress?.counselor_response && selectedProgress?.counselor_name !== (user?.full_name || "")}
+                  disabled={!!selectedSubmission?.counselor_response && selectedSubmission?.counselor_name !== (user?.full_name || "")}
                 />
-                {!!selectedProgress?.counselor_response && selectedProgress?.counselor_name !== (user?.full_name || "") && (
-                  <p className="text-xs text-muted-foreground">Hanya konselor {selectedProgress?.counselor_name} yang dapat mengedit respons ini.</p>
+                {!!selectedSubmission?.counselor_response && selectedSubmission?.counselor_name !== (user?.full_name || "") && (
+                  <p className="text-xs text-muted-foreground">Hanya konselor {selectedSubmission?.counselor_name} yang dapat mengedit respons ini.</p>
                 )}
               </div>
             </div>
@@ -1228,7 +1411,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
               <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
                 Tutup
               </Button>
-              <Button onClick={handleSaveResponse} className="bg-indigo-600 hover:bg-indigo-700" disabled={!!selectedProgress?.counselor_response && selectedProgress?.counselor_name !== (user?.full_name || "")}>
+              <Button onClick={handleSaveResponse} className="bg-teal-600 hover:bg-teal-700" disabled={!!selectedSubmission?.counselor_response && selectedSubmission?.counselor_name !== (user?.full_name || "")}>
                 Simpan Respons
               </Button>
             </DialogFooter>
@@ -1256,7 +1439,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
               <Button variant="outline" onClick={() => setIsBulkResponseOpen(false)}>
                 Batal
               </Button>
-              <Button onClick={handleBulkResponse} className="bg-indigo-600 hover:bg-indigo-700">
+              <Button onClick={handleBulkResponse} className="bg-teal-600 hover:bg-teal-700">
                 <Send className="h-4 w-4 mr-2" />
                 Kirim ke Semua
               </Button>
@@ -1273,7 +1456,7 @@ const UnifiedAssignmentManagement: React.FC = () => {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
             <p className="text-muted-foreground">Memuat data...</p>
           </div>
         </div>

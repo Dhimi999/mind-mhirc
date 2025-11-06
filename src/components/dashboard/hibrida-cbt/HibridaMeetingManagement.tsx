@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { parseGroupSchedule } from "@/utils/groupSchedule";
 import { CalendarCheck2, Pencil, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,27 +30,53 @@ const HibridaMeetingManagement: React.FC = () => {
   const [program, setProgram] = useState<ProgramType>('hibrida');
 
   type GroupKey = 'A' | 'B' | 'C';
-  type GroupSchedule = { date: string; time: string; link: string };
+  type GroupSchedule = { date?: string; time?: string; link?: string; start_time?: string; end_time?: string };
   type GroupSchedules = Partial<Record<GroupKey, GroupSchedule>>;
   const [usePerGroup, setUsePerGroup] = useState(false);
   const [groupSchedules, setGroupSchedules] = useState<GroupSchedules>({});
   const [formData, setFormData] = useState({
     date: "",
+    start_time: "",
+    end_time: "",
     time: "",
     link: "",
     description: ""
   });
 
-  const parseGroupJson = (raw: string | null): GroupSchedules | null => {
-    if (!raw) return null;
+  // Helper functions from Spiritual implementation
+  const colonToDot = (v?: string) => (v ? v.replace(":", ".") : "");
+  const dotToColon = (v?: string) => (v ? v.replace(".", ":") : "");
+  
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return 'Belum diatur';
+    const parts = iso.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      return `${d}-${m}-${y}`;
+    }
+    return iso;
+  };
+
+  const parseTimeJson = (raw: string | null | undefined): { start?: string; end?: string } => {
+    if (!raw) return {};
     try {
       const obj = JSON.parse(raw);
-      if (obj && (obj.A || obj.B || obj.C)) return obj as GroupSchedules;
-      return null;
+      // supports { start, end } or { "start": "HH.mm" }
+      const start = obj.start as string | undefined;
+      const end = obj.end as string | undefined;
+      return { start, end };
     } catch {
-      return null;
+      // Fallback legacy format like "HH:MM - HH:MM" or single time
+      const s = String(raw);
+      if (s.includes("-")) {
+        const [a, b] = s.split("-").map(x => x.trim());
+        return { start: a, end: b };
+      }
+      return { start: s };
     }
   };
+
+  const parseGroupJson = (raw: string | null): GroupSchedules | null => parseGroupSchedule(raw);
 
   useEffect(() => {
     fetchMeetings();
@@ -77,15 +104,14 @@ const HibridaMeetingManagement: React.FC = () => {
     setEditingMeeting(meeting);
     // Try parse per-group JSON from link
     const parsed = parseGroupJson(meeting.link);
-    if (parsed) {
-      setUsePerGroup(true);
-      setGroupSchedules(parsed);
-    } else {
-      setUsePerGroup(false);
-      setGroupSchedules({});
-    }
+    setUsePerGroup(!!parsed);
+    setGroupSchedules(parsed || {});
+    // Prefill from single-schedule JSON in `time`
+    const { start, end } = parseTimeJson(meeting.time);
     setFormData({
       date: meeting.date || "",
+      start_time: dotToColon(start) || "",
+      end_time: dotToColon(end) || "",
       time: meeting.time || "",
       link: parsed ? "" : (meeting.link || ""),
       description: meeting.description || ""
@@ -97,11 +123,17 @@ const HibridaMeetingManagement: React.FC = () => {
     if (!editingMeeting) return;
 
     try {
-  const table = program === 'hibrida' ? 'cbt_hibrida_meetings' : 'cbt_psikoedukasi_meetings';
+      const table = program === 'hibrida' ? 'cbt_hibrida_meetings' : 'cbt_psikoedukasi_meetings';
+      // Persist single-schedule time as JSON text in `time` column: { start: "HH.mm", end: "HH.mm" }
+      const startDot = colonToDot(formData.start_time);
+      const endDot = colonToDot(formData.end_time);
+      const timeJson = (startDot || endDot)
+        ? JSON.stringify({ start: startDot || undefined, end: endDot || undefined })
+        : null;
       const payload = {
-        date: formData.date || null,
-        time: formData.time || null,
-        link: usePerGroup ? JSON.stringify(groupSchedules) : (formData.link || null),
+        date: usePerGroup ? null : (formData.date || null),
+        time: usePerGroup ? null : timeJson,
+        link: usePerGroup ? (groupSchedules as any) : (formData.link || null),
         description: formData.description || null
       };
       const { error } = await supabase
@@ -123,7 +155,7 @@ const HibridaMeetingManagement: React.FC = () => {
   const handleClose = () => {
     setIsDialogOpen(false);
     setEditingMeeting(null);
-    setFormData({ date: "", time: "", link: "", description: "" });
+    setFormData({ date: "", start_time: "", end_time: "", time: "", link: "", description: "" });
   };
 
   if (loading) {
@@ -190,8 +222,10 @@ const HibridaMeetingManagement: React.FC = () => {
                         <div key={k} className="rounded border p-2 bg-muted/30">
                           <div className="font-semibold">Grup {k}</div>
                           <div className="flex flex-col">
-                            <span>Tanggal: <span className="font-medium">{parsed[k]?.date || 'Belum diatur'}</span></span>
-                            <span>Waktu: <span className="font-medium">{parsed[k]?.time || 'Belum diatur'}</span></span>
+                            <span>Tanggal: <span className="font-medium">{formatDate(parsed[k]?.date || null)}</span></span>
+                            <span>Waktu: <span className="font-medium">{(parsed as any)[k]?.start_time || (parsed as any)[k]?.end_time
+                              ? `${(parsed as any)[k]?.start_time || ''}${(parsed as any)[k]?.start_time && (parsed as any)[k]?.end_time ? ' - ' : ''}${(parsed as any)[k]?.end_time || ''}`
+                              : (parsed[k]?.time || 'Belum diatur')}</span></span>
                             <span className="truncate">Link: {parsed[k]?.link ? (
                               <a href={parsed[k]?.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{parsed[k]?.link}</a>
                             ) : 'Belum diatur'}</span>
@@ -201,16 +235,22 @@ const HibridaMeetingManagement: React.FC = () => {
                     </div>
                   );
                 }
-                // Default single schedule
+                // Default single schedule with parsed time JSON
+                const single = parseTimeJson(meeting.time);
+                const startColon = dotToColon(single.start || '');
+                const endColon = dotToColon(single.end || '');
+                const timeDisplay = (startColon || endColon)
+                  ? `${startColon}${startColon && endColon ? ' - ' : ''}${endColon}`
+                  : (meeting.time || 'Belum diatur');
                 return (
                   <>
                     <div>
                       <span className="text-muted-foreground">Tanggal:</span>
-                      <p className="font-medium">{meeting.date || "Belum diatur"}</p>
+                      <p className="font-medium">{formatDate(meeting.date)}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Waktu:</span>
-                      <p className="font-medium">{meeting.time || "Belum diatur"}</p>
+                      <p className="font-medium">{timeDisplay}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Link:</span>
@@ -271,25 +311,40 @@ const HibridaMeetingManagement: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="time">Waktu</Label>
+                    <Label htmlFor="start">Jam Mulai</Label>
                     <Input
-                      id="time"
+                      id="start"
                       type="time"
                       placeholder="20:00"
-                      value={formData.time}
-                      onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                      value={formData.start_time}
+                      onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="link">Link Pertemuan</Label>
-                  <Input
-                    id="link"
-                    type="url"
-                    placeholder="https://meet.google.com/..."
-                    value={formData.link}
-                    onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="end">Jam Selesai</Label>
+                    <Input
+                      id="end"
+                      type="time"
+                      placeholder="21:00"
+                      value={formData.end_time}
+                      onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
+                    />
+                  </div>
+                  <div />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="link">Link Pertemuan</Label>
+                    <Input
+                      id="link"
+                      type="text"
+                      placeholder="https://meet.google.com/..."
+                      value={formData.link}
+                      onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
+                    />
+                  </div>
                 </div>
               </>
             ) : (
@@ -307,14 +362,27 @@ const HibridaMeetingManagement: React.FC = () => {
                   {(['A','B','C'] as GroupKey[]).map(g => (
                     <div key={g} className="space-y-2 border rounded p-3">
                       <div className="font-semibold">Grup {g}</div>
-                      <Input type="date" placeholder="Tanggal" value={groupSchedules[g]?.date || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), date: e.target.value }}))} />
-                      <Input type="time" placeholder="Waktu" value={groupSchedules[g]?.time || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), time: e.target.value }}))} />
-                      <Input type="url" placeholder="Link" value={groupSchedules[g]?.link || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{date:'',time:'',link:''}), link: e.target.value }}))} />
+                      <div className="space-y-1">
+                        <Label className="text-xs">Tanggal</Label>
+                        <Input type="date" placeholder="Tanggal" value={groupSchedules[g]?.date || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{}), date: e.target.value }}))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Jam Mulai</Label>
+                        <Input type="time" placeholder="Jam Mulai" value={(groupSchedules[g] as any)?.start_time || groupSchedules[g]?.time || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{}), start_time: e.target.value }}))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Jam Selesai</Label>
+                        <Input type="time" placeholder="Jam Selesai" value={(groupSchedules[g] as any)?.end_time || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{}), end_time: e.target.value }}))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Link</Label>
+                        <Input placeholder="Link" value={groupSchedules[g]?.link || ''} onChange={(e)=> setGroupSchedules(prev=> ({...prev, [g]: { ...(prev[g]||{}), link: e.target.value }}))} />
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">Jika mode per grup aktif, data di atas akan disimpan sebagai JSON dan menggantikan jadwal umum.</p>
+              <p className="text-xs text-muted-foreground">Jika mode per grup aktif, data akan disimpan sebagai JSON dan menggantikan jadwal umum.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Deskripsi</Label>

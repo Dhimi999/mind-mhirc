@@ -18,6 +18,7 @@ import heroImage from "@/assets/hibrida-naratif-hero.jpg"; // Placeholder reuse
 import jelajahImage from "@/assets/hibrida-jelajah.jpg"; // Placeholder reuse
 import tasksImage from "@/assets/hibrida-tasks.jpg"; // Placeholder reuse
 import { getSiteBaseUrl } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 // Halaman layanan: Hibrida Naratif CBT
 // Struktur mirip Spiritual & Budaya namun konten lebih umum (naratif + CBT)
@@ -43,6 +44,32 @@ const HibridaNaratifCBT: React.FC = () => {
       if (raw) setProgressMap(JSON.parse(raw));
     } catch {}
   }, []);
+
+  // Sync progress from DB on load for HN-CBT
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (!user?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from('cbt_hibrida_user_progress' as any)
+          .select('session_number, meeting_done, assignment_done')
+          .eq('user_id', user.id);
+        if (error) throw error;
+        const map: Record<number, { meetingDone: boolean; assignmentDone: boolean }> = {};
+        (data || []).forEach((row: any) => {
+          map[row.session_number] = {
+            meetingDone: !!row.meeting_done,
+            assignmentDone: !!row.assignment_done,
+          };
+        });
+        setProgressMap(map);
+        try { localStorage.setItem('hibridaInterventionProgress', JSON.stringify(map)); } catch {}
+      } catch (e) {
+        // ignore, keep local cache
+      }
+    };
+    loadProgress();
+  }, [user?.id]);
 
   // Initialize tab (support route /hibrida-cbt/:tab)
   useEffect(() => {
@@ -193,6 +220,32 @@ const HibridaNaratifCBT: React.FC = () => {
   useEffect(() => {
     try { const raw = localStorage.getItem('hibridaPsikoEduProgress'); if (raw) setPsikoProgress(JSON.parse(raw)); } catch {}
   }, []);
+
+  // Sync progress from DB on load for Psikoedukasi
+  useEffect(() => {
+    const loadProg = async () => {
+      if (!user?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from('cbt_psikoedukasi_user_progress' as any)
+          .select('session_number, meeting_done, assignment_done')
+          .eq('user_id', user.id);
+        if (error) throw error;
+        const map: Record<number, { meetingDone?: boolean; assignmentDone?: boolean }> = {};
+        (data || []).forEach((row: any) => {
+          map[row.session_number] = {
+            meetingDone: !!row.meeting_done,
+            assignmentDone: !!row.assignment_done,
+          };
+        });
+        setPsikoProgress(map);
+        try { localStorage.setItem('hibridaPsikoEduProgress', JSON.stringify(map)); } catch {}
+      } catch (e) {
+        // ignore
+      }
+    };
+    loadProg();
+  }, [user?.id]);
 
   // Sequential unlocking logic for HN-CBT Intervensi (mirror Spiritual Budaya pattern)
   const getSessionStatus = (sessionNumber: number): "available" | "locked" => {
@@ -549,8 +602,8 @@ const HibridaNaratifCBT: React.FC = () => {
                           title={m.title}
                           status={status}
                           submissionCount={0}
-                          guideDone={progressMap[m.session]?.meetingDone}
-                          assignmentDone={progressMap[m.session]?.assignmentDone}
+                          guideDone={progressMap[m.session]?.meetingDone ?? false}
+                          assignmentDone={progressMap[m.session]?.assignmentDone ?? false}
                           onNavigate={() => navigate(`/hibrida-cbt/intervensi/sesi/${m.session}`)}
                           showProgressIndicators={true}
                         />
@@ -587,8 +640,8 @@ const HibridaNaratifCBT: React.FC = () => {
                           title={pm.title}
                           status={status}
                           submissionCount={0}
-                          guideDone={psikoProgress[pm.session]?.meetingDone}
-                          assignmentDone={psikoProgress[pm.session]?.assignmentDone}
+                          guideDone={psikoProgress[pm.session]?.meetingDone ?? false}
+                          assignmentDone={psikoProgress[pm.session]?.assignmentDone ?? false}
                           onNavigate={() => navigate(`/hibrida-cbt/psikoedukasi/sesi/${pm.session}`)}
                           showProgressIndicators={true}
                         />

@@ -752,22 +752,26 @@ const HibridaPsikoedukasiUnified: React.FC = () => {
                   </div>
                   <div className="p-6">
 
-                    {/* Action buttons - always visible if has submissions */}
-                    {!isFetching && submissionHistory.length > 0 && !isCreatingNew && !selectedHistoryItem && (
+                    {/* Action buttons - show when not in creating/viewing modes */}
+                    {!isFetching && !isCreatingNew && !selectedHistoryItem && (
                       <div className="mb-6 flex flex-col sm:flex-row gap-3">
-                        <Button
-                          onClick={handleCreateNewAnswer}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors text-sm sm:text-base"
-                        >
-                          ➕ Buat Jawaban Baru
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={handleViewHistory}
-                          className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold py-3 rounded-lg transition-colors text-sm sm:text-base"
-                        >
-                          📋 Riwayat Jawaban
-                        </Button>
+                        {submissionHistory.length > 0 && (
+                          <Button
+                            onClick={handleCreateNewAnswer}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors text-sm sm:text-base"
+                          >
+                            ➕ Buat Jawaban Baru
+                          </Button>
+                        )}
+                        {submissionHistory.length > 0 && (
+                          <Button
+                            variant="outline"
+                            onClick={handleViewHistory}
+                            className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold py-3 rounded-lg transition-colors text-sm sm:text-base"
+                          >
+                            📋 Riwayat Jawaban
+                          </Button>
+                        )}
                       </div>
                     )}
                     {/* Back button when in create new or viewing history detail */}
@@ -807,32 +811,50 @@ const HibridaPsikoedukasiUnified: React.FC = () => {
                             ✕ Tutup
                           </Button>
                         </div>
-                        {submissionHistory.map((item: any) => (
-                          <div key={item.id} className="p-4 border-2 border-gray-200 rounded-lg bg-gray-50 hover:border-blue-400 transition-colors">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <span className="inline-block px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full mb-2">
-                                  Jawaban #{item.submission_number}
-                                </span>
-                                <p className="text-xs text-gray-500">
-                                  Dikirim: {new Date(item.submitted_at).toLocaleString('id-ID')}
-                                </p>
-                              </div>
-                              <Button
-                                size="sm"
-                                onClick={() => handleViewHistoryDetail(item)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
-                              >
-                                👁️ Lihat Detail
-                              </Button>
-                            </div>
-                            {item.counselor_response && (
-                              <div className="mt-2 pt-2 border-t border-gray-300">
-                                <p className="text-xs text-green-600 font-semibold">✅ Sudah Ada Respons Konselor</p>
-                              </div>
-                            )}
+                        {submissionHistory.length === 0 ? (
+                          <div className="p-6 text-center border-2 border-dashed border-gray-300 rounded-lg">
+                            <p className="text-gray-500">Anda belum pernah mengirim jawaban untuk sesi ini.</p>
+                            <Button
+                              onClick={() => {
+                                setShowHistory(false);
+                                setIsCreatingNew(true);
+                                setAssignment(config?.defaultAssignment || {});
+                              }}
+                              className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              ➕ Mulai Mengisi Penugasan
+                            </Button>
                           </div>
-                        ))}
+                        ) : (
+                          <>
+                            {submissionHistory.map((item: any) => (
+                              <div key={item.id} className="p-4 border-2 border-gray-200 rounded-lg bg-gray-50 hover:border-blue-400 transition-colors">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div>
+                                    <span className="inline-block px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full mb-2">
+                                      Jawaban #{item.submission_number}
+                                    </span>
+                                    <p className="text-xs text-gray-500">
+                                      Dikirim: {new Date(item.submitted_at).toLocaleString('id-ID')}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleViewHistoryDetail(item)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                                  >
+                                    👁️ Lihat Detail
+                                  </Button>
+                                </div>
+                                {item.counselor_response && (
+                                  <div className="mt-2 pt-2 border-t border-gray-300">
+                                    <p className="text-xs text-green-600 font-semibold">✅ Sudah Ada Respons Konselor</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </>
+                        )}
                       </div>
                     )}
 
