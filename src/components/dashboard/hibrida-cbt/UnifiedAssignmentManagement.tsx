@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import PdfInlineViewer from "@/components/common/PdfInlineViewer";
 import { sessionConfigs } from "@/pages/hibrida-naratif/intervensi/HibridaIntervensiUnified";
+import { sessionConfigs as psikoedukasiSessionConfigs } from "@/pages/hibrida-naratif/psikoedukasi/HibridaPsikoedukasiUnified";
 import { AssignmentFieldDisplayer } from "@/components/hibrida-naratif/fields/AssignmentFieldDisplayer";
 
 type ProgramType = "hibrida" | "psikoedukasi";
@@ -1368,8 +1369,11 @@ const UnifiedAssignmentManagement: React.FC = () => {
                 <div className="bg-background p-3 rounded border max-h-[300px] overflow-y-auto">
                   {selectedSubmission?.answers ? (
                     (() => {
-                      // Find session config based on session_number
-                      const sessionConfig = sessionConfigs[selectedSession?.number || 0];
+                      // Find session config based on session_number and program type
+                      const configArray = selectedSession?.program === "psikoedukasi" 
+                        ? psikoedukasiSessionConfigs 
+                        : sessionConfigs;
+                      const sessionConfig = configArray[selectedSession?.number || 0];
                       
                       if (sessionConfig && sessionConfig.assignmentFields) {
                         // Use field-aware renderer for proper display

@@ -13,6 +13,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import PdfInlineViewer from "@/components/common/PdfInlineViewer";
+import { sessionConfigs as spiritualIntervensiConfigs } from "@/pages/spiritual-budaya/intervensi/SpiritualIntervensiUnified";
+import { sessionConfigs as spiritualPsikoedukasiConfigs } from "@/pages/spiritual-budaya/psikoedukasi/SpiritualPsikoedukasiUnified";
+import { AssignmentFieldDisplayer } from "@/components/hibrida-naratif/fields/AssignmentFieldDisplayer";
 
 type ProgramType = "intervensi" | "psikoedukasi";
 
@@ -1399,30 +1402,59 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                           return null;
                         })()
                       )}
-                      {/* Fallback generic renderer (for other sessions/types) */}
+                      {/* Field-aware renderer (for all other sessions) */}
                       {!(selectedSession?.program === 'intervensi' && selectedSession.number === 1) && selectedSubmission?.answers && (
-                        <>
-                          {Object.entries(selectedSubmission.answers).map(([key, value]) => (
-                            <div key={key}>
-                              <div className="font-medium">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div>
-                              <div className="text-muted-foreground break-words">
-                                {typeof value === 'string' || typeof value === 'number' ? (
-                                  String(value)
-                                ) : Array.isArray(value) ? (
-                                  <ul className="list-disc pl-5">
-                                    {value.map((v, i) => (
-                                      <li key={i} className="break-words">{typeof v === 'string' ? v : JSON.stringify(v)}</li>
-                                    ))}
-                                  </ul>
-                                ) : value && typeof value === 'object' ? (
-                                  <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
-                                ) : (
-                                  <span>-</span>
-                                )}
+                        (() => {
+                          // Get appropriate config based on program type
+                          const configArray = selectedSession?.program === "psikoedukasi" 
+                            ? spiritualPsikoedukasiConfigs 
+                            : spiritualIntervensiConfigs;
+                          const sessionConfig = configArray[selectedSession?.number || 0];
+                          
+                          if (sessionConfig && sessionConfig.assignmentFields) {
+                            // Use field-aware renderer
+                            return (
+                              <div className="space-y-3">
+                                {sessionConfig.assignmentFields.map((field: any) => {
+                                  const value = selectedSubmission.answers[field.key];
+                                  return (
+                                    <AssignmentFieldDisplayer
+                                      key={field.key}
+                                      field={field}
+                                      value={value}
+                                    />
+                                  );
+                                })}
                               </div>
-                            </div>
-                          ))}
-                        </>
+                            );
+                          }
+                          
+                          // Fallback to generic renderer if no config found
+                          return (
+                            <>
+                              {Object.entries(selectedSubmission.answers).map(([key, value]) => (
+                                <div key={key}>
+                                  <div className="font-medium">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div>
+                                  <div className="text-muted-foreground break-words">
+                                    {typeof value === 'string' || typeof value === 'number' ? (
+                                      String(value)
+                                    ) : Array.isArray(value) ? (
+                                      <ul className="list-disc pl-5">
+                                        {value.map((v, i) => (
+                                          <li key={i} className="break-words">{typeof v === 'string' ? v : JSON.stringify(v)}</li>
+                                        ))}
+                                      </ul>
+                                    ) : value && typeof value === 'object' ? (
+                                      <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
+                                    ) : (
+                                      <span>-</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </>
+                          );
+                        })()
                       )}
                     </div>
                   ) : (

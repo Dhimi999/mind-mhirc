@@ -39,7 +39,7 @@ export const AssignmentFieldDisplayer: React.FC<AssignmentFieldDisplayerProps> =
           <div className="text-sm font-semibold text-gray-800 mb-1">{field.label}</div>
           {field.desc && <div className="text-xs text-gray-500 mb-2 italic">{field.desc}</div>}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
-            {value === true ? "✓ Ya" : value === false ? "✗ Tidak" : "Tidak dijawab"}
+            {value === true || value === "Ya" ? "✓ Ya" : value === false || value === "Tidak" ? "✗ Tidak" : "Tidak dijawab"}
           </div>
         </div>
       );
