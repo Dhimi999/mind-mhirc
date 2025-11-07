@@ -1,8 +1,14 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/seo/SEO";
 const Cookies = () => {
   return <div className="min-h-screen flex flex-col">
       <Navbar />
+      <SEO
+        title="Kebijakan Cookie | Mind MHIRC"
+        description="Pelajari bagaimana Mind MHIRC menggunakan cookie untuk meningkatkan pengalaman Anda."
+        canonicalPath="/cookies"
+      />
   <main className="flex-1 container mx-auto px-4 py-16 md:px-6 pt-navbar">
         <h1 className="text-3xl md:text-4xl font-bold mb-6">Kebijakan Cookie</h1>
         

@@ -1,6 +1,7 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/seo/SEO";
 
 // Import refactored components
 import HeroSection from "@/components/about/HeroSection";
@@ -14,6 +15,11 @@ const AboutPage = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <SEO
+        title="Tentang Mind MHIRC – Misi, Tim, dan Dampak"
+        description="Kenali Mind MHIRC: pusat riset dan layanan kesehatan mental berbasis bukti dan peka budaya. Pelajari misi, tim, dan nilai yang kami pegang."
+        canonicalPath="/about"
+      />
 
       <main className="flex-1">
         <HeroSection />

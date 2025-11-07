@@ -289,7 +289,7 @@ const HibridaMeetingManagement: React.FC = () => {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>Edit Jadwal Sesi {editingMeeting?.session_number}</DialogTitle>
             <DialogDescription>

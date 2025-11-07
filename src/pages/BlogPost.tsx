@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Calendar, User, ArrowLeft, MessageSquare, Heart, Send } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/seo/SEO";
 import Button from "@/components/Button";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -167,6 +168,17 @@ const BlogPostPage = () => {
   if (!post) return null;
   return <div className="min-h-screen flex flex-col">
       <Navbar />
+      {/* Dynamic SEO for blog article */}
+      <SEO
+        title={`${post.title} | Blog Mind MHIRC`}
+        description={post.excerpt || post.title}
+        canonicalPath={`/blog/${post.slug}`}
+        type="article"
+        image={post.cover_image}
+        publishedTime={post.published_date}
+        modifiedTime={post.updated_date}
+        tags={Array.isArray(post.tags) ? post.tags as string[] : []}
+      />
       
   <main className="flex-1 pt-navbar">
         <div className="container mx-auto px-6 py-12">
@@ -192,6 +204,9 @@ const BlogPostPage = () => {
               </div>
               
               <h1 className="text-3xl md:text-4xl font-bold">{post.title}</h1>
+              {post.excerpt && (
+                <p className="text-muted-foreground mt-2 text-lg" aria-label="Ringkasan artikel">{post.excerpt}</p>
+              )}
               
               <div className="flex items-center space-x-3 pt-2">
                 <img src={post.author_avatar} alt={post.author_name} className="w-10 h-10 rounded-full object-cover" />
@@ -206,7 +221,13 @@ const BlogPostPage = () => {
               <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
             </div>
             
-            <article className="prose prose-lg max-w-none blog-content">
+            <article className="prose prose-lg max-w-none blog-content" itemScope itemType="https://schema.org/Article">
+              <meta itemProp="headline" content={post.title} />
+              <meta itemProp="datePublished" content={post.published_date} />
+              <meta itemProp="dateModified" content={post.updated_date || post.published_date} />
+              <meta itemProp="author" content={post.author_name} />
+              <meta itemProp="image" content={post.cover_image} />
+              {post.tags && Array.isArray(post.tags) && <meta itemProp="keywords" content={(post.tags as string[]).join(', ')} />}
               <div dangerouslySetInnerHTML={{
               __html: post.content
             }} />

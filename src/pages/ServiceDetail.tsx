@@ -4,6 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { Brain, Users, Heart, BookOpen, MessageSquare, BarChart, ArrowLeft, CheckCircle2, LucideIcon } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/seo/SEO";
 import Button from "@/components/Button";
 
 const ServiceDetail = () => {
@@ -196,6 +197,12 @@ const ServiceDetail = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
+        <SEO
+          title="Layanan Tidak Ditemukan | Mind MHIRC"
+          description="Maaf, layanan yang Anda cari tidak tersedia."
+          canonicalPath={`/services/${id ?? ''}`}
+          noIndex
+        />
   <main className="flex-1 pt-navbar flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Layanan Tidak Ditemukan</h1>
@@ -218,6 +225,12 @@ const ServiceDetail = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <SEO
+        title={`${service.title} | Layanan Mind MHIRC`}
+        description={service.description}
+        canonicalPath={`/services/${service.id}`}
+        image={service.image}
+      />
       
   <main className="flex-1 pt-navbar">
         {/* Service Header */}

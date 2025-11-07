@@ -25,6 +25,7 @@ export default async function handler(req, res) {
       { loc: `${baseUrl}/about`, changefreq: 'monthly', priority: '0.8' },
       { loc: `${baseUrl}/privacy`, changefreq: 'yearly', priority: '0.3' },
       { loc: `${baseUrl}/terms`, changefreq: 'yearly', priority: '0.3' },
+      { loc: `${baseUrl}/cookies`, changefreq: 'yearly', priority: '0.2' },
       // Services landing
       { loc: `${baseUrl}/services`, changefreq: 'monthly', priority: '0.8' },
       // Individual services (public landing + tabs)
@@ -43,6 +44,9 @@ export default async function handler(req, res) {
       { loc: `${baseUrl}/tests`, changefreq: 'monthly', priority: '0.6' },
       { loc: `${baseUrl}/publications`, changefreq: 'monthly', priority: '0.6' },
       { loc: `${baseUrl}/blog`, changefreq: 'weekly', priority: '0.9' },
+      { loc: `${baseUrl}/login`, changefreq: 'yearly', priority: '0.2' },
+      { loc: `${baseUrl}/forget-password-by-email`, changefreq: 'yearly', priority: '0.1' },
+      { loc: `${baseUrl}/complete-profile`, changefreq: 'yearly', priority: '0.1' },
     ];
 
     // Try to load blog posts if Supabase credentials are available

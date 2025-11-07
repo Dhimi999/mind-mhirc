@@ -51,6 +51,6 @@ export function getSiteBaseUrl(): string {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin.replace(/\/$/, '');
   }
-  // Final fallback to your primary domain (adjust as needed)
-  return 'https://www.mentalstatus.zone.id';
+  // Final fallback to official production domain
+  return 'https://mind-mhirc.my.id';
 }

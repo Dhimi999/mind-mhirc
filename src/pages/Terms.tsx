@@ -1,8 +1,14 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/seo/SEO";
 const Terms = () => {
   return <div className="min-h-screen flex flex-col">
       <Navbar />
+      <SEO
+        title="Syarat & Ketentuan | Mind MHIRC"
+        description="Syarat dan ketentuan penggunaan situs dan layanan Mind MHIRC."
+        canonicalPath="/terms"
+      />
   <main className="flex-1 container mx-auto px-4 py-16 md:px-6 pt-navbar">
         <h1 className="text-3xl md:text-4xl font-bold mb-6">Syarat & Ketentuan</h1>
         

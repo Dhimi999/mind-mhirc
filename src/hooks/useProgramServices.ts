@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 // Using an ad-hoc client instance without generics to access a table not yet in generated types
 import { createClient } from '@supabase/supabase-js';
+// WARNING: Hardcoded Supabase anon key fallback removed for security hygiene.
+// Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are defined in environment.
 const anonClient = createClient(
-  (import.meta as any).env?.VITE_SUPABASE_URL || 'https://gfeuhclekmdxaatyyiez.supabase.co',
-  (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmZXVoY2xla21keGFhdHl5aWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5NDI2MzIsImV4cCI6MjA1NjUxODYzMn0.zl3T3J2a8cCJxq5OI9IdAnWEYXSwdUwcJ6D_5MglXCI'
+  (import.meta as any).env?.VITE_SUPABASE_URL,
+  (import.meta as any).env?.VITE_SUPABASE_ANON_KEY
 );
 
 export interface ProgramServiceRecord {
