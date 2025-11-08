@@ -10,9 +10,10 @@
 **Benefit:** Reliable, fast, tidak pernah fail
 
 ### 2. **Prerendering Enabled**
-- ✅ Activated karena Anda sudah set `PRERENDER=1` di Vercel
-- ✅ Semua halaman utama akan di-prerender jadi HTML static
-- ✅ Google crawler dapat baca meta tags & content langsung
+- ⚠️ **DISABLED di Vercel** (Puppeteer dependency issue - Chrome binary tidak tersedia)
+- ✅ **Sitemap strategy lebih prioritas** - Google tetap bisa index via sitemap
+- ℹ️ Google modern crawler tetap bisa execute JS dan render React SPA
+- 💡 Future: bisa migrate ke Next.js atau gunakan external prerender service jika butuh SSR
 
 ### 3. **Routing Fixed**
 - ❌ Removed: Redirect 302 chain
@@ -69,9 +70,9 @@
 
 **Semua opsi dieksekusi:**
 - ✅ Opsi A: Static Sitemap
-- ✅ Opsi B: Prerendering (via PRERENDER=1)
+- ⚠️ Opsi B: Prerendering (disabled - Puppeteer issue, tapi sitemap cukup!)
 - ✅ Opsi C: Dynamic Sitemap + Error Handling
 
-**Result:** Comprehensive, robust, production-ready SEO solution!
+**Result:** Robust production-ready SEO solution via sitemap strategy!
 
 Lihat **DEPLOYMENT-SEO-GUIDE.md** untuk detail lengkap testing & troubleshooting.

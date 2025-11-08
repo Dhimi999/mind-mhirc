@@ -24,29 +24,34 @@
 
 ### 2. **Prerendering Aktif** ✨
 
+**UPDATE: Prerendering DISABLED di Vercel (Puppeteer dependency issue)**
+
+**Status:**
+- ❌ Prerender disabled di Vercel karena Chrome dependencies tidak tersedia
+- ✅ **Sitemap strategy tetap berjalan** - ini yang utama untuk SEO
+- ✅ Static + Dynamic sitemap sudah cukup untuk indexing
+
 **Perubahan di `vite.config.ts`:**
 ```typescript
-// SEBELUM (prerender disabled di Vercel):
-const shouldPrerender = mode === 'production' && !isVercel && process.env.PRERENDER === '1'
-
-// SEKARANG (prerender enabled karena Anda sudah set PRERENDER=1):
-const shouldPrerender = mode === 'production' && process.env.PRERENDER === '1'
+// Prerender disabled untuk Vercel deployment
+const shouldPrerender = mode === 'production' && process.env.PRERENDER === '1' && !isVercel
 ```
 
-**Hasil:**
-- Halaman-halaman utama akan di-prerender menjadi HTML static
-- Google crawler dapat langsung baca konten tanpa execute JS
-- Meta tags dari Helmet terlihat oleh crawler
-- Canonical URLs, OG tags, structured data terekstrak
+**Kenapa disabled?**
+- Puppeteer butuh Chrome binary + system libraries (libnss3.so, dll)
+- Vercel serverless environment tidak punya dependencies tersebut
+- Error: `Failed to launch chrome! cannot open shared object file`
 
-**Halaman yang di-prerender:**
-- `/` (homepage)
-- `/about`
-- `/privacy`, `/cookies`, `/tests`, `/services`
-- `/spiritual-budaya/*` (semua tabs)
-- `/hibrida-cbt/*` (semua tabs)
-- `/safe-mother`
-- `/blog` (landing)
+**Alternatif untuk SEO:**
+- ✅ **Sitemap komprehensif** (static + dynamic) → Google dapat crawl semua halaman
+- ✅ **Meta tags di index.html** → Basic SEO tetap ada
+- ✅ **Dynamic meta injection via Helmet** → Untuk browser/social media sharing
+- ⚠️ **Google crawler execute JS** → Masih bisa index konten React (lebih lambat tapi tetap bekerja)
+
+**Future improvement (opsional):**
+- Gunakan Cloudflare Workers atau Netlify (support prerendering better)
+- Atau setup dedicated prerender service (prerender.io, rendertron)
+- Atau migrate ke Next.js/Remix untuk native SSR
 
 ### 3. **Routing Configuration Fixed** 🔧
 
@@ -166,29 +171,30 @@ https://mind-mhirc.my.id/api/sitemap
 
 ### 2. Test Prerendered Pages
 
-**Cek View Page Source:**
+**⚠️ SKIP: Prerendering disabled di Vercel**
+
+Karena Puppeteer dependency issue, prerender tidak jalan di Vercel.
+**Ini OK!** Sitemap strategy sudah cukup untuk SEO.
+
+**Apa yang Google lihat:**
+- ✅ Sitemap XML dengan semua URLs
+- ✅ Meta tags basic dari `index.html`
+- ⚠️ Google crawler akan execute JavaScript untuk render konten React (lebih lambat tapi tetap bisa index)
+
+**Jika ingin cek meta tags:**
 ```
-https://mind-mhirc.my.id/
-https://mind-mhirc.my.id/about
-https://mind-mhirc.my.id/spiritual-budaya
-https://mind-mhirc.my.id/hibrida-cbt
+View Source: https://mind-mhirc.my.id/
 ```
+**Expected:**
+- Basic meta tags dari `index.html` (generic)
+- `<div id="root"></div>` (belum ter-render)
+- **Ini normal untuk SPA tanpa SSR**
 
-**Expected di HTML source:**
-- ✅ Title tag berisi judul halaman (bukan generic)
-- ✅ Meta description sesuai halaman
-- ✅ Canonical link tag ada
-- ✅ OG tags (og:title, og:description, og:image)
-- ✅ Twitter card tags
-- ✅ Konten HTML terrender (bukan hanya `<div id="root"></div>`)
-
-**Jika prerender berhasil:**
-- Anda akan lihat konten React sudah ter-inject dalam HTML
-- Meta tags dari Helmet sudah ada di `<head>`
-
-**Jika prerender gagal:**
-- Hanya ada meta tags generic dari `index.html`
-- Body hanya `<div id="root"></div>` kosong
+**Google modern crawler tetap bisa:**
+- Execute JavaScript
+- Render React components
+- Index konten dinamis
+- **Hanya lebih lambat dibanding prerendered pages**
 
 ### 3. Google Rich Results Test
 
@@ -266,27 +272,39 @@ https://mind-mhirc.my.id/sitemap.xml
 
 ### Issue: Prerender tidak jalan
 
-**Symptoms:**
-- View source masih kosong (`<div id="root"></div>`)
-- Meta tags masih generic
+**STATUS: EXPECTED - Prerender disabled di Vercel**
 
-**Check:**
-1. Vercel environment variable `PRERENDER=1` sudah set?
-2. Build logs di Vercel ada mention "prerender"?
-3. Puppeteer dependencies terinstall?
+**Kenapa disabled:**
+- Puppeteer butuh Chrome binary + system libraries (libnss3.so, libatk, dll)
+- Vercel serverless environment tidak punya dependencies ini
+- Build akan fail dengan error: `Failed to launch chrome!`
 
-**Fix jika Puppeteer error di Vercel:**
-```json
-// package.json - tambahkan dependencies
-{
-  "dependencies": {
-    "puppeteer-core": "^21.0.0",
-    "chrome-aws-lambda": "^10.1.0"
-  }
-}
+**Solution: Rely on Sitemap (sudah diimplementasikan)**
+- ✅ Static sitemap selalu available
+- ✅ Dynamic sitemap dengan blog posts
+- ✅ Google modern crawler tetap bisa execute JS dan index React SPA
+- ⚠️ Indexing mungkin lebih lambat (7-14 hari vs 3-7 hari)
+
+**Jika tetap ingin prerendering (advanced):**
+
+**Opsi 1: Puppeteer Core + Chrome AWS Lambda** (Kompleks)
+```bash
+npm install puppeteer-core chrome-aws-lambda
 ```
 
-Atau **fallback plan:** Disable prerender sementara, rely on sitemap dulu.
+Lalu update vite prerender config untuk gunakan chrome-aws-lambda. **Not recommended** - kompleks dan heavy.
+
+**Opsi 2: Migrate ke framework dengan SSR native:**
+- Next.js (React SSR)
+- Remix (React SSR)
+- Astro (Hybrid SSR/SSG)
+
+**Opsi 3: External prerender service:**
+- prerender.io
+- Rendertron
+- Netlify (punya built-in prerender)
+
+**Recommendation: Stick dengan sitemap-only strategy untuk sekarang.**
 
 ### Issue: API Sitemap timeout
 

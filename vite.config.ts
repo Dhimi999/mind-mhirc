@@ -12,8 +12,9 @@ const prerender = _prerenderMod.default || _prerenderMod
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true'
-  // Enable prerender in production when PRERENDER=1 is set (including Vercel)
-  const shouldPrerender = mode === 'production' && process.env.PRERENDER === '1'
+  // Disable prerender di Vercel karena Puppeteer dependency issue
+  // Rely on sitemap untuk SEO (sudah robust dengan static + dynamic)
+  const shouldPrerender = mode === 'production' && process.env.PRERENDER === '1' && !isVercel
   
   return ({
   server: {
