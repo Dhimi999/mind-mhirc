@@ -12,8 +12,9 @@ const prerender = _prerenderMod.default || _prerenderMod
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true'
-  // To avoid Puppeteer missing libs on Vercel, run prerender only when explicitly enabled
-  const shouldPrerender = mode === 'production' && !isVercel && process.env.PRERENDER === '1'
+  // Enable prerender in production when PRERENDER=1 is set (including Vercel)
+  const shouldPrerender = mode === 'production' && process.env.PRERENDER === '1'
+  
   return ({
   server: {
     host: "::",

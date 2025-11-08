@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- This index points to the dynamic sitemap endpoint -->
+  <!-- Primary static sitemap - always available -->
+  <sitemap>
+    <loc>https://mind-mhirc.my.id/sitemap-static.xml</loc>
+  </sitemap>
+  <!-- Dynamic sitemap with blog posts - updated on demand -->
   <sitemap>
     <loc>https://mind-mhirc.my.id/api/sitemap</loc>
   </sitemap>

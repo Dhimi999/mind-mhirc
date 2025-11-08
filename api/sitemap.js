@@ -1,4 +1,5 @@
 // File: /api/sitemap.js
+// Dynamic sitemap endpoint with robust error handling and timeout protection
 import { createClient } from '@supabase/supabase-js';
 import { generateSitemap } from '../src/utils/sitemap.js';
 
@@ -11,14 +12,15 @@ function getBaseUrl(req) {
   return 'https://mind-mhirc.my.id';
 }
 
-// const supabase = createClient(
-//   process.env.VITE_SUPABASE_URL,
-//   process.env.SUPABASE_SERVICE_ROLE_KEY
-// );
-
 export default async function handler(req, res) {
+  // Set headers FIRST to ensure proper response even on error
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+  
   try {
     const baseUrl = getBaseUrl(req);
+    
+    // Static URLs - always available
     const staticUrls = [
       // Core
       { loc: `${baseUrl}/`, changefreq: 'weekly', priority: '1.0' },
@@ -49,38 +51,74 @@ export default async function handler(req, res) {
       { loc: `${baseUrl}/complete-profile`, changefreq: 'yearly', priority: '0.1' },
     ];
 
-    // Try to load blog posts if Supabase credentials are available
+    // Try to load blog posts with timeout protection
     let blogUrls = [];
     const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    
     if (supabaseUrl && supabaseKey) {
       try {
+        // Create timeout promise (3 seconds max for Supabase query)
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Supabase query timeout')), 3000)
+        );
+        
         const sb = createClient(supabaseUrl, supabaseKey);
-        const { data: blogPosts, error } = await sb
+        const queryPromise = sb
           .from('blog_posts')
-          .select('slug, updated_date');
+          .select('slug, updated_date')
+          .order('updated_date', { ascending: false });
+        
+        // Race between query and timeout
+        const { data: blogPosts, error } = await Promise.race([queryPromise, timeoutPromise]);
+        
         if (error) {
-          console.error('Supabase error:', error);
+          console.warn('Supabase error (will use static URLs only):', error.message);
+        } else if (blogPosts && blogPosts.length > 0) {
+          blogUrls = blogPosts.map(post => ({
+            loc: `${baseUrl}/blog/${post.slug}`,
+            lastmod: post.updated_date?.split('T')[0],
+            changefreq: 'weekly',
+            priority: '0.8',
+          }));
+          console.log(`✅ Loaded ${blogUrls.length} blog posts for sitemap`);
         }
-        blogUrls = (blogPosts || []).map(post => ({
-          loc: `${baseUrl}/blog/${post.slug}`,
-          lastmod: post.updated_date?.split('T')[0],
-          changefreq: 'weekly',
-          priority: '0.8',
-        }));
       } catch (e) {
-        console.error('Supabase client init/fetch failed:', e);
+        console.warn('Blog fetch failed (will use static URLs only):', e.message);
+        // Continue with static URLs only - this is not fatal
       }
+    } else {
+      console.warn('Supabase credentials not available, using static sitemap only');
     }
 
     const allUrls = [...staticUrls, ...blogUrls];
     const xml = generateSitemap(allUrls);
 
-    res.setHeader('Content-Type', 'application/xml');
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
     res.status(200).send(xml);
   } catch (err) {
     console.error('Error generating sitemap:', err);
-    res.status(500).send('Internal Server Error');
+    
+    // Return minimal valid sitemap instead of 500 error
+    // This ensures Google always gets SOMETHING instead of failing completely
+    const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://mind-mhirc.my.id/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://mind-mhirc.my.id/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mind-mhirc.my.id/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>`;
+    
+    res.status(200).send(fallbackXml);
   }
 }

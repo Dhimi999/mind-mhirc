@@ -18,5 +18,5 @@ Disallow: /hibrida-cbt/psikoedukasi/sesi
 Allow: /assets/
 Allow: /images/
 
-# Use relative sitemap so it works on vercel.app and custom domains
-Sitemap: /sitemap.xml
+# Primary sitemap - sitemap index that includes both static and dynamic
+Sitemap: https://mind-mhirc.my.id/sitemap.xml
