@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Primary static sitemap - always available -->
   <sitemap>
     <loc>https://mind-mhirc.my.id/sitemap-static.xml</loc>
+    <lastmod>2025-01-10T00:00:00+00:00</lastmod>
   </sitemap>
-  <!-- Dynamic sitemap with blog posts - updated on demand -->
   <sitemap>
     <loc>https://mind-mhirc.my.id/api/sitemap</loc>
+    <lastmod>2025-01-10T00:00:00+00:00</lastmod>
   </sitemap>
 </sitemapindex>

@@ -17,7 +17,7 @@
   "main": "eslint.config.js",
   "scripts": {
     "dev": "vite",
-    "build": "npm run generate:sitemap && vite build && node -e \"try{require('fs').unlinkSync('dist/sitemap.xml')}catch(e){}\"",
+    "build": "npm run generate:sitemap && vite build",
     "build:dev": "vite build --mode development",
     "generate:sitemap": "node scripts/generate-sitemap.js",
     "lint": "eslint .",
