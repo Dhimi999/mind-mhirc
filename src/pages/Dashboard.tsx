@@ -625,7 +625,7 @@ const Dashboard = () => {
                 />
                 <Route
                   path="appointments/*"
-                  element={<DashboardAppointments user={mockUser} />}
+                  element={<DashboardAppointments user={mockUser} isProfessional={isProfessional} />}
                 />
                 <Route
                   path="diary/*"
@@ -1044,18 +1044,34 @@ const DashboardResults = ({ user }: { user: any }) => (
   </div>
 );
 
-// Untuk appointment, gunakan komponen dari Dashboard (1)
-const DashboardAppointments = ({ user }: { user: any }) => (
-  <div>
-    <h1 className="text-2xl font-semibold mb-6">Janji Konsultasi</h1>
-    <div className="bg-card shadow-soft rounded-xl p-6">
-      <p>
-        Halaman ini akan memungkinkan Anda menjadwalkan, melihat, atau
-        membatalkan janji konsultasi dengan psikolog atau konselor.
-      </p>
+// Import komponen appointments
+import { CreateAppointment } from "@/components/dashboard/appointments/CreateAppointment";
+import { MyAppointments } from "@/components/dashboard/appointments/MyAppointments";
+import { AppointmentRequests } from "@/components/dashboard/appointments/AppointmentRequests";
+
+// Untuk appointment, detect professional vs regular user
+const DashboardAppointments = ({ user, isProfessional }: { user: any; isProfessional: boolean }) => {
+  if (isProfessional) {
+    // Professional view: Lihat dan kelola appointment requests
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold mb-6">Janji Konsultasi</h1>
+        <AppointmentRequests />
+      </div>
+    );
+  }
+
+  // Regular user view: Create dan track appointments
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold">Janji Konsultasi</h1>
+        <CreateAppointment />
+      </div>
+      <MyAppointments />
     </div>
-  </div>
-);
+  );
+};
 
 const DashboardTests = ({ user }: { user: any }) => (
   <div>

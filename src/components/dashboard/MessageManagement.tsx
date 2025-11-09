@@ -184,7 +184,19 @@ const MessageManagement: React.FC = () => {
           })
         );
         setChatRooms(roomsWithParticipants);
-        if (roomsWithParticipants.length > 0 && !selectedRoomId) {
+        
+        // Check URL hash untuk room ID (dari appointment navigation)
+        const hash = window.location.hash;
+        const roomMatch = hash.match(/room=([^&]+)/);
+        const targetRoomId = roomMatch ? roomMatch[1] : null;
+        
+        if (targetRoomId && roomsWithParticipants.some(r => r.id === targetRoomId)) {
+          // Set room dari URL hash
+          setSelectedRoomId(targetRoomId);
+          // Clear hash setelah digunakan
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        } else if (roomsWithParticipants.length > 0 && !selectedRoomId) {
+          // Default: pilih room pertama
           setSelectedRoomId(roomsWithParticipants[0].id);
         }
       } catch (error) {

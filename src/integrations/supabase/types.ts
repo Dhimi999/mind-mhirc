@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -90,6 +90,65 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointments: {
+        Row: {
+          approved_datetime: string | null
+          chat_room_id: string | null
+          completed_at: string | null
+          consultation_type: string
+          created_at: string | null
+          id: string
+          preferred_datetime: string
+          professional_id: string
+          rejection_reason: string | null
+          reschedule_notes: string | null
+          status: string
+          topic: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_datetime?: string | null
+          chat_room_id?: string | null
+          completed_at?: string | null
+          consultation_type: string
+          created_at?: string | null
+          id?: string
+          preferred_datetime: string
+          professional_id: string
+          rejection_reason?: string | null
+          reschedule_notes?: string | null
+          status?: string
+          topic?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_datetime?: string | null
+          chat_room_id?: string | null
+          completed_at?: string | null
+          consultation_type?: string
+          created_at?: string | null
+          id?: string
+          preferred_datetime?: string
+          professional_id?: string
+          rejection_reason?: string | null
+          reschedule_notes?: string | null
+          status?: string
+          topic?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_chat_room_id_fkey"
+            columns: ["chat_room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
             referencedColumns: ["id"]
           },
         ]
@@ -396,12 +455,55 @@ export type Database = {
         }
         Relationships: []
       }
+      cbt_hibrida_submission_history: {
+        Row: {
+          answers: Json
+          counselor_name: string | null
+          counselor_response: string | null
+          created_at: string | null
+          id: string
+          responded_at: string | null
+          session_number: number
+          submission_number: number
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          responded_at?: string | null
+          session_number: number
+          submission_number?: number
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          responded_at?: string | null
+          session_number?: number
+          submission_number?: number
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cbt_hibrida_user_progress: {
         Row: {
           assignment_done: boolean | null
           counselor_name: string | null
           counselor_response: string | null
           created_at: string | null
+          guidance_read: boolean
           id: string
           meeting_done: boolean | null
           responded_at: string | null
@@ -415,6 +517,7 @@ export type Database = {
           counselor_name?: string | null
           counselor_response?: string | null
           created_at?: string | null
+          guidance_read?: boolean
           id?: string
           meeting_done?: boolean | null
           responded_at?: string | null
@@ -428,6 +531,7 @@ export type Database = {
           counselor_name?: string | null
           counselor_response?: string | null
           created_at?: string | null
+          guidance_read?: boolean
           id?: string
           meeting_done?: boolean | null
           responded_at?: string | null
@@ -522,12 +626,55 @@ export type Database = {
         }
         Relationships: []
       }
+      cbt_psikoedukasi_submission_history: {
+        Row: {
+          answers: Json | null
+          counselor_name: string | null
+          counselor_response: string | null
+          created_at: string | null
+          id: string
+          responded_at: string | null
+          session_number: number | null
+          submission_number: number | null
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id: string
+          responded_at?: string | null
+          session_number?: number | null
+          submission_number?: number | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          responded_at?: string | null
+          session_number?: number | null
+          submission_number?: number | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       cbt_psikoedukasi_user_progress: {
         Row: {
           assignment_done: boolean | null
           counselor_name: string | null
           counselor_response: string | null
           created_at: string | null
+          guide_done: boolean
           id: string
           meeting_done: boolean | null
           responded_at: string | null
@@ -541,6 +688,7 @@ export type Database = {
           counselor_name?: string | null
           counselor_response?: string | null
           created_at?: string | null
+          guide_done?: boolean
           id?: string
           meeting_done?: boolean | null
           responded_at?: string | null
@@ -554,6 +702,7 @@ export type Database = {
           counselor_name?: string | null
           counselor_response?: string | null
           created_at?: string | null
+          guide_done?: boolean
           id?: string
           meeting_done?: boolean | null
           responded_at?: string | null
@@ -564,109 +713,23 @@ export type Database = {
         }
         Relationships: []
       }
-      cbt_user_answers: {
-        Row: {
-          answer: string | null
-          created_at: string
-          id: number
-          module_id: number | null
-          task_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          answer?: string | null
-          created_at?: string
-          id?: number
-          module_id?: number | null
-          task_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          answer?: string | null
-          created_at?: string
-          id?: number
-          module_id?: number | null
-          task_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cbt_user_answers_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cbt_user_answers_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       cbt_user_progress: {
         Row: {
           created_at: string
           id: number
-          module_id: number | null
-          professional_comment: string | null
-          professional_id: string | null
-          progress: number | null
-          status: Database["public"]["Enums"]["cbt_module_status"] | null
-          user_id: string | null
+          status: boolean
         }
         Insert: {
           created_at?: string
           id?: number
-          module_id?: number | null
-          professional_comment?: string | null
-          professional_id?: string | null
-          progress?: number | null
-          status?: Database["public"]["Enums"]["cbt_module_status"] | null
-          user_id?: string | null
+          status?: boolean
         }
         Update: {
           created_at?: string
           id?: number
-          module_id?: number | null
-          professional_comment?: string | null
-          professional_id?: string | null
-          progress?: number | null
-          status?: Database["public"]["Enums"]["cbt_module_status"] | null
-          user_id?: string | null
+          status?: boolean
         }
-        Relationships: [
-          {
-            foreignKeyName: "cbt_user_progress_professional_id_fkey"
-            columns: ["professional_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cbt_user_progress_professional_id_fkey"
-            columns: ["professional_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cbt_user_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cbt_user_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       chat_messages: {
         Row: {
@@ -1315,12 +1378,55 @@ export type Database = {
         }
         Relationships: []
       }
+      sb_intervensi_submission_history: {
+        Row: {
+          answers: Json
+          counselor_name: string | null
+          counselor_response: string | null
+          created_at: string | null
+          id: string
+          responded_at: string | null
+          session_number: number
+          submission_number: number
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          responded_at?: string | null
+          session_number: number
+          submission_number?: number
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          responded_at?: string | null
+          session_number?: number
+          submission_number?: number
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sb_intervensi_user_progress: {
         Row: {
           assignment_done: boolean | null
           counselor_name: string | null
           counselor_response: string | null
           created_at: string | null
+          guidance_read: boolean | null
           id: string
           meeting_done: boolean | null
           responded_at: string | null
@@ -1334,6 +1440,7 @@ export type Database = {
           counselor_name?: string | null
           counselor_response?: string | null
           created_at?: string | null
+          guidance_read?: boolean | null
           id?: string
           meeting_done?: boolean | null
           responded_at?: string | null
@@ -1347,6 +1454,7 @@ export type Database = {
           counselor_name?: string | null
           counselor_response?: string | null
           created_at?: string | null
+          guidance_read?: boolean | null
           id?: string
           meeting_done?: boolean | null
           responded_at?: string | null
@@ -1441,12 +1549,55 @@ export type Database = {
         }
         Relationships: []
       }
+      sb_psikoedukasi_submission_history: {
+        Row: {
+          answers: Json
+          counselor_name: string | null
+          counselor_response: string | null
+          created_at: string | null
+          id: string
+          responded_at: string | null
+          session_number: number
+          submission_number: number
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          responded_at?: string | null
+          session_number: number
+          submission_number?: number
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          counselor_name?: string | null
+          counselor_response?: string | null
+          created_at?: string | null
+          id?: string
+          responded_at?: string | null
+          session_number?: number
+          submission_number?: number
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sb_psikoedukasi_user_progress: {
         Row: {
           assignment_done: boolean | null
           counselor_name: string | null
           counselor_response: string | null
           created_at: string | null
+          guide_done: boolean | null
           id: string
           meeting_done: boolean | null
           responded_at: string | null
@@ -1460,6 +1611,7 @@ export type Database = {
           counselor_name?: string | null
           counselor_response?: string | null
           created_at?: string | null
+          guide_done?: boolean | null
           id?: string
           meeting_done?: boolean | null
           responded_at?: string | null
@@ -1473,6 +1625,7 @@ export type Database = {
           counselor_name?: string | null
           counselor_response?: string | null
           created_at?: string | null
+          guide_done?: boolean | null
           id?: string
           meeting_done?: boolean | null
           responded_at?: string | null
@@ -1480,6 +1633,60 @@ export type Database = {
           session_opened?: boolean | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      sb_statistics_cache: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_refreshed_at: string | null
+          pending_requests: number
+          program: string
+          refreshed_by: string | null
+          rejected_requests: number
+          response_rate: number
+          session_stats: Json
+          total_enrolled: number
+          total_responded: number
+          total_submissions: number
+          updated_at: string | null
+          users_with_submissions: number
+          users_without_submissions: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_refreshed_at?: string | null
+          pending_requests?: number
+          program: string
+          refreshed_by?: string | null
+          rejected_requests?: number
+          response_rate?: number
+          session_stats?: Json
+          total_enrolled?: number
+          total_responded?: number
+          total_submissions?: number
+          updated_at?: string | null
+          users_with_submissions?: number
+          users_without_submissions?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_refreshed_at?: string | null
+          pending_requests?: number
+          program?: string
+          refreshed_by?: string | null
+          rejected_requests?: number
+          response_rate?: number
+          session_stats?: Json
+          total_enrolled?: number
+          total_responded?: number
+          total_submissions?: number
+          updated_at?: string | null
+          users_with_submissions?: number
+          users_without_submissions?: number
         }
         Relationships: []
       }
@@ -1649,7 +1856,7 @@ export type Database = {
     }
     Functions: {
       get_shared_chat_room: {
-        Args: { room_type: string; user_id_1: string; user_id_2: string }
+        Args: { room_type?: string; user_id_1: string; user_id_2: string }
         Returns: string
       }
       has_role: {
@@ -1659,6 +1866,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      refresh_sb_statistics: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "super" | "admin" | "user"
