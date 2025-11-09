@@ -14,7 +14,8 @@ import {
   Loader2,
   AlertCircle,
   Info,
-  ChevronRight
+  ChevronRight,
+  Brain
 } from "lucide-react";
 import {
   Card,
@@ -37,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -92,10 +94,26 @@ export const AppointmentRequests = () => {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    if (user) {
-      fetchAppointments();
-      subscribeToChanges();
-    }
+    if (!user) return;
+    fetchAppointments();
+    const channel = supabase
+      .channel("professional_appointments")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointments",
+          filter: `professional_id=eq.${user.id}`
+        },
+        () => {
+          fetchAppointments();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchAppointments = async () => {
@@ -103,11 +121,16 @@ export const AppointmentRequests = () => {
 
     setIsLoading(true);
     try {
-      const { data: appointmentsData, error: appointmentsError } = await supabase
+      let query = supabase
         .from("appointments")
         .select("*")
-        .eq("professional_id", user.id)
         .order("created_at", { ascending: false });
+
+      if (!user.is_admin) {
+        query = query.eq("professional_id", user.id);
+      }
+
+      const { data: appointmentsData, error: appointmentsError } = await query;
 
       if (appointmentsError) throw appointmentsError;
 
@@ -128,8 +151,23 @@ export const AppointmentRequests = () => {
         user: usersData.find(u => u.id === appointment.user_id) || null
       })) || [];
 
+      // Urutkan: Tampilkan yang disetujui (hari ini & mendatang) terlebih dahulu di "Semua Riwayat"
+      const sortedAll = [...appointmentsWithUsers].sort((a, b) => {
+        const aApproved = a.status === 'approved';
+        const bApproved = b.status === 'approved';
+        if (aApproved && !bApproved) return -1;
+        if (!aApproved && bApproved) return 1;
+        if (aApproved && bApproved) {
+          const aTime = a.approved_datetime ? new Date(a.approved_datetime).getTime() : new Date(a.preferred_datetime).getTime();
+          const bTime = b.approved_datetime ? new Date(b.approved_datetime).getTime() : new Date(b.preferred_datetime).getTime();
+          return aTime - bTime; // lebih cepat tampil duluan
+        }
+        // selain approved, urutkan terbaru ke lama
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
       setPendingAppointments(appointmentsWithUsers.filter(a => a.status === 'pending'));
-      setAllAppointments(appointmentsWithUsers);
+      setAllAppointments(sortedAll);
     } catch (error) {
       console.error("Error fetching appointments:", error);
       toast.error("Gagal memuat data appointment");
@@ -138,29 +176,7 @@ export const AppointmentRequests = () => {
     }
   };
 
-  const subscribeToChanges = () => {
-    if (!user) return;
-
-    const subscription = supabase
-      .channel("professional_appointments")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "appointments",
-          filter: `professional_id=eq.${user.id}`
-        },
-        () => {
-          fetchAppointments();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  };
+  // subscribeToChanges is now managed inside useEffect with proper cleanup
 
   const openDetailDialog = (appointment: AppointmentWithUserData) => {
     setDetailDialog({ open: true, appointment });
@@ -209,7 +225,8 @@ export const AppointmentRequests = () => {
 
       if (error) throw error;
 
-      toast.success("Appointment berhasil disetujui! Chat room otomatis dibuat.");
+  toast.success("Appointment berhasil disetujui! Chat room otomatis dibuat.");
+  await fetchAppointments();
       closeActionDialog();
     } catch (error) {
       console.error("Error approving appointment:", error);
@@ -237,7 +254,8 @@ export const AppointmentRequests = () => {
 
       if (error) throw error;
 
-      toast.success("Appointment berhasil ditolak");
+  toast.success("Appointment berhasil ditolak");
+  await fetchAppointments();
       closeActionDialog();
     } catch (error) {
       console.error("Error rejecting appointment:", error);
@@ -270,6 +288,7 @@ export const AppointmentRequests = () => {
       if (error) throw error;
 
       toast.success("Appointment berhasil dijadwal ulang dan disetujui!");
+      await fetchAppointments();
       closeActionDialog();
     } catch (error) {
       console.error("Error rescheduling appointment:", error);
@@ -310,6 +329,15 @@ export const AppointmentRequests = () => {
       </Badge>
     );
   };
+
+  const today = new Date();
+  const isSameDay = (a: Date, b: Date) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+
+  const inProgressToday = allAppointments.filter(a => a.status === 'approved' && a.approved_datetime && isSameDay(new Date(a.approved_datetime), today));
+  const upcoming = allAppointments.filter(a => a.status === 'approved' && a.approved_datetime && new Date(a.approved_datetime) > today && !isSameDay(new Date(a.approved_datetime), today));
+  const finished = allAppointments.filter(a => a.status === 'completed');
+  const cancelled = allAppointments.filter(a => a.status === 'cancelled' || a.status === 'rejected');
+  const activePending = pendingAppointments.length;
 
   const renderCompactCard = (appointment: AppointmentWithUserData) => (
     <Card key={appointment.id} className="hover:shadow-md transition-shadow">
@@ -396,6 +424,18 @@ export const AppointmentRequests = () => {
                 <span className="hidden sm:inline">Chat</span>
               </Button>
             )}
+            {user?.is_admin && appointment.status === "approved" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleMarkCompleted(appointment)}
+                disabled={isSubmitting}
+                className="gap-1"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Tandai Selesai</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -409,6 +449,39 @@ export const AppointmentRequests = () => {
     </Card>
   );
 
+  // Tandai selesai (admin only) -> ubah status ke completed dan kirim pesan sistem
+  const handleMarkCompleted = async (appointment: AppointmentWithUserData) => {
+    setIsSubmitting(true);
+    try {
+      const { error: updateError } = await supabase
+        .from("appointments")
+        .update({ status: "completed", completed_at: new Date().toISOString() })
+        .eq("id", appointment.id);
+      if (updateError) throw updateError;
+
+      if (appointment.chat_room_id) {
+        const SYSTEM_MESSAGE = "Obrolan ini sudah diakhiri, jika ingin melakukan konsultassi, harap ajukan janji konsultasi kembali";
+        const { error: messageError } = await supabase
+          .from("chat_messages")
+          .insert({
+            chat_room_id: appointment.chat_room_id,
+            sender_id: user?.id,
+            content: SYSTEM_MESSAGE,
+            read_by: user ? [user.id] : []
+          });
+        if (messageError) throw messageError;
+      }
+
+      toast.success("Appointment ditandai selesai dan pesan sistem dikirim.");
+      await fetchAppointments();
+    } catch (err) {
+      console.error("Error marking completed:", err);
+      toast.error("Gagal menandai selesai");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -419,6 +492,40 @@ export const AppointmentRequests = () => {
 
   return (
     <>
+      {user?.is_admin && (
+        <div className="grid gap-4 md:grid-cols-5 mb-6">
+          <Card className="border-l-4 border-l-yellow-400">
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+              <div className="text-2xl font-bold">{activePending}</div>
+            </CardHeader>
+          </Card>
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Hari Ini</CardTitle>
+              <div className="text-2xl font-bold">{inProgressToday.length}</div>
+            </CardHeader>
+          </Card>
+            <Card className="border-l-4 border-l-indigo-500">
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Mendatang</CardTitle>
+              <div className="text-2xl font-bold">{upcoming.length}</div>
+            </CardHeader>
+          </Card>
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Selesai</CardTitle>
+              <div className="text-2xl font-bold">{finished.length}</div>
+            </CardHeader>
+          </Card>
+          <Card className="border-l-4 border-l-red-500">
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Batal/Tolak</CardTitle>
+              <div className="text-2xl font-bold">{cancelled.length}</div>
+            </CardHeader>
+          </Card>
+        </div>
+      )}
       <Tabs defaultValue="pending" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="pending" className="gap-2">
@@ -456,7 +563,7 @@ export const AppointmentRequests = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="all" className="space-y-3">
+        <TabsContent value="all" className="space-y-6">
           {allAppointments.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -472,7 +579,44 @@ export const AppointmentRequests = () => {
               </CardContent>
             </Card>
           ) : (
-            allAppointments.map(renderCompactCard)
+            <>
+              {inProgressToday.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-blue-600">Sedang Berlangsung (Hari Ini)</h3>
+                    <Separator className="flex-1" />
+                  </div>
+                  <div className="space-y-3">{inProgressToday.map(renderCompactCard)}</div>
+                </div>
+              )}
+              {upcoming.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-indigo-600">Mendatang</h3>
+                    <Separator className="flex-1" />
+                  </div>
+                  <div className="space-y-3">{upcoming.map(renderCompactCard)}</div>
+                </div>
+              )}
+              {finished.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-green-600">Selesai</h3>
+                    <Separator className="flex-1" />
+                  </div>
+                  <div className="space-y-3">{finished.map(renderCompactCard)}</div>
+                </div>
+              )}
+              {cancelled.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-red-600">Dibatalkan / Ditolak</h3>
+                    <Separator className="flex-1" />
+                  </div>
+                  <div className="space-y-3">{cancelled.map(renderCompactCard)}</div>
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>
@@ -832,3 +976,6 @@ export const AppointmentRequests = () => {
     </>
   );
 };
+
+// Definisi fungsi handleMarkCompleted diposisikan di atas return sebelumnya, tambahkan jika belum tersisip
+// (Catatan: Fungsi sudah ditambahkan sebelumnya tetapi editor memerlukan penempatan yang terdeteksi sebelum pemakaian.)

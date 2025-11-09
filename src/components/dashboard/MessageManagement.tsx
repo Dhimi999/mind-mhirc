@@ -840,7 +840,8 @@ const MessageManagement: React.FC = () => {
                       {chatRooms.map((room) => {
                         const otherParticipant = getOtherParticipant(room);
                         const canDelete = isRoomCreator(room);
-                        const isConsultation = room.type === "consultation";
+                        // Tampilkan label/badge khusus hanya untuk layanan Safe Mother
+                        const isSafeMother = room.type === "safe-mother";
 
                         return (
                           <div
@@ -848,14 +849,14 @@ const MessageManagement: React.FC = () => {
                             className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors relative ${
                               selectedRoomId === room.id
                                 ? "bg-muted border border-primary/20"
-                                : isConsultation
+                                : isSafeMother
                                 ? "bg-pink-50/50 dark:bg-pink-900/10"
                                 : "bg-card"
                             }`}
                             onClick={() => setSelectedRoomId(room.id)}
                           >
                             {/* BADGE UNTUK KONSULTASI (KANAN ATAS) */}
-                            {isConsultation && (
+                            {isSafeMother && (
                               <Badge className="absolute top-2 right-2 bg-pink-100 text-pink-700 border-pink-200 text-xs px-1.5 py-0.5 pointer-events-none">
                                 <Heart className="w-3 h-3 mr-1" />
                                 SM

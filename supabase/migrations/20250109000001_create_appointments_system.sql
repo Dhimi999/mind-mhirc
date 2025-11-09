@@ -239,8 +239,8 @@ BEGIN
       NEW.chat_room_id := existing_room_id;
     ELSE
       -- Buat chat room baru
-      INSERT INTO public.chat_rooms (created_by, type)
-      VALUES (NEW.professional_id, 'consultation')
+  INSERT INTO public.chat_rooms (created_by, type)
+  VALUES (NEW.professional_id, 'consultation') -- tetap gunakan 'consultation' untuk general dashboard
       RETURNING id INTO new_room_id;
       
       -- Tambahkan partisipan

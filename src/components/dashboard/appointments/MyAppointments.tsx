@@ -80,10 +80,26 @@ export const MyAppointments = () => {
   const [cancellationReason, setCancellationReason] = useState("");
 
   useEffect(() => {
-    if (user) {
-      fetchAppointments();
-      subscribeToChanges();
-    }
+    if (!user) return;
+    fetchAppointments();
+    const channel = supabase
+      .channel("user_appointments")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointments",
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchAppointments();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchAppointments = async () => {
@@ -125,29 +141,7 @@ export const MyAppointments = () => {
     }
   };
 
-  const subscribeToChanges = () => {
-    if (!user) return;
-
-    const subscription = supabase
-      .channel("user_appointments")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "appointments",
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchAppointments();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  };
+  // subscribeToChanges logic now handled inside useEffect with proper cleanup
 
   const openDetailDialog = (appointment: AppointmentWithProfessionalData) => {
     setDetailDialog({ open: true, appointment });
@@ -172,7 +166,8 @@ export const MyAppointments = () => {
 
       if (error) throw error;
 
-      toast.success("Janji konsultasi berhasil dibatalkan");
+  toast.success("Janji konsultasi berhasil dibatalkan");
+  await fetchAppointments();
       setShowCancelDialog(false);
       setCancellationReason("");
       setSelectedAppointment(null);

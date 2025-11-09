@@ -119,12 +119,12 @@ const Konsultasi = () => {
         return;
       }
 
-      // Ambil data room yang tipenya 'consultation'
+      // Ambil data room yang tipenya 'safe-mother' (khusus layanan Safe Mother)
       const { data: roomsData, error: roomsError } = await supabase
         .from("chat_rooms")
         .select("*")
         .in("id", roomIds)
-        .eq("type", "consultation")
+        .eq("type", "safe-mother")
         .order("updated_at", { ascending: false });
       if (roomsError) throw roomsError;
 
@@ -188,7 +188,7 @@ const Konsultasi = () => {
         // ... (logika 'try...catch' internal Anda untuk membuat room tetap sama)
         const { data: newRoomData, error: roomError } = await supabase
           .from("chat_rooms")
-          .insert({ created_by: user.id, type: "consultation" })
+          .insert({ created_by: user.id, type: "safe-mother" })
           .select()
           .single();
         if (roomError || !newRoomData) throw roomError;
