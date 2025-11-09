@@ -45,6 +45,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AppointmentStatistics } from "./AppointmentStatistics";
+import { AppointmentCalendar } from "./AppointmentCalendar";
 
 // Extended type untuk include user data
 type AppointmentWithUserData = {
@@ -74,6 +76,9 @@ export const AppointmentRequests = () => {
   const [pendingAppointments, setPendingAppointments] = useState<AppointmentWithUserData[]>([]);
   const [allAppointments, setAllAppointments] = useState<AppointmentWithUserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Persistent active tab state (solves tab reset issue)
+  const [activeTab, setActiveTab] = useState("pending");
   
   // Detail dialog
   const [detailDialog, setDetailDialog] = useState<{
@@ -330,6 +335,7 @@ export const AppointmentRequests = () => {
     );
   };
 
+  // Filter appointments for "Semua Riwayat" tab
   const today = new Date();
   const isSameDay = (a: Date, b: Date) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
 
@@ -337,7 +343,6 @@ export const AppointmentRequests = () => {
   const upcoming = allAppointments.filter(a => a.status === 'approved' && a.approved_datetime && new Date(a.approved_datetime) > today && !isSameDay(new Date(a.approved_datetime), today));
   const finished = allAppointments.filter(a => a.status === 'completed');
   const cancelled = allAppointments.filter(a => a.status === 'cancelled' || a.status === 'rejected');
-  const activePending = pendingAppointments.length;
 
   const renderCompactCard = (appointment: AppointmentWithUserData) => (
     <Card key={appointment.id} className="hover:shadow-md transition-shadow">
@@ -460,7 +465,7 @@ export const AppointmentRequests = () => {
       if (updateError) throw updateError;
 
       if (appointment.chat_room_id) {
-        const SYSTEM_MESSAGE = "Obrolan ini sudah diakhiri, jika ingin melakukan konsultassi, harap ajukan janji konsultasi kembali";
+        const SYSTEM_MESSAGE = "[PESAN OTOMATIS] Obrolan ini sudah diakhiri, jika ingin melakukan konsultassi, harap ajukan janji konsultasi kembali [PESAN OTOMATIS]";
         const { error: messageError } = await supabase
           .from("chat_messages")
           .insert({
@@ -493,40 +498,18 @@ export const AppointmentRequests = () => {
   return (
     <>
       {user?.is_admin && (
-        <div className="grid gap-4 md:grid-cols-5 mb-6">
-          <Card className="border-l-4 border-l-yellow-400">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-              <div className="text-2xl font-bold">{activePending}</div>
-            </CardHeader>
-          </Card>
-          <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Hari Ini</CardTitle>
-              <div className="text-2xl font-bold">{inProgressToday.length}</div>
-            </CardHeader>
-          </Card>
-            <Card className="border-l-4 border-l-indigo-500">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Mendatang</CardTitle>
-              <div className="text-2xl font-bold">{upcoming.length}</div>
-            </CardHeader>
-          </Card>
-          <Card className="border-l-4 border-l-green-500">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Selesai</CardTitle>
-              <div className="text-2xl font-bold">{finished.length}</div>
-            </CardHeader>
-          </Card>
-          <Card className="border-l-4 border-l-red-500">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Batal/Tolak</CardTitle>
-              <div className="text-2xl font-bold">{cancelled.length}</div>
-            </CardHeader>
-          </Card>
+        <div className="space-y-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <AppointmentStatistics appointments={allAppointments} />
+            </div>
+            <div className="lg:col-span-1">
+              <AppointmentCalendar appointments={allAppointments} />
+            </div>
+          </div>
         </div>
       )}
-      <Tabs defaultValue="pending" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="pending" className="gap-2">
             <Clock className="h-4 w-4" />

@@ -169,13 +169,14 @@ const Konsultasi = () => {
         {
           user_id_1: user.id,
           user_id_2: professionalId,
-          room_type: "consultation"
+          room_type: "safe-mother"
         }
       );
 
       if (checkError) {
         console.error("Error checking for existing room:", checkError);
         toast.error("Terjadi kesalahan, silakan coba lagi.");
+        setStartingChatId(null);
         return; // Hentikan eksekusi jika ada error
       }
 

@@ -125,6 +125,7 @@ const MessageManagement: React.FC = () => {
   const [isDeletingRoom, setIsDeletingRoom] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<ChatRoom | null>(null);
+  const [isRoomDisabled, setIsRoomDisabled] = useState(false); // State untuk cek apakah chat room completed
 
   // Filter available users based on search term
   useEffect(() => {
@@ -303,6 +304,32 @@ const MessageManagement: React.FC = () => {
 
   // Fetch messages dan real-time subscription
   useEffect(() => {
+    // Cek apakah room terhubung dengan appointment yang sudah completed
+    const checkRoomStatus = async () => {
+      if (!selectedRoomId) {
+        setIsRoomDisabled(false);
+        return;
+      }
+      
+      try {
+        const { data: appointment, error } = await supabase
+          .from("appointments")
+          .select("status")
+          .eq("chat_room_id", selectedRoomId)
+          .maybeSingle();
+        
+        if (!error && appointment && appointment.status === "completed") {
+          setIsRoomDisabled(true);
+        } else {
+          setIsRoomDisabled(false);
+        }
+      } catch (err) {
+        console.error("Error checking room status:", err);
+        setIsRoomDisabled(false);
+      }
+    };
+    
+    checkRoomStatus();
     refreshMessages();
     const messagesSubscription = supabase
       .channel("chat_messages_changes")
@@ -1085,33 +1112,41 @@ const MessageManagement: React.FC = () => {
                       )}
                     </CardContent>
                     <CardFooter className="border-t p-3">
-                      <form
-                        className="flex w-full items-center space-x-2"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }}
-                      >
-                        <Textarea
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          placeholder="Ketik pesan..."
-                          className="min-h-[60px] flex-1 resize-none"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSendMessage();
-                            }
+                      {isRoomDisabled ? (
+                        <div className="w-full p-4 bg-muted rounded-lg text-center">
+                          <p className="text-sm text-muted-foreground">
+                            Obrolan ini sudah diakhiri. Anda tidak dapat mengirim pesan lagi.
+                          </p>
+                        </div>
+                      ) : (
+                        <form
+                          className="flex w-full items-center space-x-2"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSendMessage();
                           }}
-                        />
-                        <Button
-                          type="submit"
-                          size="icon"
-                          disabled={!newMessage.trim() || isSendingMessage}
                         >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </form>
+                          <Textarea
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Ketik pesan..."
+                            className="min-h-[60px] flex-1 resize-none"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                              }
+                            }}
+                          />
+                          <Button
+                            type="submit"
+                            size="icon"
+                            disabled={!newMessage.trim() || isSendingMessage}
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        </form>
+                      )}
                     </CardFooter>
                   </>
                 ) : (
