@@ -146,6 +146,18 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
   // Participant list state
   const [allParticipants, setAllParticipants] = useState<UserProfile[]>([]);
 
+  // Delete submission state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    userId: string;
+    userName: string;
+    submissions: Submission[];
+  } | null>(null);
+  const [selectedDeleteSubmissions, setSelectedDeleteSubmissions] = useState<Set<string>>(new Set());
+  const [deleteAllMode, setDeleteAllMode] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Keep programFilter in sync with selected session (must be before any early returns)
   useEffect(() => {
     if (selectedSession) {
@@ -802,6 +814,143 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  // Delete submissions functions
+  const handleOpenDeleteDialog = (assignment: Assignment) => {
+    const userSubmissions = submissionsByUser[assignment.user_id] || [];
+    const userName = profiles[assignment.user_id]?.full_name || "Tidak diketahui";
+    
+    setDeleteTarget({
+      userId: assignment.user_id,
+      userName: userName,
+      submissions: userSubmissions
+    });
+    
+    // Reset selection
+    setSelectedDeleteSubmissions(new Set());
+    setDeleteAllMode(false);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    
+    if (deleteAllMode) {
+      // All submissions will be deleted
+      setShowDeleteConfirmation(true);
+    } else if (selectedDeleteSubmissions.size === 0) {
+      toast.error("Pilih minimal satu jawaban untuk dihapus");
+      return;
+    } else {
+      setShowDeleteConfirmation(true);
+    }
+  };
+
+  const handleDeleteSubmissions = async () => {
+    if (!deleteTarget || !selectedSession) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      const submissionTable = selectedSession.program === "intervensi" 
+        ? "sb_intervensi_submission_history" 
+        : "sb_psikoedukasi_submission_history";
+      
+      let submissionIdsToDelete: string[] = [];
+      
+      if (deleteAllMode) {
+        // Delete all submissions for this user
+        submissionIdsToDelete = deleteTarget.submissions.map(s => s.id);
+      } else {
+        // Delete only selected submissions
+        submissionIdsToDelete = Array.from(selectedDeleteSubmissions);
+      }
+      
+      if (submissionIdsToDelete.length === 0) {
+        toast.error("Tidak ada jawaban yang dipilih");
+        setIsDeleting(false);
+        return;
+      }
+      
+      console.log("🗑️ Deleting submissions:", {
+        table: submissionTable,
+        ids: submissionIdsToDelete,
+        userId: deleteTarget.userId,
+        sessionNumber: selectedSession.number
+      });
+      
+      // Delete submissions from database
+      const { data: deletedData, error } = await supabase
+        .from(submissionTable as any)
+        .delete()
+        .in("id", submissionIdsToDelete)
+        .select();
+      
+      if (error) {
+        console.error("❌ Delete error:", error);
+        throw error;
+      }
+      
+      console.log("✅ Deleted submissions:", deletedData);
+      
+      // Check remaining submissions in database
+      const { data: remainingData, error: checkError } = await supabase
+        .from(submissionTable as any)
+        .select("id")
+        .eq("user_id", deleteTarget.userId)
+        .eq("session_number", selectedSession.number);
+      
+      if (checkError) {
+        console.error("❌ Check error:", checkError);
+      } else {
+        console.log("📊 Remaining submissions in DB:", remainingData?.length || 0);
+      }
+      
+      // If all submissions deleted, also clear user_progress
+      const remainingSubmissions = deleteTarget.submissions.filter(
+        s => !submissionIdsToDelete.includes(s.id)
+      );
+      
+      if (remainingSubmissions.length === 0 || remainingData?.length === 0) {
+        const progressTable = selectedSession.program === "intervensi" 
+          ? "sb_intervensi_user_progress" 
+          : "sb_psikoedukasi_user_progress";
+        
+        console.log("🧹 Clearing user_progress for user:", deleteTarget.userId);
+        
+        await supabase
+          .from(progressTable as any)
+          .update({
+            counselor_response: null,
+            counselor_name: null,
+            responded_at: null
+          })
+          .eq("user_id", deleteTarget.userId)
+          .eq("session_number", selectedSession.number);
+      }
+      
+      toast.success(`${submissionIdsToDelete.length} jawaban berhasil dihapus`);
+      
+      // Close dialogs first
+      setShowDeleteConfirmation(false);
+      setIsDeleteDialogOpen(false);
+      setDeleteTarget(null);
+      setSelectedDeleteSubmissions(new Set());
+      setDeleteAllMode(false);
+      
+      // Force refresh from database with cache busting
+      if (selectedSession) {
+        console.log("🔄 Refreshing data from database...");
+        await fetchSessionAssignments(selectedSession);
+        console.log("✅ Data refreshed");
+      }
+    } catch (error: any) {
+      console.error("Error deleting submissions:", error);
+      toast.error("Gagal menghapus jawaban: " + (error.message || "Unknown error"));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Session List View
   const [listFilter, setListFilter] = useState<"all" | ProgramType>("all");
 
@@ -1430,9 +1579,14 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
                             )}
                           </td>
                           <td className="p-4">
-                            <Button size="sm" variant="outline" onClick={() => handleViewDetail(assignment)} className="inline-flex items-center">
-                              <EyeIcon className="h-3 w-3" />
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" variant="outline" onClick={() => handleViewDetail(assignment)} className="inline-flex items-center" title="Lihat Detail">
+                                <EyeIcon className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => handleOpenDeleteDialog(assignment)} className="inline-flex items-center text-red-600 hover:text-red-700 hover:bg-red-50" title="Hapus Jawaban">
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1952,6 +2106,243 @@ const SpiritualUnifiedAssignmentManagement: React.FC = () => {
               >
                 <Send className="h-4 w-4 mr-2" />
                 Kirim ke {selectedRecipients.size} Peserta
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Submissions Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-red-500" />
+                Hapus Jawaban - {deleteTarget?.userName}
+              </DialogTitle>
+              <DialogDescription>
+                Pilih jawaban yang ingin dihapus atau hapus semua jawaban
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[calc(90vh-250px)]">
+              <div className="py-4 space-y-4">
+                {/* Delete All Option */}
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="delete-all"
+                      checked={deleteAllMode}
+                      onCheckedChange={(checked) => {
+                        setDeleteAllMode(checked as boolean);
+                        if (checked) {
+                          setSelectedDeleteSubmissions(new Set());
+                        }
+                      }}
+                    />
+                    <Label htmlFor="delete-all" className="text-sm font-medium cursor-pointer text-red-700">
+                      <AlertTriangle className="h-4 w-4 inline mr-1" />
+                      Hapus SEMUA jawaban ({deleteTarget?.submissions.length || 0} jawaban)
+                    </Label>
+                  </div>
+                  {deleteAllMode && (
+                    <p className="text-xs text-red-600 mt-2 ml-6">
+                      ⚠️ Tindakan ini akan menghapus semua jawaban peserta ini untuk sesi ini dan tidak dapat dibatalkan!
+                    </p>
+                  )}
+                </div>
+
+                {/* Individual Submission Selection */}
+                {!deleteAllMode && (
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">Pilih Jawaban yang Ingin Dihapus:</Label>
+                    
+                    <div className="border rounded-lg divide-y max-h-[400px] overflow-y-auto">
+                      {deleteTarget?.submissions.map((submission) => {
+                        const isSelected = selectedDeleteSubmissions.has(submission.id);
+                        const hasResponse = submission.counselor_response && submission.counselor_response.trim();
+                        
+                        return (
+                          <div key={submission.id} className="p-4 hover:bg-slate-50">
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                id={`delete-${submission.id}`}
+                                checked={isSelected}
+                                onCheckedChange={(checked) => {
+                                  const newSelected = new Set(selectedDeleteSubmissions);
+                                  if (checked) {
+                                    newSelected.add(submission.id);
+                                  } else {
+                                    newSelected.delete(submission.id);
+                                  }
+                                  setSelectedDeleteSubmissions(newSelected);
+                                }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-2">
+                                  <Label 
+                                    htmlFor={`delete-${submission.id}`}
+                                    className="font-semibold cursor-pointer text-base"
+                                  >
+                                    Jawaban #{submission.submission_number}
+                                  </Label>
+                                  <Badge variant="outline" className="text-xs">
+                                    {new Date(submission.submitted_at).toLocaleDateString("id-ID", {
+                                      day: "2-digit",
+                                      month: "short", 
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit"
+                                    })}
+                                  </Badge>
+                                  {hasResponse && (
+                                    <Badge variant="default" className="text-xs bg-green-600">
+                                      ✓ Sudah Direspons
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                {/* Preview Jawaban */}
+                                <div className="mt-2 p-3 bg-slate-50 rounded border text-sm">
+                                  <p className="font-medium text-xs text-muted-foreground mb-1">Preview Jawaban:</p>
+                                  <div className="max-h-32 overflow-y-auto">
+                                    {(() => {
+                                      const configArray = selectedSession?.program === "psikoedukasi" 
+                                        ? spiritualPsikoedukasiConfigs 
+                                        : spiritualIntervensiConfigs;
+                                      const sessionConfig = configArray[selectedSession?.number || 0];
+                                      
+                                      if (sessionConfig && sessionConfig.assignmentFields && submission.answers) {
+                                        // Show first 2 fields as preview
+                                        return sessionConfig.assignmentFields.slice(0, 2).map((field: any) => {
+                                          const value = submission.answers[field.key];
+                                          const displayValue = typeof value === 'string' 
+                                            ? value.substring(0, 100) + (value.length > 100 ? '...' : '')
+                                            : JSON.stringify(value).substring(0, 100);
+                                          
+                                          return (
+                                            <div key={field.key} className="mb-1">
+                                              <span className="text-xs font-medium">{field.label}: </span>
+                                              <span className="text-xs text-muted-foreground">{displayValue || '-'}</span>
+                                            </div>
+                                          );
+                                        });
+                                      }
+                                      
+                                      // Fallback preview
+                                      const firstKey = Object.keys(submission.answers)[0];
+                                      const firstValue = submission.answers[firstKey];
+                                      const preview = typeof firstValue === 'string' 
+                                        ? firstValue.substring(0, 150)
+                                        : JSON.stringify(firstValue).substring(0, 150);
+                                      
+                                      return (
+                                        <p className="text-xs text-muted-foreground">
+                                          {preview}...
+                                        </p>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
+                                
+                                {hasResponse && (
+                                  <div className="mt-2 text-xs text-muted-foreground">
+                                    Respons oleh: {submission.counselor_name} • {new Date(submission.responded_at!).toLocaleDateString("id-ID")}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {deleteTarget?.submissions.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>Tidak ada jawaban untuk dihapus</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+            <DialogFooter className="gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsDeleteDialogOpen(false);
+                  setDeleteTarget(null);
+                  setSelectedDeleteSubmissions(new Set());
+                  setDeleteAllMode(false);
+                }}
+              >
+                Batal
+              </Button>
+              <Button 
+                onClick={handleConfirmDelete}
+                variant="destructive"
+                disabled={!deleteAllMode && selectedDeleteSubmissions.size === 0}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {deleteAllMode 
+                  ? `Hapus Semua (${deleteTarget?.submissions.length || 0})` 
+                  : `Hapus ${selectedDeleteSubmissions.size} Jawaban`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+                Konfirmasi Penghapusan
+              </DialogTitle>
+              <DialogDescription>
+                Apakah Anda yakin ingin menghapus jawaban?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg space-y-2">
+                <p className="font-medium text-sm">Data yang akan dihapus:</p>
+                <ul className="text-sm space-y-1">
+                  <li>• Peserta: <strong>{deleteTarget?.userName}</strong></li>
+                  <li>• Sesi: <strong>{selectedSession?.title}</strong></li>
+                  <li>• Jumlah jawaban: <strong>
+                    {deleteAllMode 
+                      ? `Semua (${deleteTarget?.submissions.length})` 
+                      : selectedDeleteSubmissions.size}
+                  </strong></li>
+                </ul>
+              </div>
+              <p className="text-sm text-red-600 mt-4 font-medium">
+                ⚠️ Tindakan ini tidak dapat dibatalkan!
+              </p>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteConfirmation(false)}
+                disabled={isDeleting}
+              >
+                Batal
+              </Button>
+              <Button 
+                onClick={handleDeleteSubmissions}
+                variant="destructive"
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Menghapus...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Ya, Hapus Sekarang
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
