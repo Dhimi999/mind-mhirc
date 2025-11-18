@@ -1,5 +1,11 @@
 {
-  "redirects": [],
+  "redirects": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/robots.txt",
@@ -10,16 +16,8 @@
       "destination": "/favicon.ico"
     },
     {
-      "source": "/sitemap.xml",
-      "destination": "/sitemap.xml"
-    },
-    {
       "source": "/sitemap-static.xml",
       "destination": "/sitemap-static.xml"
-    },
-    {
-      "source": "/api/sitemap",
-      "destination": "/api/sitemap"
     },
     {
       "source": "/api/:match*",
