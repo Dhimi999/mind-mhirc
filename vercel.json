@@ -2,7 +2,7 @@
   "redirects": [
     {
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap",
+      "destination": "https://mind-mhirc.my.id/api/sitemap",
       "permanent": false
     }
   ],
@@ -14,10 +14,6 @@
     {
       "source": "/favicon.ico",
       "destination": "/favicon.ico"
-    },
-    {
-      "source": "/sitemap-static.xml",
-      "destination": "/sitemap-static.xml"
     },
     {
       "source": "/api/:match*",
