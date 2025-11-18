@@ -20,6 +20,7 @@
     "build": "npm run generate:sitemap && vite build",
     "build:dev": "vite build --mode development",
     "generate:sitemap": "node scripts/generate-sitemap.js",
+    "test:sitemap": "node scripts/test-sitemap.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "extract:spiritual-budaya": "node scripts/extract-pdf.cjs \"public\\downloads\\spiritual-budaya\\Buku Kerja Intervensi Digital Berbasis Spiritual dan Budaya.pdf\"",
