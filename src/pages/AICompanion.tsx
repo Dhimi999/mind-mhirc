@@ -10,10 +10,14 @@ import {
   Trash2,
   Edit3,
   Menu,
-  X
+  X,
+  Smile,
+  Meh,
+  Frown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,6 +50,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Database } from "@/integrations/supabase/types"; // <-- Impor tipe dari file yang digenerate
+import { InitialDialog } from "@/components/ai/InitialDialog";
 
 // ... (interface Message dan Conversation tidak berubah)
 
@@ -70,8 +75,15 @@ type UrgentCase = Database["public"]["Tables"]["urgent_cases"]["Row"] & {
     title: string | null;
   } | null;
 };
+
+const SUGGESTIONS = [
+  "Saya merasa cemas hari ini",
+  "Bantu saya rileks",
+  "Saya butuh teman cerita",
+  "Tips tidur nyenyak"
+];
+
 const AICompanion = () => {
-  // ... (semua state tidak berubah)
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] =
     useState<Conversation | null>(null);
@@ -88,13 +100,51 @@ const AICompanion = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [urgentCases, setUrgentCases] = useState<UrgentCase[]>([]);
+  const [showInitialDialog, setShowInitialDialog] = useState(false);
+  const [userNickname, setUserNickname] = useState<string | null>(null);
+  const [userSubtypes, setUserSubtypes] = useState<string[] | null>(null);
+  const [userParentId, setUserParentId] = useState<string | null>(null);
 
-  // ... (semua useEffect tidak berubah)
   useEffect(() => {
     if (user) {
+      checkUserProfile();
       fetchConversations();
     }
   }, [user]);
+
+  const checkUserProfile = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("consent_ai, nick_name, subtypes, parent_id")
+        .eq("id", user.id)
+        .single();
+      
+      if (error) throw error;
+
+      // Cast to any because types might not be updated yet in the project
+      const profile = data as any;
+      
+      setUserSubtypes(profile.subtypes);
+      setUserParentId(profile.parent_id);
+
+      if (!profile.consent_ai) {
+        setShowInitialDialog(true);
+      } else if (!profile.nick_name) {
+        // If consent is true but no nickname (edge case), show dialog starting at setup
+        // But our dialog handles flow. Let's just show dialog.
+        // Ideally we pass a prop to start at setup, but for now let's just show it.
+        // The dialog starts at consent. If they already consented, maybe we should auto-skip?
+        // For simplicity, let's just show the dialog.
+        setShowInitialDialog(true);
+      } else {
+        setUserNickname(profile.nick_name);
+      }
+    } catch (error) {
+      console.error("Error checking user profile:", error);
+    }
+  };
 
   useEffect(() => {
     if (!isLoadingConversations && user && conversations.length === 0) {
@@ -126,7 +176,6 @@ const AICompanion = () => {
     console.log("Total Conversations in State:", conversations.length);
     console.log("===============================");
   }, [user, urgentCases, conversations]);
-  // Tambahkan useEffect ini di komponen Anda
 
   useEffect(() => {
     if (!user) return;
@@ -146,13 +195,11 @@ const AICompanion = () => {
             "Realtime update received for a conversation:",
             payload.new
           );
-          // Perbarui state conversations dengan data baru
           setConversations((prevConvos) =>
             prevConvos.map((convo) =>
               convo.id === payload.new.id ? { ...convo, ...payload.new } : convo
             )
           );
-          // Perbarui juga currentConversation jika itu yang sedang aktif
           if (currentConversation?.id === payload.new.id) {
             setCurrentConversation((prev) =>
               prev ? { ...prev, ...payload.new } : null
@@ -162,13 +209,11 @@ const AICompanion = () => {
       )
       .subscribe();
 
-    // Bersihkan channel saat komponen di-unmount
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, currentConversation?.id]); // Tambahkan currentConversation.id agar bisa update state-nya
+  }, [user, currentConversation?.id]);
 
-  // ... (fetchConversations, fetchMessages, createNewConversation, deleteConversation, updateConversationTitle tidak berubah)
   const fetchConversations = async () => {
     if (!user) return;
     try {
@@ -186,13 +231,10 @@ const AICompanion = () => {
           .eq("is_resolved", false)
       ]);
 
-      // --- LOG UNTUK DEBUGGING ---
-      // Log ini menunjukkan data mentah langsung dari Supabase
       console.log("===== DATA RAW DARI SUPABASE =====");
       console.log("Raw Conversations Response:", convResponse.data);
       console.log("Raw Urgent Cases Response:", casesResponse.data);
       console.log("=================================");
-      // -----------------------------
 
       if (convResponse.error) throw convResponse.error;
       if (casesResponse.error) throw casesResponse.error;
@@ -205,7 +247,14 @@ const AICompanion = () => {
         convResponse.data.length > 0 &&
         !currentConversation
       ) {
-        setCurrentConversation(convResponse.data[0]);
+        // Check if the latest conversation is from today
+        const latestConvo = convResponse.data[0];
+        const today = new Date().toDateString();
+        const convoDate = new Date(latestConvo.created_at).toDateString();
+        
+        if (today === convoDate) {
+          setCurrentConversation(latestConvo);
+        }
       }
     } catch (error) {
       console.error("Error fetching conversations:", error);
@@ -393,10 +442,8 @@ const AICompanion = () => {
 
       if (error) throw error;
 
-      // Tambahkan percakapan baru ke daftar dan langsung beralih
       setConversations((prev) => [newConsultation, ...prev]);
       setCurrentConversation(newConsultation);
-      // Hapus notifikasi dari UI secara optimis
       setUrgentCases((prev) => prev.filter((c) => c.id !== caseItem.id));
     } catch (error) {
       toast({ title: "Gagal memulai konsultasi", variant: "destructive" });
@@ -405,15 +452,16 @@ const AICompanion = () => {
   };
 
   const handleConversationSwitch = (nextConversation: Conversation) => {
-    if (currentConversation?.id === nextConversation.id) return; // Langsung ganti state, tidak ada lagi pemicu summary di sini
+    if (currentConversation?.id === nextConversation.id) return;
 
     setCurrentConversation(nextConversation);
   };
 
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || !currentConversation || !user) return;
+  const sendMessage = async (text?: string) => {
+    const messageToSend = text || inputMessage;
+    if (!messageToSend.trim() || !currentConversation || !user) return;
 
-    const userMessageContent = inputMessage;
+    const userMessageContent = messageToSend;
     const conversationId = currentConversation.id;
 
     const tempUserMessage: Message = {
@@ -464,47 +512,66 @@ const AICompanion = () => {
     setIsTyping(true);
 
     try {
-      const { data: aiData, error: functionError } =
-        await supabase.functions.invoke("chat-ai", {
-          body: {
-            // Pastikan tiga properti ini ada
-            history: historyForAI,
-            message: userMessageContent,
-            conversation_id: conversationId,
-            user_id: user.id // <-- TAMBAHAN PENTING
-          }
-        });
-
-      if (functionError) throw functionError;
-
-      const aiResponseContent = aiData.text;
       const tempAiMessage: Message = {
         id: `temp-ai-${Date.now()}`,
-        content: aiResponseContent,
+        content: "",
         sender: "ai",
         created_at: new Date().toISOString(),
         conversation_id: conversationId
       };
+      setMessages((prev) => [...prev, tempAiMessage]);
 
-      setMessages((prevMessages) => [...prevMessages, tempAiMessage]);
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({
+            history: historyForAI,
+            message: userMessageContent,
+            conversation_id: conversationId,
+            user_id: user.id
+          })
+        }
+      );
+
+      if (!response.ok) throw new Error("Network response was not ok");
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let aiResponseContent = "";
+
       setIsTyping(false);
 
-      // await Promise.all([
-      //   supabase.from("ai_messages").insert({
-      //     conversation_id: conversationId,
-      //     user_id: user.id,
-      //     content: userMessageContent,
-      //     sender: "user",
-      //     created_at: tempUserMessage.created_at
-      //   }),
-      //   supabase.from("ai_messages").insert({
-      //     conversation_id: conversationId,
-      //     user_id: user.id,
-      //     content: aiResponseContent,
-      //     sender: "ai",
-      //     created_at: tempAiMessage.created_at
-      //   })
-      // ]);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        aiResponseContent += chunk;
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === tempAiMessage.id
+              ? { ...msg, content: aiResponseContent }
+              : msg
+          )
+        );
+      }
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempAiMessage.id
+            ? { ...msg, content: aiResponseContent }
+            : msg
+        )
+      );
+
     } catch (error) {
       console.error("Error invoking function or sending message:", error);
       toast({
@@ -512,12 +579,12 @@ const AICompanion = () => {
         description: "Pesan Anda tidak terkirim.",
         variant: "destructive"
       });
-      setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id));
+      setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id && !m.id.startsWith("temp-ai-")));
       setIsTyping(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -531,9 +598,9 @@ const AICompanion = () => {
     });
   };
 
-  const handleTitleEdit = (conversationId: string, currentTitle: string) => {
+  const handleTitleEdit = (conversationId: string, currentTitle: string, currentSummary?: string | null) => {
     setEditingTitle(conversationId);
-    setNewTitle(currentTitle);
+    setNewTitle(currentSummary || currentTitle);
   };
 
   const saveTitleEdit = () => {
@@ -550,7 +617,7 @@ const AICompanion = () => {
   };
 
   return (
-    <div className="h-screen max-h-screen flex overflow-hidden">
+    <div className="h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] flex overflow-hidden">
       {/* Sidebar */}
       <div className="w-80 md:flex hidden border-r flex-col">
         {/* Hide on mobile */}
@@ -609,10 +676,10 @@ const AICompanion = () => {
               {conversations.map((conversation) => (
                 <Card
                   key={conversation.id}
-                  className={`cursor-pointer transition-colors ${
+                  className={`cursor-pointer transition-all border-l-4 ${
                     currentConversation?.id === conversation.id
-                      ? "bg-muted"
-                      : "hover:bg-muted/50"
+                      ? "bg-primary/5 border-l-primary border-y-transparent border-r-transparent shadow-sm"
+                      : "hover:bg-muted/50 border-l-transparent border-transparent shadow-none"
                   }`}
                   onClick={() => handleConversationSwitch(conversation)}
                 >
@@ -659,7 +726,8 @@ const AICompanion = () => {
                                 onClick={() =>
                                   handleTitleEdit(
                                     conversation.id,
-                                    conversation.title
+                                    conversation.title,
+                                    conversation.summary
                                   )
                                 }
                               >
@@ -751,10 +819,10 @@ const AICompanion = () => {
                 {conversations.map((conversation) => (
                   <Card
                     key={conversation.id}
-                    className={`cursor-pointer transition-colors ${
+                    className={`cursor-pointer transition-all border-l-4 ${
                       currentConversation?.id === conversation.id
-                        ? "bg-muted"
-                        : "hover:bg-muted/50"
+                        ? "bg-primary/5 border-l-primary border-y-transparent border-r-transparent shadow-sm"
+                        : "hover:bg-muted/50 border-l-transparent border-transparent shadow-none"
                     }`}
                     onClick={() => {
                       handleConversationSwitch(conversation);
@@ -790,7 +858,8 @@ const AICompanion = () => {
                                 e.stopPropagation();
                                 handleTitleEdit(
                                   conversation.id,
-                                  conversation.title
+                                  conversation.title,
+                                  conversation.summary
                                 );
                               }}
                             >
@@ -892,7 +961,8 @@ const AICompanion = () => {
                             onClick={() =>
                               handleTitleEdit(
                                 currentConversation.id,
-                                currentConversation.title
+                                currentConversation.title,
+                                currentConversation.summary
                               )
                             }
                           >
@@ -952,53 +1022,59 @@ const AICompanion = () => {
                   </div>
                 ) : (
                   <div className="space-y-4 max-w-4xl mx-auto">
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex gap-3 ${
-                          message.sender === "user"
-                            ? "justify-end"
-                            : "justify-start"
-                        }`}
-                      >
-                        {message.sender === "ai" && (
-                          <Avatar className="h-8 w-8 mt-2 flex-shrink-0">
-                            <AvatarFallback className="bg-primary text-primary-foreground">
-                              <Bot className="h-4 w-4" />
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
+                    {messages.map((message) => {
+                      // Hide empty AI messages (waiting for stream) to prevent double bubble with typing indicator
+                      if (message.sender === "ai" && !message.content) return null;
 
+                      return (
                         <div
-                          className={`max-w-[70%] rounded-lg px-4 py-3 ${
+                          key={message.id}
+                          className={`flex gap-3 ${
                             message.sender === "user"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
-                          }`}
+                              ? "justify-end"
+                              : "justify-start"
+                          } animate-in fade-in slide-in-from-bottom-2 duration-300`}
                         >
-                          <p className="text-sm whitespace-pre-wrap">
-                            {message.content}
-                          </p>
-                          <p
-                            className={`text-xs mt-1 text-right ${
+                          {message.sender === "ai" && (
+                            <Avatar className="h-8 w-8 mt-1 flex-shrink-0 border shadow-sm">
+                              <AvatarImage src="/ai-avatar.png" />
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                <Bot className="h-4 w-4" />
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+
+                          <div
+                            className={`max-w-[85%] md:max-w-[75%] px-5 py-3.5 shadow-sm ${
                               message.sender === "user"
-                                ? "text-primary-foreground/70"
-                                : "text-muted-foreground"
+                                ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
+                                : "bg-card border text-card-foreground rounded-2xl rounded-tl-sm"
                             }`}
                           >
-                            {formatTime(message.created_at)}
-                          </p>
-                        </div>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                              {message.content}
+                            </p>
+                            <p
+                              className={`text-[10px] mt-1.5 text-right opacity-70 ${
+                                message.sender === "user"
+                                  ? "text-primary-foreground"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {formatTime(message.created_at)}
+                            </p>
+                          </div>
 
-                        {message.sender === "user" && (
-                          <Avatar className="h-8 w-8 mt-2 flex-shrink-0">
-                            <AvatarFallback className="bg-secondary text-secondary-foreground">
-                              <User className="h-4 w-4" />
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    ))}
+                          {message.sender === "user" && (
+                            <Avatar className="h-8 w-8 mt-1 flex-shrink-0 border shadow-sm">
+                              <AvatarFallback className="bg-secondary text-secondary-foreground">
+                                <User className="h-4 w-4" />
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                        </div>
+                      );
+                    })}
 
                     {isTyping && (
                       <div className="flex gap-3 justify-start">
@@ -1028,47 +1104,91 @@ const AICompanion = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t">
+            <div className="p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="max-w-4xl mx-auto">
-                <div className="flex gap-2">
-                  <Input
+                <div className="relative flex items-end gap-2 bg-muted/50 p-2 rounded-3xl border focus-within:ring-1 focus-within:ring-ring focus-within:border-primary/50 transition-all">
+                  <Textarea
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ketik pesan Anda di sini..."
-                    className="flex-1"
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ceritakan apa yang kamu rasakan..."
+                    className="flex-1 min-h-[44px] max-h-[150px] resize-none border-0 focus-visible:ring-0 bg-transparent py-3 px-4 shadow-none"
                     disabled={isTyping}
+                    rows={1}
+                    style={{ height: "auto", overflow: "hidden" }}
+                    onInput={(e) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = "auto";
+                      target.style.height = `${target.scrollHeight}px`;
+                    }}
                   />
                   <Button
-                    onClick={sendMessage}
+                    onClick={() => sendMessage()}
                     disabled={!inputMessage.trim() || isTyping}
-                    className="gap-2"
+                    size="icon"
+                    className="h-10 w-10 rounded-full mb-0.5 shrink-0 transition-all hover:scale-105 active:scale-95"
                   >
-                    <Send className="h-4 w-4" />
-                    Kirim
+                    <Send className="h-5 w-5" />
+                    <span className="sr-only">Kirim</span>
                   </Button>
                 </div>
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  AI dapat membuat kesalahan. Mohon verifikasi informasi penting.
+                </p>
               </div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <Bot className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-medium text-foreground mb-2">
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="text-center max-w-md w-full">
+              <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Bot className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-2">
                 Selamat Datang di Teman AI
               </h3>
-              <p className="text-muted-foreground mb-4">
-                Pilih obrolan yang ada atau buat obrolan baru untuk memulai
+              <p className="text-muted-foreground mb-8">
+                Saya siap mendengarkan cerita Anda. Pilih topik di bawah atau mulai obrolan baru.
               </p>
-              <Button onClick={createNewConversation} className="gap-2">
-                <Plus className="h-4 w-4" />
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                {SUGGESTIONS.map((suggestion, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    className="h-auto py-3 px-4 text-left justify-start whitespace-normal hover:bg-primary/5 hover:text-primary border-muted-foreground/20"
+                    onClick={() => {
+                      createNewConversation().then(() => {
+                        setInputMessage(suggestion);
+                      });
+                    }}
+                  >
+                    {suggestion}
+                  </Button>
+                ))}
+              </div>
+
+              <Button onClick={createNewConversation} size="lg" className="gap-2 w-full sm:w-auto rounded-full shadow-lg hover:shadow-xl transition-all">
+                <Plus className="h-5 w-5" />
                 Mulai Obrolan Baru
               </Button>
             </div>
           </div>
         )}
       </div>
+      
+      {user && (
+        <InitialDialog 
+          open={showInitialDialog} 
+          userId={user.id} 
+          currentSubtypes={userSubtypes}
+          currentParentId={userParentId}
+          onComplete={(nickname) => {
+            setUserNickname(nickname);
+            setShowInitialDialog(false);
+          }} 
+        />
+      )}
     </div>
   );
 };

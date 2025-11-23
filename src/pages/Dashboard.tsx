@@ -612,7 +612,7 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            <div className="p-4 sm:p-6">
+            <div className={location.pathname.includes('/ai-companion') ? "p-0" : "p-4 sm:p-6"}>
               <Routes>
                 <Route index element={<DashboardOverview user={mockUser} />} />
                 <Route
