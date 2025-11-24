@@ -349,6 +349,13 @@ const Dashboard = () => {
                       Catatan Harian
                     </Link>
                     <Link
+                      to="/dashboard/mood-calendar"
+                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    >
+                      <Calendar className="mr-3 h-5 w-5" />
+                      Kalender Mood
+                    </Link>
+                    <Link
                       to="/dashboard/ai-companion"
                       className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
                     >
@@ -630,6 +637,10 @@ const Dashboard = () => {
                 <Route
                   path="diary/*"
                   element={<DashboardDiary user={mockUser} />}
+                />
+                <Route
+                  path="mood-calendar/*"
+                  element={<DashboardMoodCalendar user={mockUser} />}
                 />
                 <Route
                   path="ai-companion/*"
@@ -1180,6 +1191,21 @@ const DashboardDiary = ({ user }: { user: any }) => {
       }
     >
       <Diary />
+    </React.Suspense>
+  );
+};
+
+const DashboardMoodCalendar = ({ user }: { user: any }) => {
+  const MoodCalendar = React.lazy(() => import("./MoodCalendar"));
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      }
+    >
+      <MoodCalendar />
     </React.Suspense>
   );
 };

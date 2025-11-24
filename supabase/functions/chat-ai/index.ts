@@ -63,21 +63,25 @@ const fetchUserFacts = async (supabaseClient: any, userId: string): Promise<stri
   return data.map((f: any) => f.content);
 };
 
-const createFactExtractionPrompt = (userMessage: string) => {
+const createFactExtractionPrompt = (userMessage: string, existingFacts: string[]) => {
   return `
 Tugas: Ekstrak fakta permanen tentang pengguna dari pesan ini.
 Pesan: "${userMessage}"
 
+Fakta yang SUDAH DIKETAHUI (JANGAN DUPLIKASI):
+${existingFacts.map(f => `- ${f}`).join("\n")}
+
 Kriteria Fakta:
 - Nama, hobi, hewan peliharaan, pekerjaan, hubungan keluarga, kondisi medis penting, atau preferensi jangka panjang.
+- Simpan dalam KALIMAT LENGKAP (Subjek + Predikat + Objek). Contoh: "Pengguna memiliki kucing bernama Mochi", bukan "kucing Mochi".
 - JANGAN ekstrak emosi sesaat (misal: "aku sedih hari ini") atau pertanyaan.
-- JANGAN ekstrak jika tidak ada fakta baru.
+- JANGAN ekstrak jika fakta sudah ada di daftar "Fakta yang SUDAH DIKETAHUI".
 
 Output JSON:
 {
-  "facts": ["fakta 1", "fakta 2"] 
+  "facts": ["fakta baru 1", "fakta baru 2"] 
 }
-Jika tidak ada, kembalikan { "facts": [] }
+Jika tidak ada fakta baru, kembalikan { "facts": [] }
 `;
 };
 
@@ -122,13 +126,14 @@ ATURAN PRIVASI & PENGGUNAAN KONTEXT
 - Untuk lokasi, hindari menyebut nama kota/negara kecuali pengguna sudah menyebutkannya.
 
 PENYEBUTAN NAMA
-- Jika nama tersedia dan sesuai konteks, boleh menyapa dengan nama depan secara singkat setelah konfirmasi preferensi (mis. "Jika kamu nyaman, aku memanggilmu ${userName}.")
+- Jika nama tersedia ("${userName}"), kamu HARUS mengingatnya.
+- Jika pengguna bertanya "siapa namaku" atau "apakah kamu tahu namaku", JAWABLAH dengan menyebutkan nama mereka ("${userName}").
 - Jika nama tidak tersedia: jelaskan bahwa kamu belum tahu, lalu tanya bagaimana mereka ingin dipanggil.
 - Jangan menebak atau mengarang nama.
 
 DISAMBIGUASI PERTANYAAN "NAMA"
 - Jika pengguna menanyakan nama kamu (kata kunci: "namamu", "siapa namamu", "siapa kamu"): jawab singkat "Aku Eva" lalu kembali ke fokus dukungan.
-- Jika pengguna menanyakan apakah kamu tahu nama mereka (kata kunci: "namaku", "nama saya", "tahu namaku", "kamu tau namaku?"): ikuti aturan IDENTITAS PENGGUNA di atas.
+- Jika pengguna menanyakan apakah kamu tahu nama mereka: IKUTI ATURAN PENYEBUTAN NAMA di atas.
 
 INSTRUKSI KHUSUS:
 Jawablah langsung sebagai Eva. Jangan sertakan JSON atau format lain. Langsung teks percakapan.
@@ -408,7 +413,7 @@ serve(async (req: Request) => {
       // 3b. Start Fact Extraction in Parallel (Fire and Forget)
       (async () => {
         try {
-          const factPrompt = createFactExtractionPrompt(message);
+          const factPrompt = createFactExtractionPrompt(message, userFacts);
           const factResult = await model.generateContent(factPrompt);
           const factText = factResult.response.text();
           const jsonMatch = factText.match(/{[\s\S]*}/);

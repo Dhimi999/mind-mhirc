@@ -28,6 +28,16 @@ serve(async (req) => {
       throw new Error("Missing required notification details.");
     }
 
+    // Check environment variables early
+    if (!RESEND_API_KEY) {
+      console.error("[FATAL] RESEND_API_KEY is missing in environment variables.");
+      throw new Error("Server configuration error: Missing Email API Key.");
+    }
+    if (!SENDER_EMAIL) {
+      console.error("[FATAL] SENDER_EMAIL is missing in environment variables.");
+      throw new Error("Server configuration error: Missing Sender Email.");
+    }
+
     console.log(`[ALERT] Urgent flag detected for user: ${flaggedByUserId}`);
 
     // --- [MODIFIKASI] Logika Pencarian Email Orang Tua Dua Langkah ---
@@ -87,11 +97,6 @@ serve(async (req) => {
       throw new Error(`Email not found for parent ${parentId} (checked forwarding and auth).`);
     }
     // --------------------------------------------------------------------
-
-    if (!RESEND_API_KEY || !SENDER_EMAIL) {
-      console.warn("Resend API Key or Sender Email is not set.");
-      throw new Error("Notification service is not configured.");
-    }
 
     const subject = "Peringatan Penting Mengenai Aktivitas Anak Anda";
     const htmlBody = `

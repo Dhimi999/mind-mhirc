@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Calendar, Trash2, Edit3, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Calendar, Trash2, Edit3, FileText, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,8 +23,6 @@ interface DiaryEntry {
   user_id: string;
 }
 
-// Remove templates and colors from here as they're now in DiaryEntryForm
-
 const Diary = () => {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,15 +36,92 @@ const Diary = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  // Remove selectedTemplate as it's handled in DiaryEntryForm
+  
+  // Consent State
+  const [hasConsent, setHasConsent] = useState<boolean | null>(null);
+  const [isConsentDialogOpen, setIsConsentDialogOpen] = useState(false);
+  const [consentCheck1, setConsentCheck1] = useState(false);
+  const [consentCheck2, setConsentCheck2] = useState(false);
+  const [activatingConsent, setActivatingConsent] = useState(false);
+
   const { toast } = useToast();
   const { user } = useAuth();
 
   const entriesPerPage = 10;
 
   useEffect(() => {
-    fetchEntries();
+    if (user) {
+      checkConsent();
+    }
   }, [user]);
+
+  useEffect(() => {
+    if (hasConsent) {
+      fetchEntries();
+    }
+  }, [hasConsent, user]);
+
+  const checkConsent = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('notes_consent' as any) // Cast as any since it might not be in types yet
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      
+      // If column doesn't exist yet, data might be null or property missing. 
+      // Assuming false if missing.
+      setHasConsent(!!data?.notes_consent);
+    } catch (error) {
+      console.error("Error checking consent:", error);
+      // Fallback to false if error (e.g. column missing)
+      setHasConsent(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleActivateConsent = async () => {
+    if (!user) return;
+    if (!consentCheck1 || !consentCheck2) {
+      toast({
+        title: "Persetujuan Diperlukan",
+        description: "Mohon centang kedua kotak persetujuan untuk melanjutkan.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setActivatingConsent(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 'notes_consent': true } as any)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setHasConsent(true);
+      setIsConsentDialogOpen(false);
+      toast({
+        title: "Fitur Diaktifkan",
+        description: "Catatan Harian berhasil diaktifkan."
+      });
+      fetchEntries();
+    } catch (error) {
+      console.error("Error activating consent:", error);
+      toast({
+        title: "Gagal Mengaktifkan",
+        description: "Terjadi kesalahan saat mengaktifkan fitur.",
+        variant: "destructive"
+      });
+    } finally {
+      setActivatingConsent(false);
+    }
+  };
 
   const fetchEntries = async () => {
     if (!user) return;
@@ -173,8 +251,6 @@ const Diary = () => {
     setIsDialogOpen(true);
   };
 
-  // Remove this function as template handling is now in DiaryEntryForm
-
   const filteredEntries = entries.filter(entry =>
     entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     entry.content.toLowerCase().includes(searchTerm.toLowerCase())
@@ -202,6 +278,125 @@ const Diary = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  if (isLoading && hasConsent === null) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (hasConsent === false) {
+    return (
+      <div className="p-6 space-y-6 relative min-h-[600px]">
+        {/* Blurred Background Content */}
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
+          <div className="max-w-md space-y-6 bg-card p-8 rounded-xl shadow-lg border">
+            <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Fitur Belum Diaktifkan</h2>
+              <p className="text-muted-foreground">
+                Aktifkan fitur Catatan Harian untuk mulai menulis jurnal perjalanan kesehatan mental Anda.
+              </p>
+            </div>
+            
+            <Dialog open={isConsentDialogOpen} onOpenChange={setIsConsentDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="w-full">Aktifkan Catatan Harian</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Syarat dan Ketentuan</DialogTitle>
+                  <DialogDescription>
+                    Mohon baca dan setujui syarat berikut untuk mengaktifkan fitur.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="py-4 space-y-4">
+                  <div className="bg-muted/50 p-4 rounded-lg text-sm text-muted-foreground space-y-2">
+                    <p>
+                      Dengan mengaktifkan fitur ini, Anda mengizinkan sistem untuk:
+                    </p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>Menyimpan catatan harian Anda secara aman.</li>
+                      <li>
+                        <strong>Memberikan akses kepada Teman AI (EVA)</strong> untuk membaca catatan Anda guna:
+                        <ul className="list-disc pl-4 mt-1">
+                          <li>Meningkatkan personalisasi percakapan.</li>
+                          <li>Mendeteksi permasalahan mental lebih dini.</li>
+                          <li>Mengidentifikasi risiko pencederaan diri (self-harm) sejak dini.</li>
+                        </ul>
+                      </li>
+                    </ul>
+                    <p className="text-xs mt-2 italic">
+                      *Privasi Anda adalah prioritas kami. Data tidak akan dibagikan ke pihak ketiga tanpa izin.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-2">
+                      <Checkbox 
+                        id="consent1" 
+                        checked={consentCheck1}
+                        onCheckedChange={(c) => setConsentCheck1(c as boolean)}
+                      />
+                      <Label htmlFor="consent1" className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pt-0.5">
+                        Saya telah membaca dan memahami syarat dan ketentuan di atas.
+                      </Label>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <Checkbox 
+                        id="consent2" 
+                        checked={consentCheck2}
+                        onCheckedChange={(c) => setConsentCheck2(c as boolean)}
+                      />
+                      <Label htmlFor="consent2" className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pt-0.5">
+                        Saya menerima syarat dan ketentuan yang berlaku.
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsConsentDialogOpen(false)}>Batal</Button>
+                  <Button onClick={handleActivateConsent} disabled={activatingConsent || !consentCheck1 || !consentCheck2}>
+                    {activatingConsent ? "Mengaktifkan..." : "Aktifkan Catatan Harian"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Dummy Content Behind Blur */}
+        <div className="opacity-20 pointer-events-none filter blur-sm select-none">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Catatan Harian</h1>
+              <p className="text-muted-foreground mt-2">
+                Tulis dan simpan catatan harian Anda di sini
+              </p>
+            </div>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Catatan Baru
+            </Button>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="h-48">
+                <CardHeader><CardTitle>Catatan Contoh</CardTitle></CardHeader>
+                <CardContent><p>Isi catatan...</p></CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">

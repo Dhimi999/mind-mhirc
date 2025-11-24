@@ -79,9 +79,8 @@ type UrgentCase = Database["public"]["Tables"]["urgent_cases"]["Row"] & {
 
 const SUGGESTIONS = [
   "Saya merasa cemas hari ini",
-  "Bantu saya rileks",
   "Saya butuh teman cerita",
-  "Tips tidur nyenyak"
+  "Saya tidak bisa tidur"
 ];
 
 const AICompanion = () => {
@@ -930,17 +929,6 @@ const AICompanion = () => {
                   <Menu className="h-5 w-5" />
                 </Button>
 
-                <div className="relative">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="/eva_pict.png" />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      <Bot className="h-5 w-5" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-background flex items-center justify-center">
-                    <Sparkles className="h-2 w-2 text-white" />
-                  </div>
-                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h1 className="text-base sm:text-lg font-bold text-foreground line-clamp-1 leading-tight">
@@ -1027,79 +1015,86 @@ const AICompanion = () => {
                       return (
                         <div
                           key={message.id}
-                          className={`flex gap-3 ${
-                            message.sender === "user"
-                              ? "justify-end"
-                              : "justify-start"
-                          } animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                          className="grid grid-cols-[40px_1fr_40px] gap-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-300"
                         >
-                          {message.sender === "ai" && (
-                            <Avatar className="h-8 w-8 mt-1 flex-shrink-0 border shadow-sm">
-                              <AvatarImage src="/eva_pict.png" />
-                              <AvatarFallback className="bg-primary/10 text-primary">
-                                <Bot className="h-4 w-4" />
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
+                          {/* Left Column: AI Avatar */}
+                          <div className="flex items-end justify-center pb-1">
+                            {message.sender === "ai" && (
+                              <Avatar className="h-8 w-8 border shadow-sm">
+                                <AvatarImage src="/eva_pict.png" />
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  <Bot className="h-4 w-4" />
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                          </div>
 
-                          <div
-                            className={`max-w-[90%] sm:max-w-[85%] md:max-w-[75%] px-4 py-3 sm:px-5 sm:py-3.5 shadow-sm ${
-                              message.sender === "user"
-                                ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
-                                : "bg-card border text-card-foreground rounded-2xl rounded-tl-sm"
-                            }`}
-                          >
+                          {/* Center Column: Bubble */}
+                          <div className={`flex ${message.sender === "ai" ? "justify-start" : "justify-end"} min-w-0`}>
                             <div
-                              className={`text-sm leading-relaxed prose prose-sm max-w-none break-words ${
+                              className={`max-w-full px-4 py-3 shadow-sm ${
                                 message.sender === "user"
-                                  ? "prose-invert prose-p:text-primary-foreground prose-headings:text-primary-foreground prose-strong:text-primary-foreground"
-                                  : "prose-neutral dark:prose-invert"
+                                  ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
+                                  : "bg-card border text-card-foreground rounded-2xl rounded-tl-sm"
                               }`}
                             >
-                              <ReactMarkdown
-                                components={{
-                                  p: ({ node, ...props }) => (
-                                    <p className="mb-2 last:mb-0" {...props} />
-                                  ),
-                                  a: ({ node, ...props }) => (
-                                    <a
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="underline font-medium hover:text-opacity-80"
-                                      {...props}
-                                    />
-                                  ),
-                                  ul: ({ node, ...props }) => (
-                                    <ul className="list-disc pl-4 mb-2" {...props} />
-                                  ),
-                                  ol: ({ node, ...props }) => (
-                                    <ol className="list-decimal pl-4 mb-2" {...props} />
-                                  ),
-                                  li: ({ node, ...props }) => (
-                                    <li className="mb-0.5" {...props} />
-                                  ),
-                                }}
+                              <div
+                                className={`text-sm leading-relaxed prose prose-sm max-w-none break-words ${
+                                  message.sender === "user"
+                                    ? "prose-invert prose-p:text-primary-foreground prose-headings:text-primary-foreground prose-strong:text-primary-foreground"
+                                    : "prose-neutral dark:prose-invert"
+                                }`}
                               >
-                                {message.content}
-                              </ReactMarkdown>
+                                <ReactMarkdown
+                                  components={{
+                                    p: ({ node, ...props }) => (
+                                      <p className="mb-2 last:mb-0" {...props} />
+                                    ),
+                                    a: ({ node, ...props }) => (
+                                      <a
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="underline font-medium hover:text-opacity-80"
+                                        {...props}
+                                      />
+                                    ),
+                                    ul: ({ node, ...props }) => (
+                                      <ul className="list-disc pl-4 mb-2" {...props} />
+                                    ),
+                                    ol: ({ node, ...props }) => (
+                                      <ol className="list-decimal pl-4 mb-2" {...props} />
+                                    ),
+                                    li: ({ node, ...props }) => (
+                                      <li className="mb-0.5" {...props} />
+                                    ),
+                                  }}
+                                >
+                                  {message.content}
+                                </ReactMarkdown>
+                              </div>
+                              <p
+                                className={`text-[10px] mt-1.5 text-right opacity-70 ${
+                                  message.sender === "user"
+                                    ? "text-primary-foreground"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {formatTime(message.created_at)}
+                              </p>
                             </div>
-                            <p
-                              className={`text-[10px] mt-1.5 text-right opacity-70 ${
-                                message.sender === "user"
-                                  ? "text-primary-foreground"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              {formatTime(message.created_at)}
-                            </p>
-                          </div>                          {message.sender === "user" && (
-                            <Avatar className="h-8 w-8 mt-1 flex-shrink-0 border shadow-sm">
-                              <AvatarImage src={user?.avatar_url || ""} />
-                              <AvatarFallback className="bg-secondary text-secondary-foreground">
-                                <User className="h-4 w-4" />
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
+                          </div>
+
+                          {/* Right Column: User Avatar */}
+                          <div className="flex items-end justify-center pb-1">
+                            {message.sender === "user" && (
+                              <Avatar className="h-8 w-8 border shadow-sm">
+                                <AvatarImage src={user?.avatar_url || ""} />
+                                <AvatarFallback className="bg-secondary text-secondary-foreground">
+                                  <User className="h-4 w-4" />
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -1197,10 +1192,21 @@ const AICompanion = () => {
                 ))}
               </div>
 
-              <Button onClick={createNewConversation} size="lg" className="gap-2 w-full sm:w-auto rounded-full shadow-lg hover:shadow-xl transition-all">
-                <Plus className="h-5 w-5" />
-                Mulai Obrolan Baru
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center">
+                <Button onClick={createNewConversation} size="lg" className="gap-2 w-full sm:w-auto rounded-full shadow-lg hover:shadow-xl transition-all">
+                  <Plus className="h-5 w-5" />
+                  Mulai Obrolan Baru
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="gap-2 w-full sm:w-auto rounded-full"
+                  onClick={() => setShowMobileMenu(true)}
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Lihat Obrolan Lama
+                </Button>
+              </div>
             </div>
           </div>
         )}

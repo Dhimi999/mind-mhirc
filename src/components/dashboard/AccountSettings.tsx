@@ -45,6 +45,7 @@ import {
 // Updated ProfileFormValues to include subtypes, parent_id, and updated_at
 interface ProfileFormValues {
   full_name: string;
+  nick_name: string; // Add nick_name
   avatar_url: string | null;
   city: string;
   profession: string;
@@ -70,6 +71,7 @@ export default function AccountSettings() {
   const [loading, setLoading] = useState(false);
   const [profileValues, setProfileValues] = useState<ProfileFormValues>({
     full_name: "",
+    nick_name: "", // Initialize nick_name
     avatar_url: null,
     city: "",
     profession: "",
@@ -136,11 +138,16 @@ export default function AccountSettings() {
       
       if (error) throw error;
       
+      // Update local state immediately
       setAiFacts(prev => prev.filter(f => f.id !== id));
+      
       toast({
         title: "Memori dihapus",
         description: "Fakta berhasil dihapus dari memori AI."
       });
+      
+      // Refresh facts from server to ensure sync
+      fetchAiFacts();
     } catch (error) {
       console.error("Error deleting fact:", error);
       toast({
@@ -164,6 +171,7 @@ export default function AccountSettings() {
       if (data) {
         setProfileValues({
           full_name: data.full_name || "",
+          nick_name: data.nick_name || "", // Fetch nick_name
           avatar_url: data.avatar_url || null,
           city: data.city || "",
           profession: data.profession || "",
@@ -308,6 +316,7 @@ export default function AccountSettings() {
     try {
       const updatePayload: Partial<ProfileFormValues> = {
         full_name: profileValues.full_name,
+        nick_name: profileValues.nick_name, // Save nick_name
         avatar_url: profileValues.avatar_url,
         updated_at: new Date().toISOString()
       };
@@ -450,554 +459,605 @@ export default function AccountSettings() {
     (profileValues.subtypes.length === 0 || isEditingRole);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold mb-6">Pengaturan Akun</h1>
-      <Tabs defaultValue="general">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general" className="flex items-center">
-            <User className="mr-2 h-4 w-4" />
-            Umum
-          </TabsTrigger>
-          <TabsTrigger value="ai-companion" className="flex items-center">
-            <Brain className="mr-2 h-4 w-4" />
-            Teman AI
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center">
-            <KeyRound className="mr-2 h-4 w-4" />
-            Keamanan
-          </TabsTrigger>
-          <TabsTrigger value="advanced" className="flex items-center">
-            <AlertCircle className="mr-2 h-4 w-4" />
-            Lanjutan
-          </TabsTrigger>
-        </TabsList>
+    <div className="container mx-auto py-6 max-w-6xl">
+      <Tabs defaultValue="general" orientation="vertical" className="flex flex-col md:flex-row gap-8 w-full">
+        
+        {/* Sidebar Navigation */}
+        <aside className="w-full md:w-64 shrink-0 space-y-6">
+          <div className="px-1">
+            <h1 className="text-2xl font-bold tracking-tight">Pengaturan</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Kelola akun dan preferensi Anda.
+            </p>
+          </div>
+          
+          <TabsList className="flex flex-col h-auto items-stretch bg-transparent p-0 space-y-1">
+            <TabsTrigger 
+              value="general" 
+              className="justify-start px-4 py-2.5 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted transition-colors rounded-md text-sm font-medium"
+            >
+              <User className="mr-3 h-4 w-4" />
+              Profil Umum
+            </TabsTrigger>
+            <TabsTrigger 
+              value="ai-companion" 
+              className="justify-start px-4 py-2.5 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted transition-colors rounded-md text-sm font-medium"
+            >
+              <Brain className="mr-3 h-4 w-4" />
+              Memori AI
+            </TabsTrigger>
+            <TabsTrigger 
+              value="security" 
+              className="justify-start px-4 py-2.5 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted transition-colors rounded-md text-sm font-medium"
+            >
+              <KeyRound className="mr-3 h-4 w-4" />
+              Keamanan
+            </TabsTrigger>
+            <TabsTrigger 
+              value="advanced" 
+              className="justify-start px-4 py-2.5 h-auto data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground hover:bg-destructive/10 text-destructive transition-colors rounded-md text-sm font-medium"
+            >
+              <AlertCircle className="mr-3 h-4 w-4" />
+              Zona Bahaya
+            </TabsTrigger>
+          </TabsList>
+        </aside>
 
-        <TabsContent value="general" className="space-y-6 pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Foto Profil</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row items-center gap-6">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage
-                    className="object-cover"
-                    src={profileValues.avatar_url || ""}
-                    alt="Avatar"
-                  />
-                  <AvatarFallback>{avatarInitials}</AvatarFallback>
-                </Avatar>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="avatar" className="block mb-2">
-                      Unggah foto baru
-                    </Label>
-                    <Input
-                      id="avatar"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0">
+          <TabsContent value="general" className="space-y-6 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Foto Profil</CardTitle>
+                <CardDescription>Tampilkan identitas terbaik Anda.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <Avatar className="w-24 h-24 border-4 border-muted">
+                    <AvatarImage
+                      className="object-cover"
+                      src={profileValues.avatar_url || ""}
+                      alt="Avatar"
                     />
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Format: JPG, PNG, JPEG. Maksimal 2MB.
-                    </p>
-                  </div>
-                  {avatarFile && (
-                    <Button
-                      type="button"
-                      onClick={handleAvatarUpload}
-                      disabled={uploadingAvatar}
-                    >
-                      {uploadingAvatar ? "Mengunggah..." : "Unggah Foto"}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <form onSubmit={handleProfileSubmit}>
-            <div className="space-y-6">
-              {/* START: Family Role Card Logic */}
-              {profileValues.account_type === "general" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Peran Keluarga</CardTitle>
-                    <CardDescription>
-                      Atur peran Anda sebagai orang tua atau anak untuk
-                      menautkan akun.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {showRoleEditor ? (
-                      <>
-                        {/* --- Editing/Selection View --- */}
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="isParent"
-                              onCheckedChange={() =>
-                                handleSubtypeChange("parent")
-                              }
-                              checked={profileValues.subtypes.includes(
-                                "parent"
-                              )}
-                            />
-                            <Label
-                              htmlFor="isParent"
-                              className="cursor-pointer font-normal"
-                            >
-                              Saya adalah Orang Tua / Wali
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="isChild"
-                              onCheckedChange={() =>
-                                handleSubtypeChange("child")
-                              }
-                              checked={profileValues.subtypes.includes("child")}
-                            />
-                            <Label
-                              htmlFor="isChild"
-                              className="cursor-pointer font-normal"
-                            >
-                              Saya adalah Anak
-                            </Label>
-                          </div>
-                        </div>
-
-                        {profileValues.subtypes.includes("child") && (
-                          <div className="space-y-2 animate-in fade-in-50">
-                            <Label htmlFor="parent_id">
-                              ID Akun Wali / Orang Tua
-                            </Label>
-                            <Input
-                              id="parent_id"
-                              name="parent_id"
-                              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                              value={profileValues.parent_id || ""}
-                              onChange={handleProfileChange}
-                              required
-                            />
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="link"
-                                  className="p-0 h-auto text-xs text-blue-600 hover:underline"
-                                >
-                                  <Send className="mr-1 h-3 w-3" />
-                                  Orang tua/wali Anda belum punya akun? Undang
-                                  mereka.
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>
-                                    Undang Orang Tua / Wali
-                                  </DialogTitle>
-                                  <DialogDescription>
-                                    Untuk menautkan akun, orang tua/wali Anda
-                                    perlu mendaftar terlebih dahulu. Setelah
-                                    mendaftar, mereka bisa mendapatkan ID unik
-                                    di halaman pengaturan akun mereka untuk Anda
-                                    gunakan di sini.
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <DialogFooter>
-                                  <Button
-                                    onClick={() =>
-                                      navigator.clipboard.writeText(
-                                        window.location.origin +
-                                          "/login?register=true"
-                                      )
-                                    }
-                                  >
-                                    Salin Tautan Pendaftaran
-                                  </Button>
-                                </DialogFooter>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {/* --- Display View --- */}
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>Peran Anda Saat Ini</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {profileValues.subtypes.map((role) => (
-                                <div
-                                  key={role}
-                                  className="capitalize text-sm font-medium bg-secondary text-secondary-foreground px-3 py-1 rounded-full"
-                                >
-                                  {role === "parent"
-                                    ? "Orang Tua / Wali"
-                                    : "Anak"}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {profileValues.subtypes.includes("parent") && (
-                            <div className="space-y-2">
-                              <Label>ID Orang Tua Anda (Untuk Dibagikan)</Label>
-                              <div className="flex items-center space-x-2">
-                                <Input
-                                  value={user?.id || ""}
-                                  readOnly
-                                  className="font-mono text-sm bg-muted"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={copyUserId}
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                          {profileValues.subtypes.includes("child") &&
-                            profileValues.parent_id && (
-                              <div className="space-y-2">
-                                <Label>Tertaut dengan Akun Wali</Label>
-                                <Input
-                                  value={profileValues.parent_id}
-                                  readOnly
-                                  className="font-mono text-sm bg-muted"
-                                />
-                              </div>
-                            )}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsEditingRole(true)}
-                          >
-                            <Edit className="mr-2 h-4 w-4" /> Ubah Peran
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-              {/* END: Family Role Card Logic */}
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Data Profil</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                    <AvatarFallback className="text-2xl">{avatarInitials}</AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-4 flex-1">
                     <div>
-                      <Label htmlFor="accountType">Jenis Akun</Label>
-                      <Input
-                        id="accountType"
-                        value={
-                          profileValues.account_type === "professional"
-                            ? "Akun Profesional"
-                            : "Akun Umum/Reguler"
-                        }
-                        disabled
-                        className="bg-muted"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="full_name">Nama Lengkap</Label>
-                      <Input
-                        id="full_name"
-                        name="full_name"
-                        value={profileValues.full_name}
-                        onChange={handleProfileChange}
-                        placeholder="Masukkan nama lengkap"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={user?.email || ""}
-                        disabled
-                        className="bg-muted"
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Email tidak dapat diubah.
+                      <Label htmlFor="avatar" className="block mb-2 font-medium">
+                        Unggah foto baru
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="avatar"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Format: JPG, PNG, JPEG. Maksimal 2MB.
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="city">Kota</Label>
-                        <Input
-                          id="city"
-                          name="city"
-                          value={profileValues.city || ""}
-                          disabled
-                          placeholder="Kota"
-                          className="bg-muted"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="profession">Profesi</Label>
-                        <Input
-                          id="profession"
-                          name="profession"
-                          value={profileValues.profession || ""}
-                          disabled
-                          placeholder="-"
-                          className="bg-muted"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="birth_date">Tanggal Lahir</Label>
-                        <Input
-                          id="birth_date"
-                          name="birth_date"
-                          type="date"
-                          value={profileValues.birth_date || ""}
-                          disabled
-                          className="bg-muted"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200">
-                      <Info className="inline-block mr-2 h-4 w-4" />
-                      Untuk mengubah data profesi, kota, atau tanggal lahir,
-                      silakan hubungi administrator.
-                    </p>
+                    {avatarFile && (
+                      <Button
+                        type="button"
+                        onClick={handleAvatarUpload}
+                        disabled={uploadingAvatar}
+                        size="sm"
+                      >
+                        {uploadingAvatar ? "Mengunggah..." : "Simpan Foto"}
+                      </Button>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-end sticky bottom-4">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  size="lg"
-                  className="shadow-lg"
-                >
-                  {loading ? "Menyimpan..." : "Simpan Semua Perubahan"}
-                </Button>
-              </div>
-            </div>
-          </form>
-        </TabsContent>
-
-        <TabsContent value="ai-companion" className="space-y-6 pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Memori Teman AI</CardTitle>
-              <CardDescription>
-                Berikut adalah hal-hal yang diingat oleh EVA tentang Anda untuk membuat percakapan lebih personal.
-                Anda dapat menghapus memori yang tidak diinginkan.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loadingFacts ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : aiFacts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Brain className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                  <p>Belum ada memori yang tersimpan.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {aiFacts.map((fact) => (
-                    <div
-                      key={fact.id}
-                      className="flex items-start justify-between p-3 bg-muted/50 rounded-lg border group hover:bg-muted transition-colors"
-                    >
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">{fact.content}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Disimpan pada {new Date(fact.created_at).toLocaleDateString("id-ID")}
+              </CardContent>
+            </Card>
+
+            <form onSubmit={handleProfileSubmit}>
+              <div className="space-y-6">
+                {/* START: Family Role Card Logic */}
+                {profileValues.account_type === "general" && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Peran Keluarga</CardTitle>
+                      <CardDescription>
+                        Atur peran Anda sebagai orang tua atau anak untuk
+                        menautkan akun.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {showRoleEditor ? (
+                        <>
+                          {/* --- Editing/Selection View --- */}
+                          <div className="space-y-4">
+                            <div className="flex items-center space-x-2 border p-3 rounded-md hover:bg-muted/50 transition-colors">
+                              <Checkbox
+                                id="isParent"
+                                onCheckedChange={() =>
+                                  handleSubtypeChange("parent")
+                                }
+                                checked={profileValues.subtypes.includes(
+                                  "parent"
+                                )}
+                              />
+                              <Label
+                                htmlFor="isParent"
+                                className="cursor-pointer font-normal flex-1"
+                              >
+                                Saya adalah Orang Tua / Wali
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 border p-3 rounded-md hover:bg-muted/50 transition-colors">
+                              <Checkbox
+                                id="isChild"
+                                onCheckedChange={() =>
+                                  handleSubtypeChange("child")
+                                }
+                                checked={profileValues.subtypes.includes("child")}
+                              />
+                              <Label
+                                htmlFor="isChild"
+                                className="cursor-pointer font-normal flex-1"
+                              >
+                                Saya adalah Anak
+                              </Label>
+                            </div>
+                          </div>
+
+                          {profileValues.subtypes.includes("child") && (
+                            <div className="space-y-2 animate-in fade-in-50 p-4 bg-muted/30 rounded-md border">
+                              <Label htmlFor="parent_id">
+                                ID Akun Wali / Orang Tua
+                              </Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  id="parent_id"
+                                  name="parent_id"
+                                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                  value={profileValues.parent_id || ""}
+                                  onChange={handleProfileChange}
+                                  required
+                                />
+                              </div>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="link"
+                                    className="p-0 h-auto text-xs text-primary hover:underline"
+                                  >
+                                    <Send className="mr-1 h-3 w-3" />
+                                    Orang tua/wali Anda belum punya akun? Undang
+                                    mereka.
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>
+                                      Undang Orang Tua / Wali
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                      Untuk menautkan akun, orang tua/wali Anda
+                                      perlu mendaftar terlebih dahulu. Setelah
+                                      mendaftar, mereka bisa mendapatkan ID unik
+                                      di halaman pengaturan akun mereka untuk Anda
+                                      gunakan di sini.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <DialogFooter>
+                                    <Button
+                                      onClick={() =>
+                                        navigator.clipboard.writeText(
+                                          window.location.origin +
+                                            "/login?register=true"
+                                        )
+                                      }
+                                    >
+                                      Salin Tautan Pendaftaran
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {/* --- Display View --- */}
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Peran Anda Saat Ini</Label>
+                              <div className="flex flex-wrap gap-2">
+                                {profileValues.subtypes.map((role) => (
+                                  <div
+                                    key={role}
+                                    className="capitalize text-sm font-medium bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20"
+                                  >
+                                    {role === "parent"
+                                      ? "Orang Tua / Wali"
+                                      : "Anak"}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {profileValues.subtypes.includes("parent") && (
+                              <div className="space-y-2">
+                                <Label>ID Orang Tua Anda (Untuk Dibagikan)</Label>
+                                <div className="flex items-center space-x-2">
+                                  <Input
+                                    value={user?.id || ""}
+                                    readOnly
+                                    className="font-mono text-sm bg-muted"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={copyUserId}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                            {profileValues.subtypes.includes("child") &&
+                              profileValues.parent_id && (
+                                <div className="space-y-2">
+                                  <Label>Tertaut dengan Akun Wali</Label>
+                                  <Input
+                                    value={profileValues.parent_id}
+                                    readOnly
+                                    className="font-mono text-sm bg-muted"
+                                  />
+                                </div>
+                              )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsEditingRole(true)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" /> Ubah Peran
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+                {/* END: Family Role Card Logic */}
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informasi Pribadi</CardTitle>
+                    <CardDescription>Detail data diri Anda.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="accountType">Jenis Akun</Label>
+                        <Input
+                          id="accountType"
+                          value={
+                            profileValues.account_type === "professional"
+                              ? "Akun Profesional"
+                              : "Akun Umum/Reguler"
+                          }
+                          disabled
+                          className="bg-muted"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="full_name">Nama Lengkap</Label>
+                        <Input
+                          id="full_name"
+                          name="full_name"
+                          value={profileValues.full_name}
+                          onChange={handleProfileChange}
+                          placeholder="Masukkan nama lengkap"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="nick_name">Nama Panggilan (Nickname)</Label>
+                        <Input
+                          id="nick_name"
+                          name="nick_name"
+                          value={profileValues.nick_name}
+                          onChange={handleProfileChange}
+                          placeholder="Masukkan nama panggilan"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Nama ini akan digunakan oleh Teman AI untuk menyapa Anda.
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => deleteAiFact(fact.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={user?.email || ""}
+                          disabled
+                          className="bg-muted"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Email tidak dapat diubah.
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="city">Kota</Label>
+                          <Input
+                            id="city"
+                            name="city"
+                            value={profileValues.city || ""}
+                            disabled
+                            placeholder="Kota"
+                            className="bg-muted"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="profession">Profesi</Label>
+                          <Input
+                            id="profession"
+                            name="profession"
+                            value={profileValues.profession || ""}
+                            disabled
+                            placeholder="-"
+                            className="bg-muted"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="birth_date">Tanggal Lahir</Label>
+                          <Input
+                            id="birth_date"
+                            name="birth_date"
+                            type="date"
+                            value={profileValues.birth_date || ""}
+                            disabled
+                            className="bg-muted"
+                          />
+                        </div>
+                      </div>
+                      <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200 flex items-start gap-2">
+                        <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                        <span>Untuk mengubah data profesi, kota, atau tanggal lahir, silakan hubungi administrator.</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  </CardContent>
+                </Card>
 
-        <TabsContent value="security" className="space-y-6 pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Perbarui Password</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isEmailProvider ? (
-                <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="current_password"
-                        className="flex items-center gap-1"
-                      >
-                        <KeyRound className="w-4 h-4" />
-                        Password Saat Ini
-                      </Label>
-                      <Input
-                        id="current_password"
-                        name="current_password"
-                        type="password"
-                        value={passwordValues.current_password}
-                        onChange={handlePasswordChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="new_password"
-                        className="flex items-center gap-1"
-                      >
-                        <Lock className="w-4 h-4" />
-                        Password Baru
-                      </Label>
-                      <Input
-                        id="new_password"
-                        name="new_password"
-                        type="password"
-                        value={passwordValues.new_password}
-                        onChange={handlePasswordChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="confirm_password"
-                        className="flex items-center gap-1"
-                      >
-                        <Lock className="w-4 h-4" />
-                        Konfirmasi Password Baru
-                      </Label>
-                      <Input
-                        id="confirm_password"
-                        name="confirm_password"
-                        type="password"
-                        value={passwordValues.confirm_password}
-                        onChange={handlePasswordChange}
-                        required
-                      />
-                    </div>
-                  </div>
+                <div className="flex justify-end sticky bottom-4 z-10">
                   <Button
                     type="submit"
-                    disabled={passwordLoading}
-                    className="mt-2"
+                    disabled={loading}
+                    size="lg"
+                    className="shadow-xl"
                   >
-                    {passwordLoading ? "Memperbarui..." : "Perbarui Password"}
-                  </Button>
-                </form>
-              ) : (
-                <div className="space-y-4">
-                  <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-                    <p className="text-amber-800 text-sm">
-                      <Lock className="inline-block mr-2 h-4 w-4" />
-                      Akun Anda terhubung dengan provider eksternal, sehingga
-                      password tidak dapat diubah di sini.
-                    </p>
-                  </div>
-                  <Button disabled variant="outline" className="w-full">
-                    Perbarui Password
+                    {loading ? "Menyimpan..." : "Simpan Perubahan"}
                   </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="advanced" className="space-y-6 pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Nonaktifkan Akun</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-                  <p className="text-amber-800 text-sm">
-                    <AlertCircle className="inline-block mr-2 h-4 w-4" />
-                    Tindakan ini tidak dapat diurungkan. Anda akan perlu
-                    menghubungi admin untuk reaktivasi.
-                  </p>
-                </div>
-                <Dialog open={deactivateOpen} onOpenChange={setDeactivateOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="destructive" className="w-full">
-                      Nonaktifkan Akun Saya
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        Anda yakin ingin menonaktifkan akun?
-                      </DialogTitle>
-                      <DialogDescription>
-                        Tindakan ini akan menonaktifkan akun Anda secara
-                        permanen. Untuk mengonfirmasi, ketik "Konfirmasi
-                        Nonaktifkan Akun" di bawah ini.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                      <Label
-                        htmlFor="deactivation-confirmation"
-                        className="text-sm font-medium"
-                      >
-                        Ketik <strong>"Konfirmasi Nonaktifkan Akun"</strong>
-                      </Label>
-                      <Textarea
-                        id="deactivation-confirmation"
-                        placeholder="Konfirmasi Nonaktifkan Akun"
-                        className="mt-2"
-                        value={deactivateConfirmation}
-                        onChange={(e) =>
-                          setDeactivateConfirmation(e.target.value)
-                        }
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setDeactivateOpen(false)}
-                        disabled={isDeactivating}
-                      >
-                        Batal
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={handleDeactivateAccount}
-                        disabled={
-                          isDeactivating ||
-                          deactivateConfirmation !==
-                            "Konfirmasi Nonaktifkan Akun"
-                        }
-                      >
-                        {isDeactivating
-                          ? "Menonaktifkan..."
-                          : "Ya, Nonaktifkan Akun"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="ai-companion" className="space-y-6 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Memori Teman AI</CardTitle>
+                <CardDescription>
+                  Berikut adalah hal-hal yang diingat oleh EVA tentang Anda untuk membuat percakapan lebih personal.
+                  Anda dapat menghapus memori yang tidak diinginkan.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingFacts ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : aiFacts.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+                    <Brain className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <p>Belum ada memori yang tersimpan.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {aiFacts.map((fact) => (
+                      <div
+                        key={fact.id}
+                        className="flex items-start justify-between p-4 bg-card rounded-lg border shadow-sm group hover:shadow-md transition-all"
+                      >
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium leading-relaxed">{fact.content}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Disimpan pada {new Date(fact.created_at).toLocaleDateString("id-ID")}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                          onClick={() => deleteAiFact(fact.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Perbarui Password</CardTitle>
+                <CardDescription>Amankan akun Anda dengan password yang kuat.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isEmailProvider ? (
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="current_password"
+                          className="flex items-center gap-1"
+                        >
+                          <KeyRound className="w-4 h-4" />
+                          Password Saat Ini
+                        </Label>
+                        <Input
+                          id="current_password"
+                          name="current_password"
+                          type="password"
+                          value={passwordValues.current_password}
+                          onChange={handlePasswordChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="new_password"
+                          className="flex items-center gap-1"
+                        >
+                          <Lock className="w-4 h-4" />
+                          Password Baru
+                        </Label>
+                        <Input
+                          id="new_password"
+                          name="new_password"
+                          type="password"
+                          value={passwordValues.new_password}
+                          onChange={handlePasswordChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="confirm_password"
+                          className="flex items-center gap-1"
+                        >
+                          <Lock className="w-4 h-4" />
+                          Konfirmasi Password Baru
+                        </Label>
+                        <Input
+                          id="confirm_password"
+                          name="confirm_password"
+                          type="password"
+                          value={passwordValues.confirm_password}
+                          onChange={handlePasswordChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={passwordLoading}
+                      className="mt-2 w-full sm:w-auto"
+                    >
+                      {passwordLoading ? "Memperbarui..." : "Perbarui Password"}
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-md p-4 flex gap-3">
+                      <Lock className="h-5 w-5 text-amber-800 shrink-0" />
+                      <p className="text-amber-800 text-sm">
+                        Akun Anda terhubung dengan provider eksternal (Google/Facebook), sehingga
+                        password tidak dapat diubah di sini. Silakan atur password melalui provider terkait.
+                      </p>
+                    </div>
+                    <Button disabled variant="outline" className="w-full sm:w-auto">
+                      Perbarui Password
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="advanced" className="space-y-6 mt-0">
+            <Card className="border-destructive/20 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-destructive">Zona Bahaya</CardTitle>
+                <CardDescription>Tindakan yang bersifat destruktif dan permanen.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-destructive/5 border border-destructive/20 rounded-md p-4 flex gap-3">
+                    <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-destructive font-medium text-sm">Nonaktifkan Akun</p>
+                      <p className="text-destructive/80 text-sm">
+                        Tindakan ini tidak dapat diurungkan. Anda akan perlu
+                        menghubungi admin untuk reaktivasi.
+                      </p>
+                    </div>
+                  </div>
+                  <Dialog open={deactivateOpen} onOpenChange={setDeactivateOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="destructive" className="w-full sm:w-auto">
+                        Nonaktifkan Akun Saya
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>
+                          Anda yakin ingin menonaktifkan akun?
+                        </DialogTitle>
+                        <DialogDescription>
+                          Tindakan ini akan menonaktifkan akun Anda secara
+                          permanen. Untuk mengonfirmasi, ketik "Konfirmasi
+                          Nonaktifkan Akun" di bawah ini.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="py-4">
+                        <Label
+                          htmlFor="deactivation-confirmation"
+                          className="text-sm font-medium"
+                        >
+                          Ketik <strong>"Konfirmasi Nonaktifkan Akun"</strong>
+                        </Label>
+                        <Textarea
+                          id="deactivation-confirmation"
+                          placeholder="Konfirmasi Nonaktifkan Akun"
+                          className="mt-2"
+                          value={deactivateConfirmation}
+                          onChange={(e) =>
+                            setDeactivateConfirmation(e.target.value)
+                          }
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setDeactivateOpen(false)}
+                          disabled={isDeactivating}
+                        >
+                          Batal
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeactivateAccount}
+                          disabled={
+                            isDeactivating ||
+                            deactivateConfirmation !==
+                              "Konfirmasi Nonaktifkan Akun"
+                          }
+                        >
+                          {isDeactivating
+                            ? "Menonaktifkan..."
+                            : "Ya, Nonaktifkan Akun"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </main>
       </Tabs>
     </div>
   );
