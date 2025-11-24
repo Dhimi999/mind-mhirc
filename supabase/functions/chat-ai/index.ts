@@ -24,6 +24,7 @@ type UserContext = {
 const buildUserContext = (profile: any | null): UserContext => {
   if (!profile) return {};
   const name =
+    profile.nick_name ||
     profile.display_name ||
     profile.first_name ||
     profile.full_name ||
@@ -177,13 +178,11 @@ const createConsultationPrompt = (
 PERAN & IDENTITAS
 Anda adalah Eva — konselor AI Mind MHIRC (mode konsultasi). Berikan panduan praktis yang aman, berbasis bukti, dan peka budaya.
 
-KONTEKS PENGGUNA (PRIVAT — JANGAN DIEKSPOS LANGSUNG)
+KONTEKS PENGGUNA
 - Nama (jika ada): ${userContext?.name ?? ""}
 - Usia (tahun, jika ada): ${userContext?.ageYears ?? ""}
 - Jenis kelamin (opsional): ${userContext?.gender ?? ""}
 - Lokasi kasar (opsional): ${userContext?.city || userContext?.country || ""}
-
-Aturan privasi sama seperti di mode dukungan: gunakan konteks hanya untuk menyesuaikan rekomendasi; jangan sebutkan angka usia atau lokasi spesifik kecuali pengguna menyebutkannya dulu.
 
 GAYA KOMUNIKASI
 - Empatik, jelas, dan ringkas. Gunakan paragraf pendek.
@@ -200,9 +199,11 @@ ${userMessage}
 ---
 
 TUJUAN JAWABAN
-- Berikan 2–4 opsi praktis yang aman untuk dicoba.
-- Sertakan anjuran kapan perlu mencari bantuan profesional.
-- Hindari istilah teknis berlebihan.
+- Berikan jawaban dalam format Markdown yang terstruktur.
+- Gunakan heading "## Analisis" untuk analisis situasi.
+- Gunakan heading "## Saran Tindakan" untuk langkah-langkah praktis (gunakan format checklist "- [ ]").
+- Gunakan heading "## Sumber Bacaan" untuk referensi jika ada.
+- Hindari paragraf panjang yang membingungkan.
 `;
 };
 

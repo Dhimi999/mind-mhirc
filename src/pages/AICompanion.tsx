@@ -51,6 +51,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Database } from "@/integrations/supabase/types"; // <-- Impor tipe dari file yang digenerate
 import { InitialDialog } from "@/components/ai/InitialDialog";
+import ReactMarkdown from "react-markdown";
 
 // ... (interface Message dan Conversation tidak berubah)
 
@@ -931,7 +932,7 @@ const AICompanion = () => {
 
                 <div className="relative">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src="/ai-avatar.png" />
+                    <AvatarImage src="/eva_pict.png" />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       <Bot className="h-5 w-5" />
                     </AvatarFallback>
@@ -942,7 +943,7 @@ const AICompanion = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h1 className="text-xl font-bold text-foreground truncate">
+                    <h1 className="text-base sm:text-lg font-bold text-foreground line-clamp-1 leading-tight">
                       {currentConversation.summary || currentConversation.title}
                     </h1>
                     {isMobile && (
@@ -951,7 +952,7 @@ const AICompanion = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="h-8 w-8 p-0 shrink-0"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
@@ -1006,16 +1007,13 @@ const AICompanion = () => {
                       </DropdownMenu>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Selalu siap mendengarkan dan membantu Anda
-                  </p>
                 </div>
               </div>
             </div>
 
             {/* Messages Area */}
             <div className="flex-1 min-h-0">
-              <ScrollArea ref={scrollAreaRef} className="h-full p-4">
+              <ScrollArea ref={scrollAreaRef} className="h-full p-2 sm:p-4">
                 {isLoadingMessages ? (
                   <div className="flex justify-center items-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -1037,7 +1035,7 @@ const AICompanion = () => {
                         >
                           {message.sender === "ai" && (
                             <Avatar className="h-8 w-8 mt-1 flex-shrink-0 border shadow-sm">
-                              <AvatarImage src="/ai-avatar.png" />
+                              <AvatarImage src="/eva_pict.png" />
                               <AvatarFallback className="bg-primary/10 text-primary">
                                 <Bot className="h-4 w-4" />
                               </AvatarFallback>
@@ -1045,15 +1043,46 @@ const AICompanion = () => {
                           )}
 
                           <div
-                            className={`max-w-[85%] md:max-w-[75%] px-5 py-3.5 shadow-sm ${
+                            className={`max-w-[90%] sm:max-w-[85%] md:max-w-[75%] px-4 py-3 sm:px-5 sm:py-3.5 shadow-sm ${
                               message.sender === "user"
                                 ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
                                 : "bg-card border text-card-foreground rounded-2xl rounded-tl-sm"
                             }`}
                           >
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                              {message.content}
-                            </p>
+                            <div
+                              className={`text-sm leading-relaxed prose prose-sm max-w-none break-words ${
+                                message.sender === "user"
+                                  ? "prose-invert prose-p:text-primary-foreground prose-headings:text-primary-foreground prose-strong:text-primary-foreground"
+                                  : "prose-neutral dark:prose-invert"
+                              }`}
+                            >
+                              <ReactMarkdown
+                                components={{
+                                  p: ({ node, ...props }) => (
+                                    <p className="mb-2 last:mb-0" {...props} />
+                                  ),
+                                  a: ({ node, ...props }) => (
+                                    <a
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="underline font-medium hover:text-opacity-80"
+                                      {...props}
+                                    />
+                                  ),
+                                  ul: ({ node, ...props }) => (
+                                    <ul className="list-disc pl-4 mb-2" {...props} />
+                                  ),
+                                  ol: ({ node, ...props }) => (
+                                    <ol className="list-decimal pl-4 mb-2" {...props} />
+                                  ),
+                                  li: ({ node, ...props }) => (
+                                    <li className="mb-0.5" {...props} />
+                                  ),
+                                }}
+                              >
+                                {message.content}
+                              </ReactMarkdown>
+                            </div>
                             <p
                               className={`text-[10px] mt-1.5 text-right opacity-70 ${
                                 message.sender === "user"
@@ -1063,10 +1092,9 @@ const AICompanion = () => {
                             >
                               {formatTime(message.created_at)}
                             </p>
-                          </div>
-
-                          {message.sender === "user" && (
+                          </div>                          {message.sender === "user" && (
                             <Avatar className="h-8 w-8 mt-1 flex-shrink-0 border shadow-sm">
+                              <AvatarImage src={user?.avatar_url || ""} />
                               <AvatarFallback className="bg-secondary text-secondary-foreground">
                                 <User className="h-4 w-4" />
                               </AvatarFallback>
@@ -1079,6 +1107,7 @@ const AICompanion = () => {
                     {isTyping && (
                       <div className="flex gap-3 justify-start">
                         <Avatar className="h-8 w-8 mt-2 flex-shrink-0">
+                          <AvatarImage src="/eva_pict.png" />
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             <Bot className="h-4 w-4" />
                           </AvatarFallback>

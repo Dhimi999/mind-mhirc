@@ -68,11 +68,24 @@ serve(async (req) => {
         `Error fetching parent profile: ${parentProfileError.message}`
       );
     }
-    if (!parentProfile || !parentProfile.forwarding) {
-      throw new Error(`Forwarding email not found for parent ${parentId}.`);
+
+    let parentEmail = parentProfile?.forwarding;
+
+    // Fallback: Jika forwarding email kosong, ambil email dari auth.users
+    if (!parentEmail) {
+      console.log(`[INFO] Forwarding email not set for parent ${parentId}. Fetching from Auth...`);
+      const { data: parentUser, error: parentUserError } = await supabaseAdmin.auth.admin.getUserById(parentId);
+      
+      if (parentUserError || !parentUser.user) {
+         console.warn(`[WARN] Could not fetch parent user from Auth: ${parentUserError?.message}`);
+      } else {
+        parentEmail = parentUser.user.email;
+      }
     }
 
-    const parentEmail = parentProfile.forwarding;
+    if (!parentEmail) {
+      throw new Error(`Email not found for parent ${parentId} (checked forwarding and auth).`);
+    }
     // --------------------------------------------------------------------
 
     if (!RESEND_API_KEY || !SENDER_EMAIL) {

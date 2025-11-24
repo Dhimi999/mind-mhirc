@@ -45,7 +45,33 @@ serve(async (req) => {
     const childsSummary =
       caseData.source_conversation.full_summary ||
       `Membahas percakapan anak: "${caseData.source_conversation.title}"`;
-    const initialAiMessageContent = `Halo. Saya mendeteksi adanya percakapan yang memerlukan perhatian pada anak Anda. Berikut adalah rangkuman dari percakapan tersebut:\n\n---\n"${childsSummary}"\n---\n\nSaya di sini untuk membantu Anda memahami situasi ini dan mendiskusikan langkah-langkah selanjutnya. Apa yang ingin Anda tanyakan?`;
+
+    // Fetch recent messages from the child's conversation for context
+    const { data: recentMessages } = await supabaseAdmin
+      .from("ai_messages")
+      .select("sender, content")
+      .eq("conversation_id", caseData.source_conversation_id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    const recentContext = recentMessages
+      ? recentMessages
+          .reverse()
+          .map((m: any) => `[${m.sender === "user" ? "Anak" : "AI"}]: ${m.content}`)
+          .join("\n")
+      : "Tidak ada pesan terbaru.";
+
+    const initialAiMessageContent = `Halo. Saya mendeteksi adanya percakapan yang memerlukan perhatian pada anak Anda. 
+
+Berikut adalah rangkuman dari percakapan tersebut:
+"${childsSummary}"
+
+Dan berikut adalah cuplikan pesan terakhir dari percakapan mereka:
+---
+${recentContext}
+---
+
+Saya di sini untuk membantu Anda memahami situasi ini dan mendiskusikan langkah-langkah selanjutnya. Apa yang ingin Anda tanyakan?`;
 
     // Buat percakapan baru untuk orang tua
     const { data: newConversation, error: newConvError } = await supabaseAdmin

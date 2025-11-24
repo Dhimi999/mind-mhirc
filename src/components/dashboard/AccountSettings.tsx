@@ -37,7 +37,9 @@ import {
   Copy,
   Users,
   Send,
-  Edit
+  Edit,
+  Brain,
+  Trash2
 } from "lucide-react";
 
 // Updated ProfileFormValues to include subtypes, parent_id, and updated_at
@@ -94,12 +96,60 @@ export default function AccountSettings() {
   const [deactivateConfirmation, setDeactivateConfirmation] = useState("");
   const [isDeactivating, setIsDeactivating] = useState(false);
 
+  // State for AI Facts
+  const [aiFacts, setAiFacts] = useState<{ id: string; content: string; created_at: string }[]>([]);
+  const [loadingFacts, setLoadingFacts] = useState(false);
+
   useEffect(() => {
     if (user) {
       fetchProfile();
+      fetchAiFacts();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const fetchAiFacts = async () => {
+    if (!user) return;
+    try {
+      setLoadingFacts(true);
+      const { data, error } = await supabase
+        .from("ai_user_facts")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      setAiFacts(data || []);
+    } catch (error) {
+      console.error("Error fetching AI facts:", error);
+    } finally {
+      setLoadingFacts(false);
+    }
+  };
+
+  const deleteAiFact = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("ai_user_facts")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      setAiFacts(prev => prev.filter(f => f.id !== id));
+      toast({
+        title: "Memori dihapus",
+        description: "Fakta berhasil dihapus dari memori AI."
+      });
+    } catch (error) {
+      console.error("Error deleting fact:", error);
+      toast({
+        title: "Gagal menghapus",
+        description: "Terjadi kesalahan saat menghapus memori.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -403,10 +453,14 @@ export default function AccountSettings() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold mb-6">Pengaturan Akun</h1>
       <Tabs defaultValue="general">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general" className="flex items-center">
             <User className="mr-2 h-4 w-4" />
             Umum
+          </TabsTrigger>
+          <TabsTrigger value="ai-companion" className="flex items-center">
+            <Brain className="mr-2 h-4 w-4" />
+            Teman AI
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center">
             <KeyRound className="mr-2 h-4 w-4" />
@@ -731,6 +785,54 @@ export default function AccountSettings() {
               </div>
             </div>
           </form>
+        </TabsContent>
+
+        <TabsContent value="ai-companion" className="space-y-6 pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Memori Teman AI</CardTitle>
+              <CardDescription>
+                Berikut adalah hal-hal yang diingat oleh EVA tentang Anda untuk membuat percakapan lebih personal.
+                Anda dapat menghapus memori yang tidak diinginkan.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingFacts ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : aiFacts.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Brain className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <p>Belum ada memori yang tersimpan.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {aiFacts.map((fact) => (
+                    <div
+                      key={fact.id}
+                      className="flex items-start justify-between p-3 bg-muted/50 rounded-lg border group hover:bg-muted transition-colors"
+                    >
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">{fact.content}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Disimpan pada {new Date(fact.created_at).toLocaleDateString("id-ID")}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => deleteAiFact(fact.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6 pt-4">
