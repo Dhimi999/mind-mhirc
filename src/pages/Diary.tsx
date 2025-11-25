@@ -251,10 +251,16 @@ const Diary = () => {
     setIsDialogOpen(true);
   };
 
-  const filteredEntries = entries.filter(entry =>
-    entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.content.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEntries = entries.filter(entry => {
+    // Filter out mood entries with no content (default content)
+    const isMoodEntry = entry.title.startsWith('[MOOD]');
+    const isDefaultContent = entry.content === 'Tidak ada catatan.';
+    
+    if (isMoodEntry && isDefaultContent) return false;
+
+    return entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    entry.content.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const totalPages = Math.ceil(filteredEntries.length / entriesPerPage);
   const startIndex = (currentPage - 1) * entriesPerPage;
