@@ -23,7 +23,6 @@ import { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { Helmet } from "react-helmet-async";
 import { getSiteBaseUrl } from "@/lib/utils";
-import WebVitals from "@/components/seo/WebVitals";
 import { RelatedContent } from "@/components/seo/InternalLinking";
 
 const Index = () => {
@@ -222,6 +221,9 @@ const Index = () => {
           name="description"
           content="Pusat riset dan layanan kesehatan mental di Indonesia. Temukan tes psikologi online, layanan konsultasi, dan artikel tepercaya untuk kesejahteraan mental Anda di MIND MHIRC."
         />
+        
+        {/* FORCE NOINDEX */}
+        <meta name="robots" content="noindex, nofollow" />
 
   {/* --- URL Konsisten --- */}
   <link rel="canonical" href={`${getSiteBaseUrl()}/`} />
@@ -617,23 +619,6 @@ const Index = () => {
       </main>
 
       <Footer />
-      <WebVitals />
-      
-      {/* SEO Schema */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "name": "Mind MHIRC",
-          "description": "Pusat riset dan layanan kesehatan mental berbasis bukti di Indonesia",
-          "url": "https://mind-mhirc.my.id",
-          "logo": "https://mind-mhirc.my.id/logo.png",
-          "sameAs": [
-            "https://www.facebook.com/mindmhirc",
-            "https://www.instagram.com/mindmhirc"
-          ]
-        })}
-      </script>
     </div>
   );
 };

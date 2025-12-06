@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,7 +19,15 @@ export const useHibridaRole = () => {
   const [enrollment, setEnrollment] = useState<HibridaEnrollment | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchEnrollment = async () => {
+  interface EnrollmentRow {
+    role: HibridaRole | null;
+    group_assignment: HibridaGroup | null;
+    enrollment_status: EnrollmentStatus | null;
+    enrollment_requested_at: string | null;
+    approved_at: string | null;
+  }
+
+  const fetchEnrollment = useCallback(async () => {
     if (!user?.id) {
       setEnrollment(null);
       setLoading(false);
@@ -29,10 +37,10 @@ export const useHibridaRole = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-  .from('cbt_hibrida_enrollments' as any)
+        .from('cbt_hibrida_enrollments')
         .select('role, group_assignment, enrollment_status, enrollment_requested_at, approved_at')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .maybeSingle<EnrollmentRow>();
 
       if (error) {
         console.error('Error fetching Hibrida enrollment:', error);
@@ -42,11 +50,11 @@ export const useHibridaRole = () => {
 
       if (data) {
         setEnrollment({
-          role: (data as any).role as HibridaRole,
-          group: (data as any).group_assignment as HibridaGroup,
-          status: (data as any).enrollment_status as EnrollmentStatus,
-          enrollmentRequestedAt: (data as any).enrollment_requested_at,
-          approvedAt: (data as any).approved_at
+          role: data.role ?? 'reguler',
+          group: data.group_assignment ?? null,
+          status: data.enrollment_status ?? 'pending',
+          enrollmentRequestedAt: data.enrollment_requested_at,
+          approvedAt: data.approved_at
         });
       }
     } catch (error) {
@@ -55,18 +63,18 @@ export const useHibridaRole = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     fetchEnrollment();
-  }, [user?.id]);
+  }, [fetchEnrollment]);
 
   const requestEnrollment = async () => {
     if (!user?.id) return { success: false, error: 'User not authenticated' };
 
     try {
-      const { data: updateData, error: updateError, status: updateStatus } = await supabase
-  .from('cbt_hibrida_enrollments' as any)
+      const { error: updateError } = await supabase
+        .from('cbt_hibrida_enrollments')
         .update({ 
           enrollment_status: 'pending',
           enrollment_requested_at: new Date().toISOString()
@@ -78,7 +86,7 @@ export const useHibridaRole = () => {
       // If no row was updated (e.g., older users without auto-created row), insert one
       const ensureRow = async () => {
         const { data: existing, error: selectError } = await supabase
-          .from('cbt_hibrida_enrollments' as any)
+          .from('cbt_hibrida_enrollments')
           .select('id')
           .eq('user_id', user.id)
           .maybeSingle();
@@ -87,7 +95,7 @@ export const useHibridaRole = () => {
         if (existing) return;
 
         const { error: insertError } = await supabase
-          .from('cbt_hibrida_enrollments' as any)
+          .from('cbt_hibrida_enrollments')
           .insert({
             user_id: user.id,
             role: 'reguler',

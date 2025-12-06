@@ -9,9 +9,14 @@ const BlogPost = ({
   post
 }: BlogPostProps) => {
   return <article className="group">
-      <Link to={`/blog/${post.slug}`} className="block">
+      <Link to={`/blog/${post.slug}`} className="block" aria-label={`Read article: ${post.title}`}>
         <div className="overflow-hidden rounded-xl mb-4 aspect-[16/9]">
-          <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <img 
+            src={post.cover_image} 
+            alt="" 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+            aria-hidden="true"
+          />
         </div>
       </Link>
       

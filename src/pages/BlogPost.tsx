@@ -221,13 +221,7 @@ const BlogPostPage = () => {
               <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
             </div>
             
-            <article className="prose prose-lg max-w-none blog-content" itemScope itemType="https://schema.org/Article">
-              <meta itemProp="headline" content={post.title} />
-              <meta itemProp="datePublished" content={post.published_date} />
-              <meta itemProp="dateModified" content={post.updated_date || post.published_date} />
-              <meta itemProp="author" content={post.author_name} />
-              <meta itemProp="image" content={post.cover_image} />
-              {post.tags && Array.isArray(post.tags) && <meta itemProp="keywords" content={(post.tags as string[]).join(', ')} />}
+            <article className="prose prose-lg max-w-none blog-content">
               <div dangerouslySetInnerHTML={{
               __html: post.content
             }} />

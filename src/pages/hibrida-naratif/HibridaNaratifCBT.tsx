@@ -56,7 +56,7 @@ const HibridaNaratifCBT: React.FC = () => {
           .eq('user_id', user.id);
         if (error) throw error;
         const map: Record<number, { meetingDone: boolean; assignmentDone: boolean }> = {};
-        (data || []).forEach((row: any) => {
+        (data || []).forEach((row: { session_number: number; meeting_done?: boolean; assignment_done?: boolean }) => {
           map[row.session_number] = {
             meetingDone: !!row.meeting_done,
             assignmentDone: !!row.assignment_done,
@@ -65,7 +65,7 @@ const HibridaNaratifCBT: React.FC = () => {
         setProgressMap(map);
         try { localStorage.setItem('hibridaInterventionProgress', JSON.stringify(map)); } catch {}
       } catch (e) {
-        // ignore, keep local cache
+        // TODO: log to monitoring service when available
       }
     };
     loadProgress();
@@ -78,6 +78,7 @@ const HibridaNaratifCBT: React.FC = () => {
     if ((allowed as readonly string[]).includes(desired)) {
       setActiveTab(desired);
     } else {
+      // Fallback tab when invalid param provided
       setActiveTab("pengantar");
     }
   }, [tab]);
@@ -232,7 +233,7 @@ const HibridaNaratifCBT: React.FC = () => {
           .eq('user_id', user.id);
         if (error) throw error;
         const map: Record<number, { meetingDone?: boolean; assignmentDone?: boolean }> = {};
-        (data || []).forEach((row: any) => {
+        (data || []).forEach((row: { session_number: number; meeting_done?: boolean; assignment_done?: boolean }) => {
           map[row.session_number] = {
             meetingDone: !!row.meeting_done,
             assignmentDone: !!row.assignment_done,

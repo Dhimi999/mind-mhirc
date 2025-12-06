@@ -31,37 +31,14 @@ export const SEO: React.FC<SEOProps> = ({
   const canonical = `${base}${canonicalPath}`.replace(/\/$/, canonicalPath.endsWith("/") ? canonicalPath : canonicalPath);
   const keywords = tags.join(", ");
 
-  // JSON-LD for Article if applicable
-  const articleLd = type === "article" ? {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: title,
-    description,
-    image: [image],
-    datePublished: publishedTime,
-    dateModified: modifiedTime || publishedTime,
-    author: {
-      "@type": "Organization",
-      name: "Mind MHIRC"
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Mind MHIRC",
-      logo: {
-        "@type": "ImageObject",
-        url: `${base}/logo.png`
-      }
-    },
-    mainEntityOfPage: canonical
-  } : null;
-
   return (
     <Helmet>
       <title>{title}</title>
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} />}
       <link rel="canonical" href={canonical} />
-      {noIndex && <meta name="robots" content="noindex, nofollow" />}
+      {/* FORCE NOINDEX FOR ALL PAGES */}
+      <meta name="robots" content="noindex, nofollow" />
 
       {/* Open Graph */}
       <meta property="og:title" content={title} />
@@ -88,13 +65,6 @@ export const SEO: React.FC<SEOProps> = ({
       {type === "article" && tags.map(t => (
         <meta property="article:tag" content={t} key={t} />
       ))}
-
-      {/* JSON-LD */}
-      {articleLd && (
-        <script type="application/ld+json">
-          {JSON.stringify(articleLd)}
-        </script>
-      )}
     </Helmet>
   );
 };

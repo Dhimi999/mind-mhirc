@@ -9,11 +9,14 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
+    // Tightened TypeScript settings (Stage 1 hardening)
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    // Keep skipLibCheck temporarily to avoid external lib noise; will remove later
     "skipLibCheck": true,
-    "allowJs": true,
-    "noUnusedLocals": false,
-    "strictNullChecks": false
+    // Disallow JS to encourage migration to TS
+    "allowJs": false,
+    "noUnusedParameters": true,
+    "noUnusedLocals": true
   }
 }
