@@ -19,7 +19,9 @@ import {
   Users,
   MoreHorizontal,
   ArrowLeft,
-  CheckCircle2 // <-- Tambahkan ikon baru
+  CheckCircle2,
+  Sparkles,
+  MessageSquare
 } from "lucide-react";
 import {
   Dialog,
@@ -39,7 +41,7 @@ import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
 import { Helmet } from "react-helmet-async";
-import { Badge } from "@/components/ui/badge"; // <-- Import Badge
+import { Badge } from "@/components/ui/badge";
 
 // --- Definisi Tipe ---
 type ForumType = "public" | "parent" | "child" | "mother";
@@ -60,7 +62,7 @@ interface ForumPost {
   created_at: string;
   forum_users: ForumUser;
   is_liked: boolean;
-  professional_answer_id: string | null; // <-- Izinkan null
+  professional_answer_id: string | null;
 }
 
 interface ForumComment {
@@ -83,6 +85,7 @@ const formatPostDate = (dateString: string) => {
     return dateString;
   }
 };
+
 // --- Komponen Header ---
 interface ForumHeaderProps {
   forumUser: ForumUser | null;
@@ -108,22 +111,33 @@ const ForumHeader: React.FC<ForumHeaderProps> = ({
   };
 
   return (
-    <header className="mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
+    <header className="mb-8 relative z-10">
+      <div className="flex items-center justify-between mb-6">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => navigate(-1)}
+          className="bg-white/50 hover:bg-white rounded-full shadow-sm backdrop-blur-sm"
+        >
+          <ArrowLeft className="h-5 w-5 text-gray-700" />
         </Button>
-        <h1 className="text-xl font-bold">{forumTitles[activeForum]}</h1>
-        <div className="flex items-center gap-2">
+        
+        <div className="flex items-center gap-3">
           {forumUser && (
             <>
-              <Button variant="outline" size="sm" onClick={onProfileClick}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onProfileClick}
+                className="rounded-full bg-white/50 border-pink-100 hover:bg-pink-50 text-pink-700"
+              >
                 @{forumUser.username}
               </Button>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={onNotificationClick}
+                className="rounded-full bg-white/50 border-pink-100 hover:bg-pink-50 text-pink-700"
               >
                 <Users className="h-4 w-4" />
               </Button>
@@ -131,29 +145,45 @@ const ForumHeader: React.FC<ForumHeaderProps> = ({
           )}
         </div>
       </div>
+
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center space-x-2 bg-pink-100/80 backdrop-blur-sm rounded-full px-4 py-1.5 mb-4 shadow-sm border border-pink-200 animate-fade-in">
+          <MessageSquare className="w-4 h-4 text-pink-600" />
+          <span className="text-pink-700 font-medium text-sm">Ruang Berbagi Ibu</span>
+        </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 animate-fade-in-up">
+          {forumTitles[activeForum]}
+        </h1>
+        <p className="text-gray-600 max-w-lg mx-auto animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          Tempat aman untuk berbagi cerita, pengalaman, dan mendapatkan dukungan dari sesama ibu dan profesional.
+        </p>
+      </div>
+
       {isLoadingPosts && (
-        <div className="w-full h-1 bg-primary/20 rounded overflow-hidden">
-          <div className="w-1/3 h-full bg-primary animate-indeterminate-progress"></div>
+        <div className="w-full h-1 bg-pink-100 rounded-full overflow-hidden">
+          <div className="w-1/3 h-full bg-pink-500 animate-indeterminate-progress rounded-full"></div>
         </div>
       )}
     </header>
   );
 };
+
 const ForumPostSkeletonList = () => (
-  <div className="space-y-4">
+  <div className="space-y-6">
     {[...Array(3)].map((_, i) => (
-      <Card key={i}>
+      <Card key={i} className="border-none shadow-sm bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden">
         <CardContent className="pt-6">
           <div className="flex items-center space-x-4">
-            <div className="h-10 w-10 rounded-full bg-muted animate-pulse"></div>
+            <div className="h-12 w-12 rounded-full bg-gray-100 animate-pulse"></div>
             <div className="space-y-2">
-              <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
-              <div className="h-3 w-32 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-32 bg-gray-100 rounded animate-pulse"></div>
+              <div className="h-3 w-24 bg-gray-100 rounded animate-pulse"></div>
             </div>
           </div>
-          <div className="mt-4 space-y-2">
-            <div className="h-4 w-full bg-muted rounded animate-pulse"></div>
-            <div className="h-4 w-5/6 bg-muted rounded animate-pulse"></div>
+          <div className="mt-6 space-y-3">
+            <div className="h-4 w-full bg-gray-100 rounded animate-pulse"></div>
+            <div className="h-4 w-5/6 bg-gray-100 rounded animate-pulse"></div>
+            <div className="h-4 w-4/6 bg-gray-100 rounded animate-pulse"></div>
           </div>
         </CardContent>
       </Card>
@@ -192,17 +222,31 @@ const CreatePost: React.FC<{
   };
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-8 border-none shadow-lg shadow-pink-100/50 bg-white/90 backdrop-blur-md rounded-3xl overflow-hidden transform transition-all hover:scale-[1.01]">
       <CardContent className="pt-6">
-        <Textarea
-          placeholder="Apa yang Anda pikirkan?"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="mb-2"
-        />
-        <Button onClick={handleCreatePost} disabled={!content.trim()}>
-          Kirim
-        </Button>
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white font-bold shadow-md shrink-0">
+            {forumUser?.username?.charAt(0).toUpperCase() || "U"}
+          </div>
+          <div className="flex-1">
+            <Textarea
+              placeholder={`Apa yang sedang Anda pikirkan, Bunda ${forumUser?.username}?`}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="mb-4 min-h-[100px] border-gray-200 focus:border-pink-300 focus:ring-pink-200 bg-gray-50/50 rounded-2xl resize-none"
+            />
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleCreatePost} 
+                disabled={!content.trim()}
+                className="rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-md shadow-pink-200"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Kirim Postingan
+              </Button>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -214,11 +258,13 @@ const ForumProfile: React.FC<{
   forumUser: ForumUser | null;
 }> = ({ isOpen, onClose, forumUser }) => (
   <Dialog open={isOpen} onOpenChange={onClose}>
-    <DialogContent>
+    <DialogContent className="rounded-3xl">
       <DialogHeader>
         <DialogTitle>Profil Forum</DialogTitle>
       </DialogHeader>
-      <p>Username: @{forumUser?.username}</p>
+      <div className="p-4 bg-gray-50 rounded-2xl">
+        <p className="text-gray-600">Username: <span className="font-bold text-gray-900">@{forumUser?.username}</span></p>
+      </div>
     </DialogContent>
   </Dialog>
 );
@@ -229,13 +275,16 @@ const ForumNotifications: React.FC<{
   forumUser: ForumUser | null;
 }> = ({ isOpen, onClose }) => (
   <Dialog open={isOpen} onOpenChange={onClose}>
-    <DialogContent>
+    <DialogContent className="rounded-3xl">
       <DialogHeader>
         <DialogTitle>Notifikasi</DialogTitle>
       </DialogHeader>
-      <p className="text-center text-muted-foreground py-8">
-        Tidak ada notifikasi baru.
-      </p>
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <Sparkles className="w-8 h-8 text-gray-400" />
+        </div>
+        <p className="text-gray-500">Tidak ada notifikasi baru saat ini.</p>
+      </div>
     </DialogContent>
   </Dialog>
 );
@@ -264,7 +313,7 @@ const ForumIbu = () => {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [showOnlyAnswered, setShowOnlyAnswered] = useState(false); // <-- State Baru untuk Filter
+  const [showOnlyAnswered, setShowOnlyAnswered] = useState(false);
 
   const activeForum: ForumType = "mother";
   const POSTS_PER_PAGE = 10;
@@ -277,7 +326,7 @@ const ForumIbu = () => {
 
   useEffect(() => {
     if (forumUser) fetchPosts(true);
-  }, [forumUser, showOnlyAnswered]); // <-- Tambahkan showOnlyAnswered sebagai dependency
+  }, [forumUser, showOnlyAnswered]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -356,7 +405,7 @@ const ForumIbu = () => {
         }
         throw error;
       }
-      setForumUser({ ...data, subtypes: [], account_type: "general" }); // Asumsi default account_type adalah 'user'
+      setForumUser({ ...data, subtypes: [], account_type: "general" });
       setShowUsernameDialog(false);
       setUsername("");
     } catch (error) {
@@ -387,13 +436,10 @@ const ForumIbu = () => {
         .select("*, forum_users(id, username, user_id)")
         .eq("forum_type", activeForum);
 
-      // --- [MODIFIKASI 1] Logika Filter ---
       if (showOnlyAnswered) {
         query = query.not("professional_answer_id", "is", null);
       }
 
-      // --- [MODIFIKASI 2] Logika Urutan ---
-      // Urutkan berdasarkan professional_answer_id (yang ada di atas), lalu berdasarkan tanggal
       query = query.order("professional_answer_id", {
         ascending: false,
         nullsFirst: false
@@ -403,7 +449,6 @@ const ForumIbu = () => {
       query = query.range(startRange, endRange);
 
       const { data, error } = await query;
-      // --- Akhir Modifikasi ---
 
       if (error) throw error;
       if (!data) return;
@@ -583,7 +628,6 @@ const ForumIbu = () => {
         .single();
       if (error) throw error;
 
-      // --- [MODIFIKASI 3] Update Postingan Jika Profesional Menjawab ---
       if (forumUser.account_type === "professional") {
         const { error: updateError } = await supabase
           .from("forum_posts")
@@ -593,7 +637,6 @@ const ForumIbu = () => {
         if (updateError) {
           console.error("Gagal menandai jawaban profesional:", updateError);
         } else {
-          // Update state post secara lokal agar badge langsung muncul
           setPosts(
             posts.map((p) =>
               p.id === selectedPost.id
@@ -603,7 +646,6 @@ const ForumIbu = () => {
           );
         }
       }
-      // --- Akhir Modifikasi ---
 
       setComments((prev) =>
         prev.map((c) =>
@@ -656,31 +698,35 @@ const ForumIbu = () => {
       }
     }
   };
+
   // --- Render ---
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <ForumHeader
-          forumUser={null}
-          activeForum={activeForum}
-          onProfileClick={() => {}}
-          onNotificationClick={() => {}}
-          isLoadingPosts={true}
-        />
-        <div className="mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="h-10 bg-muted rounded animate-pulse" />
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30">
+        <SafeMotherNavbar />
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <ForumHeader
+            forumUser={null}
+            activeForum={activeForum}
+            onProfileClick={() => {}}
+            onNotificationClick={() => {}}
+            isLoadingPosts={true}
+          />
+          <div className="mb-6">
+            <Card className="border-none shadow-sm bg-white/80 backdrop-blur-sm rounded-3xl">
+              <CardContent className="pt-6">
+                <div className="h-10 bg-gray-100 rounded animate-pulse" />
+              </CardContent>
+            </Card>
+          </div>
+          <ForumPostSkeletonList />
         </div>
-        <ForumPostSkeletonList />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30 font-sans selection:bg-pink-100 selection:text-pink-900">
       <HelmetAny>
         <title>Forum & Konsultasi - Safe Mother | Mind MHIRC</title>
         <meta
@@ -690,7 +736,14 @@ const ForumIbu = () => {
       </HelmetAny>
 
       <SafeMotherNavbar />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      
+      {/* Background Elements */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-pink-200/20 to-purple-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-blue-200/20 to-pink-200/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 max-w-2xl flex-1">
         <ForumHeader
           forumUser={forumUser}
           activeForum={activeForum}
@@ -699,23 +752,25 @@ const ForumIbu = () => {
           isLoadingPosts={isLoadingPosts}
         />
 
-        {/* --- [MODIFIKASI 4] Tambahkan Tombol Filter --- */}
-        <div className="mb-4">
+        <div className="mb-6">
           <Button
             variant={showOnlyAnswered ? "default" : "outline"}
             onClick={() => setShowOnlyAnswered(!showOnlyAnswered)}
-            className="w-full"
+            className={`w-full rounded-xl h-12 transition-all ${
+              showOnlyAnswered 
+                ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200 border-none" 
+                : "bg-white/50 border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300"
+            }`}
           >
-            <CheckCircle2 className="h-4 w-4 mr-2" />
+            <CheckCircle2 className="h-5 w-5 mr-2" />
             {showOnlyAnswered
               ? "Tampilkan Semua Postingan"
               : "Hanya Tampilkan yang Dijawab Profesional"}
           </Button>
         </div>
-        {/* --- Akhir Modifikasi --- */}
 
         <Dialog open={showUsernameDialog} onOpenChange={setShowUsernameDialog}>
-          <DialogContent>
+          <DialogContent className="rounded-3xl">
             <DialogHeader>
               <DialogTitle>Buat Username Anonim</DialogTitle>
             </DialogHeader>
@@ -728,8 +783,9 @@ const ForumIbu = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && createForumUser()}
+                className="rounded-xl"
               />
-              <Button onClick={createForumUser} className="w-full">
+              <Button onClick={createForumUser} className="w-full rounded-xl bg-pink-600 hover:bg-pink-700">
                 Buat Username
               </Button>
             </div>
@@ -744,22 +800,39 @@ const ForumIbu = () => {
               onPostCreated={handlePostCreated}
               activeForum={activeForum}
             />
-            {/* ... (komponen Profile & Notifikasi tidak berubah) */}
-            <div className="space-y-4 mt-6">
+            
+            <ForumProfile 
+              isOpen={showProfile} 
+              onClose={() => setShowProfile(false)} 
+              forumUser={forumUser} 
+            />
+            
+            <ForumNotifications 
+              isOpen={showNotifications} 
+              onClose={() => setShowNotifications(false)} 
+              forumUser={forumUser} 
+            />
+
+            <div className="space-y-6 mt-8">
               {isLoadingPosts ? (
                 <ForumPostSkeletonList />
               ) : posts.length > 0 ? (
                 posts.map((post) => (
-                  <Card key={post.id}>
+                  <Card key={post.id} className="border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden group">
                     <CardContent className="pt-6">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="font-semibold text-primary">
-                            @{post.forum_users.username}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatPostDate(post.created_at)}
-                          </p>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center text-blue-600 font-bold text-sm">
+                            {post.forum_users.username.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900">
+                              @{post.forum_users.username}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {formatPostDate(post.created_at)}
+                            </p>
+                          </div>
                         </div>
                         {user?.id === post.forum_users.user_id && (
                           <DropdownMenu>
@@ -767,15 +840,15 @@ const ForumIbu = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
                               >
-                                <MoreHorizontal className="h-4 w-4" />
+                                <MoreHorizontal className="h-4 w-4 text-gray-500" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="rounded-xl">
                               <DropdownMenuItem
                                 onClick={() => deletePost(post.id)}
-                                className="text-destructive"
+                                className="text-destructive focus:text-destructive rounded-lg"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" /> Hapus
                               </DropdownMenuItem>
@@ -784,26 +857,26 @@ const ForumIbu = () => {
                         )}
                       </div>
 
-                      {/* --- [MODIFIKASI 5] Badge Jawaban Profesional --- */}
                       {post.professional_answer_id && (
-                        <span className="inline-flex items-center mb-3 rounded px-2 py-1 text-xs font-medium bg-green-100 text-green-800">
-                          <CheckCircle2 className="h-3 w-3 mr-1.5" />
+                        <div className="inline-flex items-center mb-4 rounded-xl px-3 py-1.5 text-xs font-bold bg-green-50 text-green-700 border border-green-100">
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
                           Dijawab oleh Profesional
-                        </span>
+                        </div>
                       )}
-                      {/* --- Akhir Modifikasi --- */}
 
-                      <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
+                      <p className="mb-6 whitespace-pre-wrap text-gray-700 leading-relaxed text-[15px]">
+                        {post.content}
+                      </p>
 
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleLike(post.id, post.is_liked)}
-                          className={post.is_liked ? "text-red-500" : ""}
+                          className={`rounded-full px-4 hover:bg-pink-50 ${post.is_liked ? "text-pink-500" : "text-gray-500 hover:text-pink-500"}`}
                         >
                           <Heart
-                            className={`h-4 w-4 mr-1 ${
+                            className={`h-4 w-4 mr-2 ${
                               post.is_liked ? "fill-current" : ""
                             }`}
                           />
@@ -818,85 +891,109 @@ const ForumIbu = () => {
                           }}
                         >
                           <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MessageCircle className="h-4 w-4 mr-1" />
+                            <Button variant="ghost" size="sm" className="rounded-full px-4 hover:bg-blue-50 text-gray-500 hover:text-blue-500">
+                              <MessageCircle className="h-4 w-4 mr-2" />
                               {post.comments_count}
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-                            {/* ... Konten Dialog Komentar akan dirender di sini ... */}
-                            <DialogHeader>
-                              <DialogTitle>Komentar</DialogTitle>
-                            </DialogHeader>
-                            <div className="border-b pb-4">
-                              <p className="font-semibold text-primary mb-1">
-                                @{post.forum_users.username}
-                              </p>
-                              <p className="whitespace-pre-wrap">
+                          <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col rounded-3xl p-0 overflow-hidden">
+                            <div className="p-6 border-b bg-gray-50/50">
+                              <DialogHeader>
+                                <DialogTitle>Komentar</DialogTitle>
+                              </DialogHeader>
+                            </div>
+                            
+                            <div className="p-6 border-b bg-white">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold">
+                                  {post.forum_users.username.charAt(0).toUpperCase()}
+                                </div>
+                                <p className="font-bold text-gray-900 text-sm">
+                                  @{post.forum_users.username}
+                                </p>
+                              </div>
+                              <p className="whitespace-pre-wrap text-gray-700 text-sm pl-11">
                                 {post.content}
                               </p>
                             </div>
-                            <div className="flex-1 space-y-3 overflow-y-auto pr-2">
+
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/30">
                               {isLoadingComments ? (
-                                <p className="text-center text-sm text-muted-foreground py-4">
-                                  Memuat komentar...
-                                </p>
+                                <div className="flex justify-center py-8">
+                                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+                                </div>
                               ) : comments.length > 0 ? (
                                 comments.map((comment) => (
                                   <div
                                     key={comment.id}
-                                    className="border-l-2 border-muted pl-4"
+                                    className={`flex gap-3 ${comment.forum_users.account_type === "professional" ? "bg-green-50/50 p-4 rounded-2xl border border-green-100" : ""}`}
                                   >
-                                    <div className="flex justify-between items-center">
-                                      <p className="font-semibold text-primary text-sm">
-                                        @{comment.forum_users.username}
-                                        {comment.forum_users.account_type ===
-                                          "professional" && (
-                                          <span className="ml-2 inline-flex items-center rounded border border-green-600 px-1.5 py-0.5 text-xs font-medium text-green-700">
-                                            Profesional
-                                          </span>
-                                        )}
-                                      </p>
-                                      {user?.id ===
-                                        comment.forum_users.user_id && (
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6"
-                                          onClick={() =>
-                                            deleteComment(comment.id)
-                                          }
-                                        >
-                                          <Trash2 className="h-3 w-3 text-destructive" />
-                                        </Button>
-                                      )}
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                                      comment.forum_users.account_type === "professional" 
+                                        ? "bg-green-100 text-green-700" 
+                                        : "bg-gray-200 text-gray-600"
+                                    }`}>
+                                      {comment.forum_users.username.charAt(0).toUpperCase()}
                                     </div>
-                                    <p className="text-sm whitespace-pre-wrap">
-                                      {comment.content}
-                                    </p>
+                                    <div className="flex-1">
+                                      <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <p className="font-bold text-gray-900 text-sm">
+                                            @{comment.forum_users.username}
+                                          </p>
+                                          {comment.forum_users.account_type === "professional" && (
+                                            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 text-[10px] px-1.5 py-0 h-5">
+                                              Profesional
+                                            </Badge>
+                                          )}
+                                          <span className="text-[10px] text-gray-400">
+                                            {formatPostDate(comment.created_at)}
+                                          </span>
+                                        </div>
+                                        {user?.id === comment.forum_users.user_id && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-gray-400 hover:text-red-500"
+                                            onClick={() => deleteComment(comment.id)}
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                      <p className="text-sm whitespace-pre-wrap text-gray-700 leading-relaxed">
+                                        {comment.content}
+                                      </p>
+                                    </div>
                                   </div>
                                 ))
                               ) : (
-                                <p className="text-sm text-muted-foreground text-center py-4">
-                                  Belum ada komentar.
-                                </p>
+                                <div className="text-center py-12">
+                                  <MessageSquare className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                                  <p className="text-sm text-gray-500">
+                                    Belum ada komentar. Jadilah yang pertama!
+                                  </p>
+                                </div>
                               )}
                             </div>
-                            <div className="border-t pt-4 space-y-2">
-                              <Textarea
-                                placeholder="Tulis komentar..."
-                                value={newCommentContent}
-                                onChange={(e) =>
-                                  setNewCommentContent(e.target.value)
-                                }
-                              />
-                              <Button
-                                onClick={createComment}
-                                size="sm"
-                                disabled={!newCommentContent.trim()}
-                              >
-                                <Send className="h-4 w-4 mr-2" /> Kirim
-                              </Button>
+                            
+                            <div className="p-4 bg-white border-t">
+                              <div className="flex gap-2">
+                                <Textarea
+                                  placeholder="Tulis komentar..."
+                                  value={newCommentContent}
+                                  onChange={(e) => setNewCommentContent(e.target.value)}
+                                  className="min-h-[44px] max-h-[120px] rounded-xl bg-gray-50 border-gray-200 focus:ring-pink-200 focus:border-pink-300 resize-none"
+                                />
+                                <Button
+                                  onClick={createComment}
+                                  size="icon"
+                                  disabled={!newCommentContent.trim()}
+                                  className="h-11 w-11 rounded-xl bg-pink-600 hover:bg-pink-700 shrink-0"
+                                >
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </DialogContent>
                         </Dialog>
@@ -905,29 +1002,33 @@ const ForumIbu = () => {
                   </Card>
                 ))
               ) : (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <p className="mt-4 text-muted-foreground">
+                <Card className="border-none shadow-sm bg-white/80 backdrop-blur-sm rounded-3xl">
+                  <CardContent className="text-center py-16">
+                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Users className="h-10 w-10 text-gray-300" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Belum ada postingan</h3>
+                    <p className="text-gray-500 max-w-xs mx-auto">
                       {showOnlyAnswered
                         ? "Tidak ada postingan yang dijawab oleh profesional."
-                        : "Belum ada postingan di forum ini. Jadilah yang pertama!"}
+                        : "Jadilah yang pertama membagikan cerita atau pertanyaan di forum ini!"}
                     </p>
                   </CardContent>
                 </Card>
               )}
 
               {isLoadingMore && (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">Memuat...</p>
+                <div className="flex justify-center py-6">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500"></div>
                 </div>
               )}
 
               {!hasMorePosts && posts.length > 0 && !isLoadingPosts && (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">
-                    -- Anda telah mencapai akhir --
-                  </p>
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center px-4 py-2 rounded-full bg-gray-100 text-gray-500 text-xs font-medium">
+                    <Sparkles className="w-3 h-3 mr-2" />
+                    Anda telah mencapai akhir
+                  </div>
                 </div>
               )}
             </div>

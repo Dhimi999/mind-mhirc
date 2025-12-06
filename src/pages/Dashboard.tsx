@@ -89,6 +89,21 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
 
+  const isActiveLink = (path: string) => {
+    if (path === "/dashboard") {
+      return location.pathname === "/dashboard";
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  const getLinkClass = (path: string) => {
+    return `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+      isActiveLink(path)
+        ? "bg-cyan-100 text-cyan-700 font-medium"
+        : "hover:bg-muted hover:text-primary text-gray-600"
+    }`;
+  };
+
   // Ambil profile user
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -304,7 +319,7 @@ const Dashboard = () => {
                 <nav className="space-y-1">
                   <Link
                     to="/dashboard"
-                    className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                    className={getLinkClass("/dashboard")}
                   >
                     <Home className="mr-3 h-5 w-5" />
                     Beranda
@@ -322,56 +337,56 @@ const Dashboard = () => {
                     </div>
                     <Link
                       to="/dashboard/tests"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/tests")}
                     >
                       <ClipboardList className="mr-3 h-5 w-5" />
                       Tes Mental
                     </Link>
                     <Link
                       to="/dashboard/results"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/results")}
                     >
                       <PieChart className="mr-3 h-5 w-5" />
                       Hasil Tes
                     </Link>
                     <Link
                       to="/dashboard/appointments"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/appointments")}
                     >
                       <Calendar className="mr-3 h-5 w-5" />
                       Janji Konsultasi
                     </Link>
                     <Link
                       to="/dashboard/diary"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/diary")}
                     >
                       <BookOpen className="mr-3 h-5 w-5" />
                       Catatan Harian
                     </Link>
                     <Link
                       to="/dashboard/mood-calendar"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/mood-calendar")}
                     >
                       <Calendar className="mr-3 h-5 w-5" />
                       Kalender Mood
                     </Link>
                     <Link
                       to="/dashboard/ai-companion"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/ai-companion")}
                     >
                       <MessageSquare className="mr-3 h-5 w-5" />
                       Teman AI
                     </Link>
                     <Link
                       to="/dashboard/mindforum"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/mindforum")}
                     >
                       <Users className="mr-3 h-5 w-5" />
                       Forum Mind
                     </Link>
                     <Link
                       to="/dashboard/messages"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/messages")}
                     >
                       <Mail className="mr-3 h-5 w-5" />
                       Pesan
@@ -389,21 +404,21 @@ const Dashboard = () => {
                         </div>
                         <Link
                           to="/dashboard/spiritual-budaya/account"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/spiritual-budaya/account")}
                         >
                           <Users className="mr-3 h-5 w-5" />
                           Manajemen Akun
                         </Link>
                         <Link
                           to="/dashboard/spiritual-budaya/assignments"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/spiritual-budaya/assignments")}
                         >
                           <ClipboardList className="mr-3 h-5 w-5" />
                           Manajemen Penugasan
                         </Link>
                         <Link
                           to="/dashboard/spiritual-budaya/meetings"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/spiritual-budaya/meetings")}
                         >
                           <Calendar className="mr-3 h-5 w-5" />
                           Manajemen Pertemuan
@@ -418,21 +433,21 @@ const Dashboard = () => {
                         </div>
                         <Link
                           to="/dashboard/hibrida-cbt/account"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/hibrida-cbt/account")}
                         >
                           <Users className="mr-3 h-5 w-5" />
                           Manajemen Akun
                         </Link>
                         <Link
                           to="/dashboard/hibrida-cbt/assignments"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/hibrida-cbt/assignments")}
                         >
                           <ClipboardList className="mr-3 h-5 w-5" />
                           Manajemen Penugasan
                         </Link>
                         <Link
                           to="/dashboard/hibrida-cbt/meetings"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/hibrida-cbt/meetings")}
                         >
                           <Calendar className="mr-3 h-5 w-5" />
                           Manajemen Pertemuan
@@ -447,28 +462,28 @@ const Dashboard = () => {
                         </div>
                         <Link
                           to="/dashboard/safe-mother/psikoedukasi"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/safe-mother/psikoedukasi")}
                         >
                           <FileText className="mr-3 h-5 w-5" />
                           Manajemen Psikoedukasi
                         </Link>
                         <Link
                           to="/dashboard/safe-mother/account"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/safe-mother/account")}
                         >
                           <Users className="mr-3 h-5 w-5" />
                           Manajemen Akun
                         </Link>
                         <Link
                           to="/dashboard/safe-mother/assignments"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/safe-mother/assignments")}
                         >
                           <ClipboardList className="mr-3 h-5 w-5" />
                           Manajemen Penugasan
                         </Link>
                         <Link
                           to="/dashboard/safe-mother/meetings"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/safe-mother/meetings")}
                         >
                           <Calendar className="mr-3 h-5 w-5" />
                           Manajemen Pertemuan
@@ -484,7 +499,7 @@ const Dashboard = () => {
                       {mockUser.role === "Teacher" && (
                         <Link
                           to="/dashboard/students"
-                          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                          className={getLinkClass("/dashboard/students")}
                         >
                           <Users className="mr-3 h-5 w-5" />
                           Daftar Murid
@@ -494,35 +509,35 @@ const Dashboard = () => {
                         <>
                           <Link
                             to="/dashboard/users"
-                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                            className={getLinkClass("/dashboard/users")}
                           >
                             <Users className="mr-3 h-5 w-5" />
                             Manajemen Pengguna
                           </Link>
                           <Link
                             to="/dashboard/content"
-                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                            className={getLinkClass("/dashboard/content")}
                           >
                             <FileText className="mr-3 h-5 w-5" />
                             Manajemen Konten
                           </Link>
                           <Link
                             to="/dashboard/broadcast"
-                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                            className={getLinkClass("/dashboard/broadcast")}
                           >
                             <Megaphone className="mr-3 h-5 w-5" />
                             Siaran
                           </Link>
                           <Link
                             to="/dashboard/reports"
-                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                            className={getLinkClass("/dashboard/reports")}
                           >
                             <AlertCircle className="mr-3 h-5 w-5" />
                             Laporan
                           </Link>
                           <Link
                             to="/dashboard/analytics"
-                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                            className={getLinkClass("/dashboard/analytics")}
                           >
                             <LineChart className="mr-3 h-5 w-5" />
                             Statistik & Analitik
@@ -537,14 +552,14 @@ const Dashboard = () => {
                     </div>
                     <Link
                       to="/dashboard/settings"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/settings")}
                     >
                       <SettingsIcon className="mr-3 h-5 w-5" />
                       Pengaturan Akun
                     </Link>
                     <Link
                       to="/dashboard/help"
-                      className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-muted hover:text-primary"
+                      className={getLinkClass("/dashboard/help")}
                     >
                       <BookOpen className="mr-3 h-5 w-5" />
                       Bantuan

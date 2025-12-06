@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Bold, Italic, Underline } from "lucide-react";
+import { Bold, Italic, Underline, List, ListOrdered, Heading1, Heading2, Heading3 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -278,8 +278,8 @@ export const AddMaterialDialog = ({ open, onOpenChange, onSuccess, authorName, a
     }
   };
 
-  const execCommand = (command: string) => {
-    document.execCommand(command, false);
+  const execCommand = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
     contentEditorRef.current?.focus();
   };
 
@@ -446,6 +446,58 @@ export const AddMaterialDialog = ({ open, onOpenChange, onSuccess, authorName, a
                       title="Underline"
                     >
                       <Underline className="h-4 w-4" />
+                    </Button>
+                    <div className="w-px h-4 bg-gray-300 mx-1" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => execCommand("insertUnorderedList")}
+                      className="h-8 w-8 p-0"
+                      title="Bullet List"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => execCommand("insertOrderedList")}
+                      className="h-8 w-8 p-0"
+                      title="Numbered List"
+                    >
+                      <ListOrdered className="h-4 w-4" />
+                    </Button>
+                    <div className="w-px h-4 bg-gray-300 mx-1" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => execCommand("formatBlock", "H1")}
+                      className="h-8 w-8 p-0"
+                      title="Heading 1"
+                    >
+                      <Heading1 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => execCommand("formatBlock", "H2")}
+                      className="h-8 w-8 p-0"
+                      title="Heading 2"
+                    >
+                      <Heading2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => execCommand("formatBlock", "H3")}
+                      className="h-8 w-8 p-0"
+                      title="Heading 3"
+                    >
+                      <Heading3 className="h-4 w-4" />
                     </Button>
                   </div>
                   {/* Editor */}

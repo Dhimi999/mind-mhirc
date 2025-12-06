@@ -126,6 +126,22 @@ const MessageManagement: React.FC = () => {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<ChatRoom | null>(null);
   const [isRoomDisabled, setIsRoomDisabled] = useState(false); // State untuk cek apakah chat room completed
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    if (scrollContainerRef.current) {
+      const { scrollHeight, clientHeight } = scrollContainerRef.current;
+      scrollContainerRef.current.scrollTo({
+        top: scrollHeight - clientHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Use setTimeout to ensure DOM is updated before scrolling
+    setTimeout(scrollToBottom, 100);
+  }, [messages]);
 
   // Filter available users based on search term
   useEffect(() => {
@@ -1045,7 +1061,10 @@ const MessageManagement: React.FC = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-[380px] overflow-y-auto p-4">
+                    <CardContent 
+                      ref={scrollContainerRef}
+                      className="h-[380px] overflow-y-auto p-4"
+                    >
                       {isFetchingMessages ? (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>

@@ -24,7 +24,7 @@ const SafeMotherNavbar = () => {
       href: "/safe-mother/forum",
       icon: MessageSquare
     },
-    { name: "CBT", href: "/safe-mother/cbt", icon: Brain },
+    { name: "M-LIPI", href: "/safe-mother/cbt", icon: Brain },
     { name: "Profil", href: "/safe-mother/profil", icon: User }
   ];
 
@@ -43,16 +43,16 @@ const SafeMotherNavbar = () => {
   };
 
   return (
-    <nav className="bg-white/95 backdrop-blur-md shadow-soft sticky top-0 z-50 border-b border-pink-100">
+    <nav className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-white/50">
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/safe-mother" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center shadow-lg">
-              <Heart className="w-5 h-5 text-white" />
+          <Link to="/safe-mother" className="flex items-center space-x-3 group">
+            <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+              <Heart className="w-5 h-5 text-white fill-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Safe Mother</h1>
+              <h1 className="text-xl font-bold text-gray-900 group-hover:text-pink-600 transition-colors">Safe Mother</h1>
               <p className="text-xs text-pink-600 font-medium">MLIPI Program by Mind MHIRC</p>
             </div>
           </Link>
@@ -62,7 +62,7 @@ const SafeMotherNavbar = () => {
             {/* Tombol Kembali ke Halaman Utama */}
             <Link
               to="/"
-              className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 mr-2"
+              className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-white/50 text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-md border border-transparent hover:border-gray-100 mr-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Kembali</span>
@@ -70,17 +70,18 @@ const SafeMotherNavbar = () => {
 
             {navigation.map((item) => {
               const Icon = item.icon;
+              const active = isActive(item.href);
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    isActive(item.href)
-                      ? "bg-pink-100 text-pink-700 shadow-soft"
-                      : "text-gray-600 hover:text-pink-600 hover:bg-pink-50"
+                  className={`flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${
+                    active
+                      ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-200 transform scale-105"
+                      : "text-gray-600 hover:text-pink-600 hover:bg-pink-50/50"
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className={`w-4 h-4 ${active ? "text-white" : ""}`} />
                   <span>{item.name}</span>
                 </Link>
               );

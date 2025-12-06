@@ -11,6 +11,13 @@ import { Helmet } from "react-helmet-async";
 import SafeMotherNavbar from "@/components/SafeMotherNavbar";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface SafeMotherTutorialProps {
   isOpen: boolean;
@@ -301,6 +308,7 @@ const SafeMotherTutorial = ({ isOpen, onClose, onComplete }: SafeMotherTutorialP
 
 const SafeMother = () => {
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showMenuDialog, setShowMenuDialog] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
 
@@ -344,12 +352,12 @@ const SafeMother = () => {
     if (!userProfile?.safe_mother_role) {
       setShowTutorial(true);
     } else {
-      document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+      setShowMenuDialog(true);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-sans selection:bg-pink-100 selection:text-pink-900">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30 font-sans selection:bg-pink-100 selection:text-pink-900">
       <Helmet>
         <title>Safe Mother - Ruang Aman Ibu & Keluarga | Mind MHIRC</title>
         <meta
@@ -365,11 +373,64 @@ const SafeMother = () => {
         onComplete={handleTutorialComplete}
       />
 
+      <Dialog open={showMenuDialog} onOpenChange={setShowMenuDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold text-gray-900">
+              Pilih Layanan
+            </DialogTitle>
+            <DialogDescription className="text-center text-gray-600">
+              Silakan pilih layanan yang ingin Anda akses saat ini.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Link to="/safe-mother/psikoedukasi" onClick={() => setShowMenuDialog(false)}>
+              <div className="flex items-center p-4 border rounded-xl hover:bg-pink-50 hover:border-pink-200 transition-all cursor-pointer group">
+                <div className="p-3 bg-pink-100 rounded-full mr-4 group-hover:bg-pink-200 transition-colors">
+                  <BookOpen className="w-6 h-6 text-pink-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Psikoedukasi</h3>
+                  <p className="text-sm text-gray-500">Artikel dan materi edukasi</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 ml-auto group-hover:text-pink-500" />
+              </div>
+            </Link>
+
+            <Link to="/safe-mother/forum" onClick={() => setShowMenuDialog(false)}>
+              <div className="flex items-center p-4 border rounded-xl hover:bg-purple-50 hover:border-purple-200 transition-all cursor-pointer group">
+                <div className="p-3 bg-purple-100 rounded-full mr-4 group-hover:bg-purple-200 transition-colors">
+                  <MessageSquare className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Forum & Konsultasi</h3>
+                  <p className="text-sm text-gray-500">Diskusi dan tanya jawab ahli</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 ml-auto group-hover:text-purple-500" />
+              </div>
+            </Link>
+
+            <Link to="/safe-mother/cbt" onClick={() => setShowMenuDialog(false)}>
+              <div className="flex items-center p-4 border rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all cursor-pointer group">
+                <div className="p-3 bg-blue-100 rounded-full mr-4 group-hover:bg-blue-200 transition-colors">
+                  <Brain className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">M-LIPI</h3>
+                  <p className="text-sm text-gray-500">Program intervensi terstruktur</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 ml-auto group-hover:text-blue-500" />
+              </div>
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <SafeMotherNavbar />
 
       <main className="flex-1">
         {/* Hero Section with Image Background */}
-        <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+        <section className="relative min-h-[100vh] md:min-h-[90vh] flex items-center overflow-hidden pb-20 md:pb-0">
           {/* Background Image with Overlay */}
           <div className="absolute inset-0 z-0">
             <img 
@@ -377,31 +438,31 @@ const SafeMother = () => {
               alt="Mother and child" 
               className="w-full h-full object-cover object-center"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/80 to-white/40 md:bg-gradient-to-r md:from-white/95 md:via-white/80 md:to-transparent"></div>
           </div>
 
-          <div className="container relative z-10 mx-auto px-4 sm:px-6 pt-20">
-            <div className="max-w-2xl space-y-8 animate-fade-in-up">
-              <div className="inline-flex items-center space-x-2 bg-pink-100/80 backdrop-blur-sm rounded-full px-4 py-1.5 text-pink-700 text-sm font-medium border border-pink-200">
+          <div className="container relative z-10 mx-auto px-4 sm:px-6 pt-24 md:pt-20">
+            <div className="max-w-2xl space-y-6 md:space-y-8 animate-fade-in-up text-center md:text-left">
+              <div className="inline-flex items-center space-x-2 bg-pink-100/80 backdrop-blur-sm rounded-full px-4 py-1.5 text-pink-700 text-sm font-medium border border-pink-200 shadow-sm">
                 <Heart className="w-4 h-4 fill-pink-500 text-pink-500" />
                 <span>#1 Platform Kesehatan Mental Maternal</span>
               </div>
               
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight tracking-tight">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight tracking-tight">
                 Ibu Bahagia, <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
                   Keluarga Sejahtera
                 </span>
               </h1>
               
-              <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg">
+              <p className="text-base md:text-xl text-gray-700 md:text-gray-600 leading-relaxed max-w-lg mx-auto md:mx-0">
                 Pendamping setia perjalanan keibuan Anda. Dari masa persiapan, kehamilan, hingga mengasuh buah hati, kami hadir dengan dukungan profesional dan komunitas yang peduli.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center md:justify-start">
                 <Button 
                   size="lg" 
-                  className="bg-pink-600 hover:bg-pink-700 text-white shadow-lg shadow-pink-200/50 rounded-full px-8 h-14 text-lg"
+                  className="bg-pink-600 hover:bg-pink-700 text-white shadow-lg shadow-pink-200/50 rounded-full px-8 h-12 md:h-14 text-base md:text-lg w-full sm:w-auto"
                   onClick={handleJoinProgram}
                 >
                   Mulai Perjalanan
@@ -410,7 +471,7 @@ const SafeMother = () => {
                 <Button 
                   variant="outline" 
                   size="lg" 
-                  className="bg-white/50 backdrop-blur-sm border-gray-300 hover:bg-white text-gray-700 rounded-full px-8 h-14 text-lg"
+                  className="bg-white/60 backdrop-blur-sm border-gray-300 hover:bg-white text-gray-700 rounded-full px-8 h-12 md:h-14 text-base md:text-lg w-full sm:w-auto"
                   onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   <PlayCircle className="mr-2 h-5 w-5" />
@@ -418,12 +479,12 @@ const SafeMother = () => {
                 </Button>
               </div>
 
-              <div className="pt-8 flex items-center gap-6 text-sm font-medium text-gray-500">
-                <div className="flex items-center gap-2">
+              <div className="pt-6 md:pt-8 flex flex-wrap justify-center md:justify-start gap-4 md:gap-6 text-sm font-medium text-gray-600 md:text-gray-500">
+                <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full md:bg-transparent md:p-0">
                   <CheckCircle2 className="w-5 h-5 text-green-500" />
                   <span>Terverifikasi Medis</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full md:bg-transparent md:p-0">
                   <CheckCircle2 className="w-5 h-5 text-green-500" />
                   <span>Privasi Terjamin</span>
                 </div>
@@ -433,16 +494,16 @@ const SafeMother = () => {
         </section>
 
         {/* Stats Section */}
-        <section className="relative z-20 -mt-20 pb-20">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section className="relative z-20 mt-8 md:-mt-20 pb-12 md:pb-20 px-4">
+          <div className="container mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {[
                 { label: "Ibu Bergabung", value: "2,000+", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
                 { label: "Sesi Konsultasi", value: "500+", icon: MessageSquare, color: "text-pink-600", bg: "bg-pink-50" },
                 { label: "Materi Edukasi", value: "100+", icon: BookOpen, color: "text-purple-600", bg: "bg-purple-50" },
               ].map((stat, idx) => (
-                <div key={idx} className="bg-white rounded-2xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100 flex items-center space-x-4 transform hover:-translate-y-1 transition-transform duration-300">
-                  <div className={`w-16 h-16 ${stat.bg} rounded-2xl flex items-center justify-center`}>
+                <div key={idx} className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-xl shadow-gray-200/50 border border-white/50 flex items-center space-x-4 transform hover:-translate-y-1 transition-transform duration-300">
+                  <div className={`w-16 h-16 ${stat.bg} rounded-2xl flex items-center justify-center shrink-0`}>
                     <stat.icon className={`w-8 h-8 ${stat.color}`} />
                   </div>
                   <div>
@@ -456,70 +517,70 @@ const SafeMother = () => {
         </section>
 
         {/* Features Grid (Bento Style) */}
-        <section id="features" className="py-20 bg-gray-50">
+        <section id="features" className="py-12 md:py-20 bg-transparent">
           <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Layanan Komprehensif</h2>
               <p className="text-gray-600 text-lg">Semua yang Anda butuhkan untuk menjaga kesehatan mental dan emosional selama masa keibuan.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               {/* Psikoedukasi - Large Card */}
-              <div className="md:col-span-8 group relative overflow-hidden rounded-3xl shadow-lg h-[400px]">
+              <div className="md:col-span-8 group relative overflow-hidden rounded-3xl shadow-lg h-[350px] md:h-[400px]">
                 <img 
                   src="https://images.unsplash.com/photo-1516534775068-ba3e7458af70?q=80&w=2070&auto=format&fit=crop" 
                   alt="Education" 
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 p-8 text-white">
-                  <div className="bg-pink-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white">
+                  <div className="bg-pink-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4 shadow-lg">
                     <BookOpen className="w-6 h-6" />
                   </div>
                   <h3 className="text-2xl font-bold mb-2">Psikoedukasi & Artikel</h3>
-                  <p className="text-gray-200 mb-4 max-w-lg">Akses ratusan artikel dan video edukasi yang dikurasi oleh ahli kesehatan mental maternal.</p>
-                  <Link to="/safe-mother/psikoedukasi" className="inline-flex items-center text-pink-300 hover:text-pink-200 font-medium">
+                  <p className="text-gray-200 mb-4 max-w-lg text-sm md:text-base">Akses ratusan artikel dan video edukasi yang dikurasi oleh ahli kesehatan mental maternal.</p>
+                  <Link to="/safe-mother/psikoedukasi" className="inline-flex items-center text-pink-300 hover:text-pink-200 font-medium transition-colors">
                     Mulai Belajar <ArrowRight className="ml-2 w-4 h-4" />
                   </Link>
                 </div>
               </div>
 
               {/* CBT - Tall Card */}
-              <div className="md:col-span-4 group relative overflow-hidden rounded-3xl shadow-lg h-[400px]">
+              <div className="md:col-span-4 group relative overflow-hidden rounded-3xl shadow-lg h-[350px] md:h-[400px]">
                 <img 
                   src="https://images.unsplash.com/photo-1544367563-12123d8965cd?q=80&w=2070&auto=format&fit=crop" 
                   alt="Meditation" 
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 p-8 text-white">
-                  <div className="bg-purple-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white">
+                  <div className="bg-purple-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4 shadow-lg">
                     <Brain className="w-6 h-6" />
                   </div>
                   <h3 className="text-2xl font-bold mb-2">Program CBT</h3>
-                  <p className="text-gray-200 mb-4">Terapi Kognitif Perilaku mandiri untuk mengelola kecemasan.</p>
-                  <Link to="/safe-mother/cbt" className="inline-flex items-center text-purple-300 hover:text-purple-200 font-medium">
+                  <p className="text-gray-200 mb-4 text-sm md:text-base">Terapi Kognitif Perilaku mandiri untuk mengelola kecemasan.</p>
+                  <Link to="/safe-mother/cbt" className="inline-flex items-center text-purple-300 hover:text-purple-200 font-medium transition-colors">
                     Ikuti Program <ArrowRight className="ml-2 w-4 h-4" />
                   </Link>
                 </div>
               </div>
 
               {/* Forum - Wide Card */}
-              <div className="md:col-span-12 group relative overflow-hidden rounded-3xl shadow-lg h-[300px]">
+              <div className="md:col-span-12 group relative overflow-hidden rounded-3xl shadow-lg h-[350px] md:h-[300px]">
                 <img 
                   src="https://images.unsplash.com/photo-1544027993-37dbfe43562a?q=80&w=2070&auto=format&fit=crop" 
                   alt="Community" 
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
-                <div className="absolute inset-0 flex items-center p-8 md:p-12">
+                <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/90 via-black/50 to-transparent"></div>
+                <div className="absolute inset-0 flex items-end md:items-center p-6 md:p-12">
                   <div className="max-w-xl text-white">
-                    <div className="bg-blue-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                    <div className="bg-blue-600 w-12 h-12 rounded-xl flex items-center justify-center mb-4 shadow-lg">
                       <Users className="w-6 h-6" />
                     </div>
-                    <h3 className="text-3xl font-bold mb-4">Forum & Konsultasi Ahli</h3>
-                    <p className="text-gray-200 text-lg mb-6">Jangan berjuang sendirian. Bergabunglah dengan komunitas ibu yang saling mendukung dan konsultasikan masalah Anda dengan psikolog profesional.</p>
-                    <Link to="/safe-mother/forum" className="bg-white text-gray-900 px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors inline-flex items-center">
+                    <h3 className="text-2xl md:text-3xl font-bold mb-3 md:mb-4">Forum & Konsultasi Ahli</h3>
+                    <p className="text-gray-200 text-sm md:text-lg mb-6">Jangan berjuang sendirian. Bergabunglah dengan komunitas ibu yang saling mendukung dan konsultasikan masalah Anda dengan psikolog profesional.</p>
+                    <Link to="/safe-mother/forum" className="bg-white text-gray-900 px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors inline-flex items-center shadow-lg">
                       Gabung Komunitas <ArrowRight className="ml-2 w-4 h-4" />
                     </Link>
                   </div>

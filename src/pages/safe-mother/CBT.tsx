@@ -64,14 +64,30 @@ interface UserAnswers {
   };
 }
 
-// --- Data Master Modul (DIUBAH UNTUK MENYISIPKAN SESI ZOOM SETELAH 2 MODUL) ---
+// --- Data Master Modul (M-LIPI Structure) ---
 const masterModules: Omit<
   CbtModule,
   "status" | "progress" | "professionalComment"
 >[] = [
-  // 1. Sesi CBT 1
+  // 1. Orientasi (Zoom)
   {
     id: 1,
+    title: "Orientasi: Pengenalan Program",
+    description:
+      "Sesi pertemuan awal untuk mengenal program M-LIPI, mentor, dan sesama peserta. Membahas tujuan dan harapan selama program berlangsung.",
+    duration: "60 menit",
+    tasks: [],
+    objectives: [
+      "Memahami struktur dan tujuan program M-LIPI",
+      "Mengenal mentor dan peserta lain",
+      "Menetapkan komitmen awal"
+    ],
+    type: "zoom",
+    zoomLink: "https://zoom.us/j/orientation" // Placeholder
+  },
+  // 2. Sesi 1 (Task)
+  {
+    id: 2,
     title: "Sesi 1: Journey to Recovery",
     description:
       "Mengenali irama hidup Anda, membangun langkah-langkah kecil untuk pemulihan, dan menjaga rutinitas serta dukungan sosial.",
@@ -106,9 +122,9 @@ const masterModules: Omit<
     ],
     type: "cbt"
   },
-  // 2. Sesi CBT 2
+  // 3. Sesi 2 (Task)
   {
-    id: 2,
+    id: 3,
     title: "Sesi 2: Kenali Jejak Perasaan",
     description:
       "Mempelajari bagaimana suasana hati memengaruhi tindakan, mengenali pola emosi, dan menetapkan tujuan pemulihan yang jelas.",
@@ -143,23 +159,7 @@ const masterModules: Omit<
     ],
     type: "cbt"
   },
-  // 3. Sesi Virtual 1 (Setelah 2 Modul CBT)
-  {
-    id: 3,
-    title: "Sesi Zoom 1: Early-Program Check-in",
-    description:
-      "Setelah dua sesi pertama, gunakan kesempatan ini untuk mendiskusikan pemahaman dan tantangan awal Anda dengan mentor. Ini adalah sesi konsultasi pribadi pertama Anda.",
-    duration: "60 menit",
-    tasks: [],
-    objectives: [
-      "Mendapatkan panduan awal personal",
-      "Mengatasi hambatan di Sesi 1 & 2",
-      "Mengatur strategi belajar"
-    ],
-    type: "zoom",
-    zoomLink: "https://zoom.us/j/1112223334?pwd=SAFE-MOTHER-EARLY" // Link Placeholder
-  },
-  // 4. Sesi CBT 3 (ID 3 yang lama)
+  // 4. Sesi 3 (Task)
   {
     id: 4,
     title: "Sesi 3: Reset dan Aktifkan",
@@ -168,22 +168,22 @@ const masterModules: Omit<
     duration: "55 menit",
     tasks: [
       {
-        id: "4-1", // ID diubah dari 3-1
+        id: "3-1",
         prompt:
           "Isi mood check-in harian Anda dan berikan skala 0-10 untuk suasana hati Anda hari ini."
       },
       {
-        id: "4-2", // ID diubah dari 3-2
+        id: "3-2",
         prompt:
           "Tuliskan 1 kebiasaan terkait tidur yang ingin Anda ubah minggu ini (Contoh: tidak melihat layar 1 jam sebelum tidur)."
       },
       {
-        id: "4-3", // ID diubah dari 3-3
+        id: "3-3",
         prompt:
           "Tuliskan 2 opsi makanan cepat-sehat yang realistis untuk Anda siapkan."
       },
       {
-        id: "4-4", // ID diubah dari 3-4
+        id: "3-4",
         prompt:
           "Jadwalkan 1 aktivitas rutin, 1 menyenangkan, dan 1 penting untuk besok (sertakan kapan & di mana)."
       }
@@ -196,31 +196,47 @@ const masterModules: Omit<
     ],
     type: "cbt"
   },
-  // 5. Sesi CBT 4 (ID 5 yang lama)
+  // 5. Evaluasi (Zoom)
   {
     id: 5,
+    title: "Evaluasi: Review Pertengahan",
+    description:
+      "Sesi pertemuan untuk mengevaluasi kemajuan setelah 3 sesi penugasan. Diskusi hambatan dan strategi untuk sesi selanjutnya.",
+    duration: "60 menit",
+    tasks: [],
+    objectives: [
+      "Mengevaluasi pemahaman materi sesi 1-3",
+      "Mendiskusikan hambatan yang ditemui",
+      "Menyesuaikan strategi belajar"
+    ],
+    type: "zoom",
+    zoomLink: "https://zoom.us/j/evaluation" // Placeholder
+  },
+  // 6. Sesi 4 (Task)
+  {
+    id: 6,
     title: "Sesi 4: Pikiran VS Khawatir dan Dukungan",
     description:
       "Melatih cara mengenali pikiran negatif, mengelola kekhawatiran dengan teknik 'worry time', dan memperkuat dukungan sosial.",
     duration: "60 menit",
     tasks: [
       {
-        id: "5-1", // ID diubah dari 5-1
+        id: "4-1",
         prompt:
           "Tuliskan 1 pikiran otomatis yang sering muncul dan 2 bukti yang menentangnya."
       },
       {
-        id: "5-2", // ID diubah dari 5-2
+        id: "4-2",
         prompt:
           "Bedakan antara masalah nyata dan kekhawatiran hipotesis menggunakan Pohon Khawatir."
       },
       {
-        id: "5-3", // ID diubah dari 5-3
+        id: "4-3",
         prompt:
           "Tentukan jadwal 'Waktu Khawatir' Anda setiap hari (Contoh: Pukul 17:00 selama 20 menit)."
       },
       {
-        id: "5-4", // ID diubah dari 5-4
+        id: "4-4",
         prompt:
           "Tuliskan nama pendamping utama Anda dan 2 bentuk bantuan nyata yang Anda butuhkan darinya minggu ini."
       }
@@ -233,74 +249,52 @@ const masterModules: Omit<
     ],
     type: "cbt"
   },
-  // 6. Sesi Virtual 2 (Setelah 2 Modul CBT lagi)
-  {
-    id: 6,
-    title: "Sesi Zoom 2: Mid-Program Review",
-    description:
-      "Anda telah menyelesaikan sebagian besar modul inti. Sesi ini fokus pada evaluasi teknik CBT yang sudah dipraktikkan dan penyelesaian hambatan psikologis sebelum sesi terakhir.",
-    duration: "60 menit",
-    tasks: [],
-    objectives: [
-      "Mendapatkan umpan balik personal",
-      "Mengevaluasi strategi CBT",
-      "Menetapkan tujuan paruh kedua"
-    ],
-    type: "zoom",
-    zoomLink: "https://zoom.us/j/4445556667?pwd=SAFE-MOTHER-MID" // Link Placeholder
-  },
-  // 7. Sesi CBT 5 (ID 6 yang lama)
+  // 7. Sesi 5 (Task)
   {
     id: 7,
-    title: "Sesi 5: Tetap Pulih, Tetap Kuat",
+    title: "Sesi 5: Rencana Jangka Panjang",
     description:
-      "Fokus untuk mempertahankan hasil pemulihan, menjaga kebugaran, dan menyiapkan rencana pencegahan jika gejala muncul kembali.",
-    duration: "50 menit",
+      "Merangkum semua yang telah dipelajari dan membuat rencana pencegahan kekambuhan serta pemeliharaan kesehatan mental jangka panjang.",
+    duration: "60 menit",
     tasks: [
       {
-        id: "7-1", // ID diubah dari 6-1
+        id: "5-1",
         prompt:
-          "Tuliskan kegiatan sehat yang sudah berhasil Anda lakukan dan tandai mana yang ingin dipertahankan."
+          "Identifikasi tanda-tanda peringatan dini (early warning signs) jika kondisi Anda mulai menurun kembali."
       },
       {
-        id: "7-2", // ID diubah dari 6-2
+        id: "5-2",
         prompt:
-          "Tuliskan tanda-tanda pribadi ketika mood Anda mulai turun (Contoh: sulit tidur, malas beraktivitas)."
+          "Buat daftar strategi coping yang paling efektif bagi Anda selama program ini."
       },
       {
-        id: "7-3", // ID diubah dari 6-3
+        id: "5-3",
         prompt:
-          "Buat rencana darurat pribadi 'Jika... maka...' (Contoh: Jika saya merasa cemas, maka saya akan melakukan latihan napas)."
-      },
-      {
-        id: "7-4", // ID diubah dari 6-4
-        prompt:
-          "Tuliskan 1 orang pendamping utama dan simpan sebagai 'Kontak Darurat' Anda."
+          "Tuliskan surat untuk diri Anda di masa depan sebagai pengingat kekuatan dan pencapaian Anda."
       }
     ],
     objectives: [
-      "Merefleksikan dan mempertahankan gaya hidup sehat",
-      "Mengidentifikasi tanda-tanda awal mood menurun",
-      "Membuat rencana darurat pribadi (Jika... maka...)",
-      "Memanfaatkan sumber dukungan sebagai kontak darurat"
+      "Mengidentifikasi tanda peringatan dini",
+      "Menyusun kotak peralatan (toolbox) strategi coping",
+      "Membuat rencana pemeliharaan jangka panjang"
     ],
     type: "cbt"
   },
-  // 8. Sesi Virtual 3 (Setelah Modul CBT terakhir)
+  // 8. Tindak Lanjut (Zoom)
   {
     id: 8,
-    title: "Sesi Zoom 3: Final Program & Aftercare",
+    title: "Tindak Lanjut: Penutupan Program",
     description:
-      "Program CBT selesai! Sesi akhir ini fokus pada refleksi, konsolidasi pembelajaran, pembuatan rencana pencegahan *relapse*, dan diskusi langkah selanjutnya untuk menjaga kesehatan mental Anda.",
+      "Sesi pertemuan akhir untuk merayakan pencapaian, membahas rencana jangka panjang, dan menutup program secara resmi.",
     duration: "60 menit",
     tasks: [],
     objectives: [
-      "Membuat rencana pencegahan relapse",
-      "Mendapatkan sertifikat",
-      "Diskusi tindak lanjut"
+      "Merayakan kelulusan program",
+      "Finalisasi rencana jangka panjang",
+      "Penutupan dan umpan balik akhir"
     ],
     type: "zoom",
-    zoomLink: "https://zoom.us/j/9998887776?pwd=SAFE-MOTHER-FINAL" // Link Placeholder
+    zoomLink: "https://zoom.us/j/followup" // Placeholder
   }
 ];
 
@@ -316,21 +310,21 @@ const initialAchievements: Achievement[] = [
     id: "halfway",
     icon: Target,
     title: "Setengah Jalan",
-    description: "Menyelesaikan 3 dari 5 modul CBT inti.",
+    description: "Menyelesaikan 3 dari 5 modul M-LIPI inti.",
     unlocked: false
   },
   {
     id: "master",
     icon: Brain,
-    title: "CBT Master",
+    title: "M-LIPI Master",
     description:
-      "Menyelesaikan seluruh 8 langkah program CBT dan Sesi Virtual!",
+      "Menyelesaikan seluruh 8 langkah program M-LIPI!",
     unlocked: false
   }
 ];
 
 const CBT = () => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [modules, setModules] = useState<CbtModule[]>([]);
   const [achievements, setAchievements] =
     useState<Achievement[]>(initialAchievements);
@@ -342,7 +336,10 @@ const CBT = () => {
 
   // [DB] Fetch user progress and merge with master data
   const loadUserProgress = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const { data: progressData, error } = await supabase
@@ -375,15 +372,27 @@ const CBT = () => {
       setModules(mergedModules);
     } catch (error) {
       console.error("Error fetching user progress:", error);
-      toast.error("Gagal memuat progres Anda.");
+      toast.error("Gagal memuat progres Anda. Menampilkan modul default.");
+
+      // Fallback: Tampilkan modul master dengan status default
+      const defaultModules = masterModules.map((m) => ({
+        ...m,
+        status: m.id === 1 ? "available" : "locked",
+        progress: 0,
+        professionalComment: null
+      } as CbtModule));
+
+      setModules(defaultModules);
     } finally {
       setIsLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    loadUserProgress();
-  }, [loadUserProgress]);
+    if (!authLoading) {
+      loadUserProgress();
+    }
+  }, [authLoading, loadUserProgress]);
 
   // [DB] Handle module start: either load tasks or open Zoom link
   const handleStartModule = async (moduleId: number) => {
@@ -605,59 +614,59 @@ const CBT = () => {
       activeModuleDetail.professionalComment;
 
     return (
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30 font-sans selection:bg-pink-100 selection:text-pink-900">
         <Helmet>
           <title>{activeModuleDetail.title} - Safe Mother</title>
         </Helmet>
         <SafeMotherNavbar />
-        <main className="flex-1 pt-8">
+        <main className="flex-1 pt-24 pb-12">
           <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
             <Button
               variant="ghost"
               onClick={handleGoBack}
-              className="mb-4"
+              className="mb-6 hover:bg-white/50"
               disabled={isSaving}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kembali ke Daftar Modul
             </Button>
             {hasComment && (
-              <Card className="mb-6 border-l-4 border-blue-500 bg-blue-50 shadow-md">
-                <CardHeader className="flex flex-row items-center space-x-3 p-4 pb-0">
-                  <MessagesSquare className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                  <CardTitle className="text-xl font-semibold text-blue-800">
+              <Card className="mb-8 border-l-4 border-purple-500 bg-purple-50/50 backdrop-blur-sm shadow-lg rounded-2xl overflow-hidden">
+                <CardHeader className="flex flex-row items-center space-x-3 p-6 pb-2">
+                  <MessagesSquare className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                  <CardTitle className="text-xl font-semibold text-purple-800">
                     Umpan Balik Mentor
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 pt-2">
+                <CardContent className="p-6 pt-2">
                   <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">
                     {activeModuleDetail.professionalComment}
                   </p>
                 </CardContent>
               </Card>
             )}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">
+            <Card className="bg-white/80 backdrop-blur-md shadow-xl border-white/50 rounded-3xl overflow-hidden">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="text-3xl font-bold text-gray-900 mb-2">
                   {activeModuleDetail.title}
                 </CardTitle>
-                <p className="text-muted-foreground">
+                <p className="text-lg text-gray-600 leading-relaxed">
                   {activeModuleDetail.description}
                 </p>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="p-8 space-y-8">
                 {activeModuleDetail.tasks.map((task, index) => (
-                  <div key={task.id}>
+                  <div key={task.id} className="bg-white/50 rounded-2xl p-6 border border-white/50 shadow-sm">
                     <label
                       htmlFor={task.id}
-                      className="font-medium text-gray-800 block mb-2"
+                      className="font-bold text-gray-900 block mb-4 text-lg"
                     >
                       Tugas {index + 1}: {task.prompt}
                     </label>
                     <Textarea
                       id={task.id}
                       placeholder="Tuliskan jawaban Anda di sini..."
-                      className="min-h-[120px]"
+                      className="min-h-[150px] bg-white border-gray-200 focus:border-purple-300 focus:ring-purple-200 rounded-xl text-base leading-relaxed resize-none"
                       value={
                         userAnswers[activeModuleDetail.id]?.[task.id] || ""
                       }
@@ -672,16 +681,16 @@ const CBT = () => {
                   </div>
                 ))}
               </CardContent>
-              <CardFooter>
+              <CardFooter className="p-8 pt-0">
                 <Button
                   onClick={() => handleCompleteModule(activeModuleDetail.id)}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-6 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
                   disabled={isSaving}
                 >
                   {isSaving ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                   ) : (
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <CheckCircle className="h-5 w-5 mr-2" />
                   )}
                   {isSaving ? "Menyimpan..." : "Selesaikan & Simpan Modul"}
                 </Button>
@@ -705,262 +714,249 @@ const CBT = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50/30 via-white to-purple-50/30">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50/30 via-white to-purple-50/30 font-sans selection:bg-pink-100 selection:text-pink-900">
       <Helmet>
-        <title>Program CBT - Safe Mother | Mind MHIRC</title>
+        <title>Program M-LIPI - Safe Mother | Mind MHIRC</title>
         <meta
           name="description"
-          content="Program Cognitive Behavioral Therapy (CBT) khusus untuk ibu dengan berbagai modul terstruktur untuk mendukung kesehatan mental maternal."
+          content="Program M-LIPI (Modifikasi Langkah Intervensi Psikologis Ibu) khusus untuk ibu dengan berbagai modul terstruktur untuk mendukung kesehatan mental maternal."
         />
       </Helmet>
 
       <SafeMotherNavbar />
 
-      <main className="flex-1 pt-8">
-        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center space-x-2 bg-blue-100 rounded-full px-4 py-2 mb-4">
-              <Heart className="w-4 h-4 text-blue-600" />
-              <span className="text-blue-700 font-medium text-sm">
-                Program CBT
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative pt-32 pb-20 overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-30"></div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-pink-200/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" style={{ animationDelay: '1s' }}></div>
+          
+          <div className="container mx-auto px-4 sm:px-6 relative z-10 text-center">
+            <div className="inline-flex items-center space-x-2 bg-white/60 backdrop-blur-md rounded-full px-6 py-2 mb-8 shadow-sm border border-white/50 animate-fade-in">
+              <Brain className="w-4 h-4 text-purple-500 fill-purple-500" />
+              <span className="text-purple-800 font-medium text-sm">M-LIPI Program</span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 leading-tight animate-fade-in-up">
+              Pikiran Sehat, <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                Hati Tenang
               </span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Cognitive Behavioral Therapy untuk Ibu
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Program terstruktur 8 langkah (5 Modul Tugas & 3 Sesi Zoom
-              Konsultasi) yang dirancang khusus untuk mendukung kesehatan mental
-              maternal.
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-12 animate-fade-in-up leading-relaxed" style={{ animationDelay: '0.1s' }}>
+              Program M-LIPI terstruktur 8 langkah yang dirancang khusus untuk membantu Anda mengelola emosi dan pikiran selama masa keibuan.
             </p>
-          </div>
 
-          {/* Progress Overview */}
-          <div className="bg-white rounded-2xl shadow-soft p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Progress Anda
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-xl">
-                <div className="text-2xl font-bold text-blue-600">
-                  {totalModulesCompleted}/{totalModules}
+            {/* Progress Overview - Floating */}
+            <div className="max-w-4xl mx-auto bg-white/60 backdrop-blur-md rounded-3xl shadow-xl p-8 border border-white/50 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Progress Perjalanan Anda</h2>
+                <div className="text-sm font-medium text-purple-600 bg-purple-50 px-4 py-1.5 rounded-full border border-purple-100">
+                  {((totalModulesCompleted / totalModules) * 100).toFixed(0)}% Selesai
                 </div>
-                <div className="text-sm text-gray-600">Total Modul Selesai</div>
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-xl">
-                <div className="text-2xl font-bold text-purple-600">
-                  {((totalModulesCompleted / totalModules) * 100).toFixed(0)}%
-                </div>
-                <div className="text-sm text-gray-600">Penyelesaian</div>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-100 rounded-full h-3 mb-8 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${(totalModulesCompleted / totalModules) * 100}%` }}
+                ></div>
               </div>
-              <div className="text-center p-4 bg-orange-50 rounded-xl">
-                <div className="text-2xl font-bold text-orange-600">
-                  {achievementsUnlocked}
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-2xl hover:bg-blue-50 transition-colors">
+                  <div className="text-3xl font-bold text-blue-600 mb-1">
+                    {totalModulesCompleted}/{totalModules}
+                  </div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Modul</div>
                 </div>
-                <div className="text-sm text-gray-600">Pencapaian</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-xl">
-                <div className="text-2xl font-bold text-green-600">
-                  {cbtModulesCompleted}/5
+                <div className="text-center p-4 bg-gray-50 rounded-2xl hover:bg-purple-50 transition-colors">
+                  <div className="text-3xl font-bold text-purple-600 mb-1">
+                    {cbtModulesCompleted}/5
+                  </div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tugas Inti</div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  Tugas CBT Inti Selesai
+                <div className="text-center p-4 bg-gray-50 rounded-2xl hover:bg-orange-50 transition-colors">
+                  <div className="text-3xl font-bold text-orange-600 mb-1">
+                    {achievementsUnlocked}
+                  </div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pencapaian</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-2xl hover:bg-green-50 transition-colors">
+                  <div className="text-3xl font-bold text-green-600 mb-1">
+                    {totalModulesCompleted >= 3 ? "Aktif" : "-"}
+                  </div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</div>
                 </div>
               </div>
             </div>
           </div>
+        </section>
 
-          {/* Modules */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-            {modules.map((module) => {
-              const isZoom = module.type === "zoom";
-              const hasProfessionalComment =
-                module.status === "completed" && module.professionalComment;
-              return (
-                <div
-                  key={module.id}
-                  className={`bg-white rounded-2xl shadow-soft hover:shadow-lg transition-all duration-300 overflow-hidden ${
-                    module.status === "locked" ? "opacity-75" : ""
-                  } ${isZoom ? "border-2 border-purple-300 shadow-lg" : ""}`}
-                >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl py-16">
+          {/* Modules Timeline */}
+          <div className="relative mb-20">
+            {/* Vertical Line for Desktop */}
+            <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-200 -translate-x-1/2"></div>
+
+            <div className="space-y-12">
+              {modules.map((module, index) => {
+                const isZoom = module.type === "zoom";
+                const hasProfessionalComment = module.status === "completed" && module.professionalComment;
+                const isLeft = index % 2 === 0;
+
+                return (
+                  <div key={module.id} className={`relative flex items-center ${isLeft ? 'lg:flex-row' : 'lg:flex-row-reverse'} flex-col lg:gap-16 gap-6`}>
+                    
+                    {/* Timeline Dot */}
+                    <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-8 h-8 rounded-full border-4 border-white shadow-md items-center justify-center z-10 bg-gray-200">
+                      <div className={`w-3 h-3 rounded-full ${
+                        module.status === "completed" ? "bg-green-500" : 
+                        module.status === "available" ? "bg-blue-500" : "bg-gray-400"
+                      }`}></div>
+                    </div>
+
+                    {/* Content Card */}
+                    <div className={`flex-1 w-full ${isLeft ? 'lg:text-right' : 'lg:text-left'}`}>
+                      <div className={`bg-white/60 backdrop-blur-md rounded-3xl p-8 shadow-lg border border-white/50 transition-all duration-300 group hover:shadow-2xl hover:-translate-y-1 ${
+                        module.status === "locked" ? "opacity-70 grayscale" : 
+                        isZoom ? "ring-1 ring-purple-200" : "hover:border-purple-200"
+                      }`}>
+                        <div className={`flex items-center gap-4 mb-4 ${isLeft ? 'lg:flex-row-reverse' : 'lg:flex-row'}`}>
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${
                             module.status === "available"
-                              ? isZoom
-                                ? "bg-purple-100"
-                                : "bg-blue-100"
+                              ? isZoom ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"
                               : module.status === "completed"
-                              ? isZoom
-                                ? "bg-purple-100"
-                                : "bg-green-100"
-                              : "bg-gray-100"
-                          }`}
-                        >
-                          {isZoom ? (
-                            <Video
-                              className={`w-6 h-6 ${
-                                module.status !== "locked"
-                                  ? "text-purple-600"
-                                  : "text-gray-400"
-                              }`}
-                            />
-                          ) : (
-                            <Brain
-                              className={`w-6 h-6 ${
-                                module.status === "available"
-                                  ? "text-blue-600"
-                                  : module.status === "completed"
-                                  ? "text-green-600"
-                                  : "text-gray-400"
-                              }`}
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <h3
-                            className={`text-lg font-semibold ${
-                              isZoom ? "text-purple-800" : "text-gray-900"
-                            }`}
-                          >
-                            {module.title}
-                          </h3>
-                          <div
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                              module.status
-                            )}`}
-                          >
-                            {getStatusText(module.status)}
+                              ? "bg-green-100 text-green-600"
+                              : "bg-gray-100 text-gray-400"
+                          }`}>
+                            {isZoom ? <Video className="w-7 h-7" /> : <Brain className="w-7 h-7" />}
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className={`flex items-center gap-2 mb-1 ${isLeft ? 'lg:justify-end' : 'lg:justify-start'}`}>
+                              <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${getStatusColor(module.status)}`}>
+                                {getStatusText(module.status)}
+                              </span>
+                              {hasProfessionalComment && (
+                                <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-md bg-yellow-100 text-yellow-700">
+                                  <MessagesSquare className="w-3 h-3 mr-1" />
+                                  Feedback
+                                </span>
+                              )}
+                            </div>
+                            <h3 className={`text-xl font-bold ${isZoom ? "text-purple-900" : "text-gray-900"}`}>
+                              {module.title}
+                            </h3>
                           </div>
                         </div>
-                      </div>
-                      {hasProfessionalComment && (
-                        <span className="ml-3 inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          <MessagesSquare className="w-3 h-3 mr-1" />
-                          Ada Umpan Balik
-                        </span>
-                      )}
-                    </div>
 
-                    <p className="text-gray-600 text-sm mb-4">
-                      {module.description}
-                    </p>
+                        <p className="text-gray-600 mb-6 leading-relaxed">
+                          {module.description}
+                        </p>
 
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{module.duration}</span>
-                      </div>
-                      {module.tasks.length > 0 && (
-                        <div className="flex items-center space-x-1">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>{module.tasks.length} tugas</span>
+                        <div className={`flex items-center gap-4 text-sm text-gray-500 mb-6 ${isLeft ? 'lg:justify-end' : 'lg:justify-start'}`}>
+                          <div className="flex items-center gap-1.5 bg-white/50 px-3 py-1.5 rounded-lg border border-white/50">
+                            <Clock className="w-4 h-4" />
+                            <span>{module.duration}</span>
+                          </div>
+                          {module.tasks.length > 0 && (
+                            <div className="flex items-center gap-1.5 bg-white/50 px-3 py-1.5 rounded-lg border border-white/50">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>{module.tasks.length} tugas</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">
-                        Tujuan:
-                      </h4>
-                      <ul className="space-y-1">
-                        {module.objectives.map((objective, index) => (
-                          <li
-                            key={index}
-                            className="flex items-start space-x-2 text-xs text-gray-600"
+                        <div className={`flex ${isLeft ? 'lg:justify-end' : 'lg:justify-start'}`}>
+                          <Button
+                            onClick={() => handleStartModule(module.id)}
+                            disabled={module.status === "locked" || isSaving}
+                            className={`rounded-xl px-8 py-6 font-bold shadow-lg transition-all transform hover:-translate-y-0.5 ${
+                              module.status === "available"
+                                ? isZoom
+                                  ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-purple-200"
+                                  : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-blue-200"
+                                : module.status === "completed"
+                                ? isZoom
+                                  ? "bg-purple-100 text-purple-700 hover:bg-purple-200 shadow-none"
+                                  : "bg-green-100 text-green-700 hover:bg-green-200 shadow-none"
+                                : "bg-gray-100 text-gray-400 shadow-none cursor-not-allowed"
+                            }`}
                           >
-                            <div className="w-1 h-1 bg-gray-400 rounded-full mt-1.5 flex-shrink-0"></div>
-                            <span>{objective}</span>
-                          </li>
-                        ))}
-                      </ul>
+                            {isSaving && module.status === "available" ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : module.status === "completed" ? (
+                              <>
+                                <CheckCircle className="w-5 h-5 mr-2" />
+                                {isZoom ? "Sesi Selesai" : "Selesai"}
+                              </>
+                            ) : module.status === "available" ? (
+                              isZoom ? (
+                                <>
+                                  <Video className="w-5 h-5 mr-2" />
+                                  Gabung Sesi Zoom
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-5 h-5 mr-2" />
+                                  Mulai Modul
+                                </>
+                              )
+                            ) : (
+                              <>
+                                <Lock className="w-5 h-5 mr-2" />
+                                Terkunci
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-
-                    <Button
-                      onClick={() => handleStartModule(module.id)}
-                      disabled={module.status === "locked" || isSaving}
-                      className={`w-full ${
-                        module.status === "available"
-                          ? isZoom
-                            ? "bg-purple-600 hover:bg-purple-700 text-white"
-                            : "bg-blue-600 hover:bg-blue-700 text-white"
-                          : module.status === "completed"
-                          ? isZoom
-                            ? "bg-purple-500 text-white cursor-default"
-                            : "bg-green-600 hover:bg-green-700 text-white"
-                          : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      }`}
-                    >
-                      {isSaving && module.status === "available" ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : module.status === "completed" ? (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          {isZoom ? "Sesi Selesai (Gabung Kembali)" : "Selesai"}
-                        </>
-                      ) : module.status === "available" ? (
-                        isZoom ? (
-                          <>
-                            <Video className="w-4 h-4 mr-2" />
-                            Gabung Zoom
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 mr-2" />
-                            Mulai Modul
-                          </>
-                        )
-                      ) : (
-                        <>
-                          <Lock className="w-4 h-4 mr-2" />
-                          Terkunci
-                        </>
-                      )}
-                    </Button>
+                    
+                    {/* Spacer for the other side */}
+                    <div className="flex-1 hidden lg:block"></div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
-          {/* Achievements */}
-          <div className="bg-white rounded-2xl shadow-soft p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              Pencapaian
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Achievements Grid */}
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-10 text-white shadow-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Pencapaian Anda</h2>
+                <p className="text-gray-400">Kumpulkan lencana seiring kemajuan Anda.</p>
+              </div>
+              <Award className="w-12 h-12 text-yellow-500" />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {achievements.map((achievement) => {
                 const Icon = achievement.icon;
                 return (
                   <div
                     key={achievement.id}
-                    className={`flex items-center space-x-4 p-4 rounded-xl transition-opacity ${
+                    className={`flex items-center space-x-4 p-5 rounded-2xl border transition-all ${
                       achievement.unlocked
-                        ? "bg-green-50 opacity-100"
-                        : "bg-gray-50 opacity-50"
+                        ? "bg-white/10 border-white/20 backdrop-blur-sm"
+                        : "bg-white/5 border-white/5 opacity-50 grayscale"
                     }`}
                   >
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        achievement.unlocked ? "bg-green-100" : "bg-gray-200"
+                      className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-lg ${
+                        achievement.unlocked ? "bg-gradient-to-br from-yellow-400 to-orange-500 text-white" : "bg-gray-700 text-gray-500"
                       }`}
                     >
-                      <Icon
-                        className={`w-6 h-6 ${
-                          achievement.unlocked
-                            ? "text-green-600"
-                            : "text-gray-400"
-                        }`}
-                      />
+                      <Icon className="w-7 h-7" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-700">
+                      <h3 className={`font-bold ${achievement.unlocked ? "text-white" : "text-gray-400"}`}>
                         {achievement.title}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-400 mt-1 leading-tight">
                         {achievement.description}
                       </p>
                     </div>

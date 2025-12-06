@@ -19,9 +19,10 @@ interface ManagePsikoedukasiDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (materialId: string) => void;
+  onMaterialDeleted?: () => void;
 }
 
-export const ManagePsikoedukasiDialog = ({ open, onOpenChange, onEdit }: ManagePsikoedukasiDialogProps) => {
+export const ManagePsikoedukasiDialog = ({ open, onOpenChange, onEdit, onMaterialDeleted }: ManagePsikoedukasiDialogProps) => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -61,6 +62,9 @@ export const ManagePsikoedukasiDialog = ({ open, onOpenChange, onEdit }: ManageP
       
       toast.success("Materi berhasil dihapus");
       fetchMaterials();
+      if (onMaterialDeleted) {
+        onMaterialDeleted();
+      }
     } catch (error: any) {
       toast.error("Gagal menghapus materi");
       console.error(error);
