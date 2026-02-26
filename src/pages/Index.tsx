@@ -591,27 +591,37 @@ const Index = () => {
         {/* Internal linking section for SEO */}
         <section className="container mx-auto px-4 py-16">
           <RelatedContent
-            title="Mulai Perjalanan Kesehatan Mental Anda"
+            title="Jelajahi Platform Kesehatan Mental Mind MHIRC"
             links={[
               {
-                to: "/tests",
-                text: "Tes Kesehatan Mental",
-                description: "Evaluasi kondisi kesehatan mental Anda dengan berbagai tes yang telah tervalidasi"
+                to: "/services",
+                text: "Layanan Kami",
+                description: "Konsultasi psikologis, program edukasi, pendampingan kelompok, dan layanan khusus"
               },
               {
                 to: "/about",
                 text: "Tentang Mind MHIRC",
-                description: "Pelajari lebih lanjut tentang misi dan visi kami dalam kesehatan mental"
-              },
-              {
-                to: "/services",
-                text: "Layanan Kami",
-                description: "Temukan berbagai layanan kesehatan mental yang kami tawarkan"
+                description: "Pelajari misi, tim, dan pendekatan berbasis bukti yang kami gunakan"
               },
               {
                 to: "/blog",
-                text: "Artikel Kesehatan Mental",
-                description: "Baca artikel terbaru tentang tips dan informasi kesehatan mental"
+                text: "Blog Kesehatan Mental",
+                description: "Artikel edukasi dan tips kesehatan mental dari para peneliti dan psikolog kami"
+              },
+              {
+                to: "/safe-mother",
+                text: "Safe Mother Program",
+                description: "Pendampingan psikologis komprehensif untuk ibu hamil dan pasca-nifas"
+              },
+              {
+                to: "/spiritual-budaya",
+                text: "Spiritual & Budaya",
+                description: "Intervensi berbasis kearifan spiritual dan budaya lokal Indonesia"
+              },
+              {
+                to: "/hibrida-cbt",
+                text: "Hibrida Naratif CBT",
+                description: "Program terapi kognitif-perilaku berbasis naratif hibrida"
               }
             ]}
           />

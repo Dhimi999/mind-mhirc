@@ -37,8 +37,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} />}
       <link rel="canonical" href={canonical} />
-      {/* FORCE NOINDEX FOR ALL PAGES */}
-      <meta name="robots" content="noindex, nofollow" />
+      <meta name="robots" content={noIndex ? "noindex, nofollow" : "index, follow"} />
 
       {/* Open Graph */}
       <meta property="og:title" content={title} />

@@ -14,8 +14,9 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ServiceCard from "@/components/ServiceCard";
-import { Helmet } from "react-helmet-async"; // Jangan lupa import
+import { Helmet } from "react-helmet-async";
 import { getSiteBaseUrl } from "@/lib/utils";
+import { RelatedContent } from "@/components/seo/InternalLinking";
 
 const Services = () => {
   // Helper to render multiple labels/links per program with consistent tones
@@ -418,6 +419,45 @@ const Services = () => {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Internal Linking untuk SEO */}
+        <section className="container mx-auto px-6 pb-16">
+          <RelatedContent
+            title="Jelajahi Lebih Lanjut"
+            links={[
+              {
+                to: "/",
+                text: "Beranda Mind MHIRC",
+                description: "Kembali ke halaman utama untuk melihat semua yang ditawarkan Mind MHIRC"
+              },
+              {
+                to: "/about",
+                text: "Tentang Kami",
+                description: "Kenali lebih dalam misi, tim, dan nilai-nilai Mind MHIRC dalam kesehatan mental"
+              },
+              {
+                to: "/safe-mother",
+                text: "Program Safe Mother",
+                description: "Layanan kesehatan mental komprehensif untuk ibu hamil dan pasca-nifas"
+              },
+              {
+                to: "/spiritual-budaya",
+                text: "Program Spiritual & Budaya",
+                description: "Intervensi berbasis kearifan spiritual dan budaya lokal Indonesia"
+              },
+              {
+                to: "/hibrida-cbt",
+                text: "Hibrida Naratif CBT",
+                description: "Program terapi kognitif-perilaku berbasis naratif untuk restrukturisasi kognitif"
+              },
+              {
+                to: "/blog",
+                text: "Blog Kesehatan Mental",
+                description: "Artikel edukasi dan tips kesehatan mental dari tim peneliti Mind MHIRC"
+              }
+            ]}
+          />
         </section>
       </main>
 

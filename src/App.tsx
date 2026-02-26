@@ -52,6 +52,7 @@ import HibridaPsikoedukasiUnified from "./pages/hibrida-naratif/psikoedukasi/Hib
 import HibridaPsikoedukasiLoginRequired from "./pages/hibrida-naratif/psikoedukasi/LoginRequired";
 import UnderMaintanance from "./pages/UnderMaintenance";
 import { HelmetProvider } from "react-helmet-async";
+import SiteNavigationSchema from "@/components/seo/SiteNavigationSchema";
 
 const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }) => {
@@ -265,6 +266,8 @@ const AppRoutes = () => {
 const App = () => (
   <HelmetProvider>
     {/* 1. Tambahkan HelmetProvider sebagai pembungkus terluar */}
+    {/* Schema JSON-LD global: SiteNavigation, Organization, WebSite */}
+    <SiteNavigationSchema />
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>

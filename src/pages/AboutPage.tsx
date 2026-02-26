@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SEO from "@/components/seo/SEO";
+import { RelatedContent } from "@/components/seo/InternalLinking";
 
 // Import refactored components
 import HeroSection from "@/components/about/HeroSection";
@@ -28,6 +29,45 @@ const AboutPage = () => {
         <OrganizationProfile />
         <TeamSection />
         <ContactSection />
+
+        {/* Internal Linking untuk SEO */}
+        <section className="container mx-auto px-4 pb-16">
+          <RelatedContent
+            title="Mulai Perjalanan Bersama Kami"
+            links={[
+              {
+                to: "/services",
+                text: "Layanan Kami",
+                description: "Jelajahi konsultasi psikologis, program edukasi, dan semua layanan kesehatan mental Mind MHIRC"
+              },
+              {
+                to: "/blog",
+                text: "Blog & Artikel",
+                description: "Baca artikel terbaru seputar kesehatan mental dari tim peneliti dan psikolog kami"
+              },
+              {
+                to: "/safe-mother",
+                text: "Program Safe Mother",
+                description: "Program khusus untuk mendampingi ibu hamil dan pasca-nifas secara psikologis"
+              },
+              {
+                to: "/spiritual-budaya",
+                text: "Program Spiritual & Budaya",
+                description: "Intervensi berbasis kearifan lokal dan spiritualitas untuk kesehatan mental"
+              },
+              {
+                to: "/hibrida-cbt",
+                text: "Hibrida Naratif CBT",
+                description: "Terapi kognitif-perilaku berbasis naratif untuk rekonstruksi cerita diri yang lebih sehat"
+              },
+              {
+                to: "/login",
+                text: "Daftar & Masuk",
+                description: "Buat akun Mind MHIRC untuk mengakses semua layanan digital secara personal"
+              }
+            ]}
+          />
+        </section>
       </main>
 
       <Footer />

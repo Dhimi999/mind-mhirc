@@ -1,8 +1,13 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Helmet } from "react-helmet-async";
 
 const UnderMaintanance = () => {
   return <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+        <title>Segera Hadir | Mind MHIRC</title>
+      </Helmet>
       <Navbar />       
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
