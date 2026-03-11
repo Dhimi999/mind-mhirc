@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef } from "react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import Index from "./pages/Index";
 import Tests from "./pages/Tests";
 import TestDetail from "./pages/TestDetail";
@@ -277,6 +278,7 @@ const App = () => (
             <AppRoutes />
           </BrowserRouter>
           <Analytics />
+          <SpeedInsights />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
