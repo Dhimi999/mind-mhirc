@@ -25,8 +25,7 @@ const TokenExpired = () => {
     const error = hashParams.get("error");
     const errorCode = hashParams.get("error_code");
     const errorDescription = hashParams.get("error_description");
-    
-    console.log("Auth error details:", { error, errorCode, errorDescription });
+    // Jangan log error auth details — bisa bocorkan info sensitif dari URL hash
   }, []);
 
   const handleSendToken = async () => {

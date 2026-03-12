@@ -71,12 +71,6 @@ import CbtModuleReview from "@/components/dashboard/safe-mother/CbtModuleReview"
 import CbtAnswerDetail from "@/components/dashboard/safe-mother/CbtAnswerDetail";
 import { Helmet } from "react-helmet-async";
 
-// Variabel global untuk menentukan role user
-let id = "";
-let isProfessional = false;
-let isAdmin = false;
-let globalUnreadBroadcastsCount = 0;
-
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [userName, setUserName] = useState("Pengguna");
@@ -84,6 +78,9 @@ const Dashboard = () => {
   const [unreadBroadcastsCount, setUnreadBroadcastsCount] = useState(0);
   const [chatRooms, setChatRooms] = useState<any[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  // Role flags sebagai state (bukan module-level variable)
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isProfessional, setIsProfessional] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -107,9 +104,8 @@ const Dashboard = () => {
   // Ambil profile user
   useEffect(() => {
     const fetchUserProfile = async () => {
-      id = user?.id;
-      isProfessional = user?.account_type === "professional";
-      isAdmin = user?.is_admin === true;
+      setIsAdmin(user?.is_admin === true);
+      setIsProfessional(user?.account_type === "professional");
       if (user?.id) {
         try {
           const { data, error } = await supabase
@@ -176,18 +172,12 @@ const Dashboard = () => {
             }
           }
         }
-        console.log(
-          "Recipient read:" + recipientRead,
-          "dari broadcast:" + broadcast.recepient_read
-        );
-
         // Kembalikan true jika user belum membaca broadcast ini
         return !recipientRead.includes(user.id);
       }).length;
 
       // Set jumlah broadcast yang belum dibaca
       setUnreadBroadcastsCount(unreadCount);
-      globalUnreadBroadcastsCount = unreadCount;
     } catch (error) {
       console.error("Error fetching unread broadcasts count:", error);
     }
@@ -815,8 +805,6 @@ const DashboardOverview = ({ user }: { user: any }) => {
     const sevenDaysAgoISO = sevenDaysAgo.toISOString();
 
     try {
-      console.log("Fetching data...");
-
       // Fetch data dari Supabase
       const [
         { data: testData, error: testError },
@@ -845,15 +833,6 @@ const DashboardOverview = ({ user }: { user: any }) => {
           .select("id", { count: "exact", head: true })
           .gte("published_date", sevenDaysAgoISO)
       ]);
-
-      // Debug response dari Supabase
-      console.log("Test Data:", testData);
-      console.log("Stats: ", {
-        totalTests,
-        testsLast7Days,
-        totalBlogs,
-        blogsLast7Days
-      });
 
       // Tangani error eksplisit
       if (testError) console.error("Error fetching test results:", testError);
@@ -891,10 +870,6 @@ const DashboardOverview = ({ user }: { user: any }) => {
   useEffect(() => {
     fetchAllData();
   }, []);
-
-  useEffect(() => {
-    console.log("Updated testResults:", stats);
-  }, [testResults]);
 
   return (
     <div className="mt-1">

@@ -658,23 +658,10 @@ const HibridaIntervensiUnified: React.FC = () => {
   const allGroupSchedules = meetingSchedule?.has_group_schedules ? (meetingSchedule as any).all_group_schedules : null;
   const p = progress;
 
-  // Debug log for progress
+  // Persist progress: DB is source of truth; localStorage removed for security
   useEffect(() => {
-    console.log('Progress updated:', progress);
-  }, [progress]);
-
-  // Persist progress to localStorage so listing page can reflect latest state
-  useEffect(() => {
-    try {
-      const key = 'hibridaInterventionProgress';
-      const raw = localStorage.getItem(key);
-      const map = raw ? JSON.parse(raw) : {};
-      map[sessionNumber] = {
-        meetingDone: !!progress?.meetingDone,
-        assignmentDone: !!progress?.assignmentDone,
-      };
-      localStorage.setItem(key, JSON.stringify(map));
-    } catch {}
+    // Progress di-sync dari DB oleh hook useHibridaSession
+    // localStorage tidak dipakai untuk data terapi (rentan XSS)
   }, [sessionNumber, progress?.meetingDone, progress?.assignmentDone]);
 
   // Reset local state on session change to avoid stale content flash

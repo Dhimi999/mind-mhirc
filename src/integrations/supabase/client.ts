@@ -2,8 +2,19 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://gfeuhclekmdxaatyyiez.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmZXVoY2xla21keGFhdHl5aWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5NDI2MzIsImV4cCI6MjA1NjUxODYzMn0.zl3T3J2a8cCJxq5OI9IdAnWEYXSwdUwcJ6D_5MglXCI";
+// Kredensial Supabase diambil dari environment variables.
+// Nilai VITE_* akan diekspos ke bundle client-side — ini adalah anon key
+// yang memang boleh publik, TAPI keamanan data bergantung pada RLS di Supabase.
+// JANGAN pernah menaruh service_role key di variabel VITE_*.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error(
+    "[Mind MHIRC] VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY harus diisi di file .env.local. " +
+    "Salin .env.example ke .env.local dan isi nilainya."
+  );
+}
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

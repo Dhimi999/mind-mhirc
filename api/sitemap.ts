@@ -1,10 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 
-// Public credentials (anon key) – safe to use in serverless function
-const SUPABASE_URL = "https://gfeuhclekmdxaatyyiez.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmZXVoY2xla21keGFhdHl5aWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5NDI2MzIsImV4cCI6MjA1NjUxODYzMn0.zl3T3J2a8cCJxq5OI9IdAnWEYXSwdUwcJ6D_5MglXCI";
+// Gunakan environment variables — JANGAN hardcode credentials
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
 
 const SITE = "https://mind-mhirc.my.id";
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DOMPurify from "dompurify";
 import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ArrowLeft, Clock, User, Calendar, Download, Share2 } from "lucide-react";
@@ -162,7 +163,7 @@ const PsikoedukasiDetail = () => {
               {material.type === "text" && material.content && (
                 <div 
                   className="prose prose-lg max-w-none text-gray-800 leading-relaxed prose-headings:text-gray-900 prose-headings:font-bold prose-a:text-pink-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-lg"
-                  dangerouslySetInnerHTML={{ __html: material.content }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(material.content ?? "", { USE_PROFILES: { html: true } }) }}
                 />
               )}
 

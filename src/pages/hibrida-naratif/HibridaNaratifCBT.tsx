@@ -37,12 +37,10 @@ const HibridaNaratifCBT: React.FC = () => {
   type SessionProgress = { meetingDone: boolean; assignmentDone: boolean };
   const [progressMap, setProgressMap] = useState<Record<number, SessionProgress>>({});
 
-  // Load persisted progress from portal sessions (shared via localStorage)
+  // Load persisted progress from portal sessions
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("hibridaInterventionProgress");
-      if (raw) setProgressMap(JSON.parse(raw));
-    } catch {}
+    // Progress di-load dari DB saat komponen mount (lihat useEffect di bawah)
+    // localStorage tidak dipakai untuk data terapi (rentan XSS)
   }, []);
 
   // Sync progress from DB on load for HN-CBT
@@ -63,9 +61,8 @@ const HibridaNaratifCBT: React.FC = () => {
           };
         });
         setProgressMap(map);
-        try { localStorage.setItem('hibridaInterventionProgress', JSON.stringify(map)); } catch {}
       } catch (e) {
-        // TODO: log to monitoring service when available
+        // Progress load failed silently — DB is source of truth
       }
     };
     loadProgress();
@@ -180,19 +177,7 @@ const HibridaNaratifCBT: React.FC = () => {
 
   const rawIsAdmin = user?.is_admin === true;
   const [adminView, setAdminView] = useState(true); // Default TRUE - admin by default
-  // Persist admin preview toggle so admin can switch mode easily
-  useEffect(() => {
-    if (!rawIsAdmin) return;
-    try {
-      const saved = localStorage.getItem("hibridaAdminView");
-      if (saved !== null) setAdminView(saved === "true");
-    } catch {}
-  }, [rawIsAdmin]);
-  useEffect(() => {
-    if (rawIsAdmin) {
-      try { localStorage.setItem("hibridaAdminView", String(adminView)); } catch {}
-    }
-  }, [adminView, rawIsAdmin]);
+  // Admin toggle disimpan hanya dalam memory (tidak di localStorage) untuk keamanan
   // Effective admin gating (if toggle ON, behave as admin; if OFF, behave as participant)
   const isAdmin = isSuperAdmin || (rawIsAdmin && adminView);
 
@@ -240,7 +225,7 @@ const HibridaNaratifCBT: React.FC = () => {
           };
         });
         setPsikoProgress(map);
-        try { localStorage.setItem('hibridaPsikoEduProgress', JSON.stringify(map)); } catch {}
+        // Tidak menyimpan data terapi di localStorage (rentan XSS)
       } catch (e) {
         // ignore
       }

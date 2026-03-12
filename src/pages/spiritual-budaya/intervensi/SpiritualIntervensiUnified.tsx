@@ -207,11 +207,6 @@ const SpiritualIntervensiUnified: React.FC = () => {
   const allGroupSchedules = meeting?.all_group_schedules;
   const p = progress;
 
-  // Debug log for progress
-  useEffect(() => {
-    console.log('Progress updated:', progress);
-  }, [progress]);
-
   // Reset local state on session change to avoid stale content flash
   useEffect(() => {
     setAssignment(config?.defaultAssignment ? { ...config.defaultAssignment } : {});
@@ -237,7 +232,6 @@ const SpiritualIntervensiUnified: React.FC = () => {
       
       // Set initial state: if has submissions, show latest (locked), else create new mode
       if (sorted && sorted.length > 0) {
-        console.log(`[Sesi ${sessionNumber}] Has ${history.length} submissions - showing latest (locked)`);
         setIsCreatingNew(false);
         // Load latest submission into form (will be disabled)
         const latest = sorted[0] as any;
@@ -246,7 +240,6 @@ const SpiritualIntervensiUnified: React.FC = () => {
           setAssignment({ ...answers });
         }
       } else {
-        console.log(`[Sesi ${sessionNumber}] No submissions yet - create new mode`);
         // No submission yet, enable create new mode
         setIsCreatingNew(true);
         if (config?.defaultAssignment) {

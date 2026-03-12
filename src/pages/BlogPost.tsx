@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Calendar, User, ArrowLeft, MessageSquare, Heart, Send } from "lucide-react";
+import DOMPurify from "dompurify";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SEO from "@/components/seo/SEO";
@@ -98,8 +99,9 @@ const BlogPostPage = () => {
       setCommentLoading(true);
       const newComment: Comment = {
         name: commentName,
-        email: commentEmail,
-        content: commentContent,
+        // Simpan email yang di-mask agar tidak bocor ke publik
+        email: commentEmail.replace(/(.{2})(.*)(@.*)/, "$1***$3"),
+        content: commentContent.slice(0, 1000), // batasi panjang komentar
         date: new Date().toISOString()
       };
       const updatedComments = [...comments, newComment];
@@ -223,7 +225,7 @@ const BlogPostPage = () => {
             
             <article className="prose prose-lg max-w-none blog-content">
               <div dangerouslySetInnerHTML={{
-              __html: post.content
+              __html: DOMPurify.sanitize(post.content ?? "", { USE_PROFILES: { html: true } })
             }} />
               
               {post.references_cit && Array.isArray(post.references_cit) && (

@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables (jangan commit ke Git)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+# Tapi .env.example BOLEH dicommit (tidak berisi nilai nyata)
+!.env.example

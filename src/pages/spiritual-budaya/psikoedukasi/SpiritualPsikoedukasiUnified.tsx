@@ -287,7 +287,6 @@ const SpiritualPsikoedukasiUnified: React.FC = () => {
       const sorted = Array.isArray(history)
         ? [...history].sort((a: any, b: any) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
         : [];
-      console.log('Psikoedukasi submission history:', sorted);
       setSubmissionHistory(sorted);
       // Set initial state: if has submissions, show latest (locked), else create new mode
       if (sorted && sorted.length > 0) {
